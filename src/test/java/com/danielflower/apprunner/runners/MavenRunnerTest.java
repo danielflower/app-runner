@@ -39,7 +39,7 @@ public class MavenRunnerTest {
         runner.start(45678);
 
         try {
-            ContentResponse resp = client.GET("http://localhost:45678/");
+            ContentResponse resp = client.GET("http://localhost:45678/maven/");
             assertThat(resp.getStatus(), is(200));
             assertThat(resp.getContentAsString(), containsString("My Maven App"));
         } finally {

@@ -1,7 +1,9 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.problems.AppRunnerException;
-import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.resource.Resource;
@@ -22,7 +24,6 @@ public class WebServer implements AutoCloseable {
 
     public void start() throws Exception {
         jettyServer = new Server(port);
-
         HandlerList handlers = new HandlerList();
         handlers.addHandler(resourceHandler());
         jettyServer.setHandler(handlers);
