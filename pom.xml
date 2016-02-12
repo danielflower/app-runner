@@ -4,12 +4,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.danielflower.laprunner</groupId>
-    <artifactId>lap-runner</artifactId>
+    <groupId>com.danielflower.apprunner</groupId>
+    <artifactId>app-runner</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <description>Lap Runner - the little app runner that hosts java, clojure and nodejs apps</description>
-    <url>https://github.com/danielflower/lap-runner</url>
+    <description>App Runner - the little app runner that hosts java, clojure and nodejs apps</description>
+    <url>https://github.com/danielflower/app-runner</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -20,14 +20,14 @@
 
     <ciManagement>
         <system>travis-ci</system>
-        <url>https://travis-ci.org/danielflower/lap-runner</url>
+        <url>https://travis-ci.org/danielflower/app-runner</url>
     </ciManagement>
 
     <inceptionYear>2016</inceptionYear>
 
     <issueManagement>
         <system>GitHub</system>
-        <url>https://github.com/danielflower/lap-runner/issues</url>
+        <url>https://github.com/danielflower/app-runner/issues</url>
     </issueManagement>
 
     <licenses>
@@ -186,7 +186,7 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>com.danielflower.laprunner.App</mainClass>
+                                    <mainClass>com.danielflower.apprunner.App</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>

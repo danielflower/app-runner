@@ -1,6 +1,6 @@
-package com.danielflower.laprunner.runners;
+package com.danielflower.apprunner.runners;
 
-import com.danielflower.laprunner.problems.ProjectCannotStartException;
+import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.danielflower.laprunner.FileUtils.dirPath;
+import static com.danielflower.apprunner.FileUtils.dirPath;
 import static java.util.Arrays.asList;
 
 public class MavenRunner {

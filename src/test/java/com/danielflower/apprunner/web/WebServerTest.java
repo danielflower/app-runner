@@ -1,6 +1,5 @@
-package com.danielflower.laprunner.web;
+package com.danielflower.apprunner.web;
 
-import com.danielflower.laprunner.web.WebServer;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.util.ssl.SslContextFactory;

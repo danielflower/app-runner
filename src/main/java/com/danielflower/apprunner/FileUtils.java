@@ -1,4 +1,4 @@
-package com.danielflower.laprunner;
+package com.danielflower.apprunner;
 
 import java.io.File;
 import java.io.IOException;

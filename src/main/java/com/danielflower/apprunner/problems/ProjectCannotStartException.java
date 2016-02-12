@@ -1,6 +1,6 @@
-package com.danielflower.laprunner.problems;
+package com.danielflower.apprunner.problems;
 
-public class ProjectCannotStartException extends LapRunnerException {
+public class ProjectCannotStartException extends AppRunnerException {
     public ProjectCannotStartException(String message) {
         super(message);
     }

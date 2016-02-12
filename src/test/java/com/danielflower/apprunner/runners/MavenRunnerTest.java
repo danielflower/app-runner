@@ -1,7 +1,7 @@
-package com.danielflower.laprunner.runners;
+package com.danielflower.apprunner.runners;
 
-import com.danielflower.laprunner.FileUtils;
-import com.danielflower.laprunner.problems.LapRunnerException;
+import com.danielflower.apprunner.FileUtils;
+import com.danielflower.apprunner.problems.AppRunnerException;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
@@ -50,7 +50,7 @@ public class MavenRunnerTest {
     private static File sampleAppDir(String subDir) {
         File samples = new File("src/main/resources/samples/" + subDir);
         if (!samples.isDirectory()) {
-            throw new LapRunnerException("Could not find sample dir at " + FileUtils.dirPath(samples));
+            throw new AppRunnerException("Could not find sample dir at " + FileUtils.dirPath(samples));
         }
         return samples;
     }

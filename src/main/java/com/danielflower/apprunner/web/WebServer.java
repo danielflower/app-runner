@@ -1,6 +1,6 @@
-package com.danielflower.laprunner.web;
+package com.danielflower.apprunner.web;
 
-import com.danielflower.laprunner.problems.LapRunnerException;
+import com.danielflower.apprunner.problems.AppRunnerException;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -54,7 +54,7 @@ public class WebServer implements AutoCloseable {
         try {
             return new URL("https", "localhost", port, "");
         } catch (MalformedURLException e) {
-            throw new LapRunnerException(e);
+            throw new AppRunnerException(e);
         }
     }
 

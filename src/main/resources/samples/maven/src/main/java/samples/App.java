@@ -17,7 +17,7 @@ public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
     public static void main(String[] args) throws Exception {
 
-        // When run from lap-runner, you must use the port set in the environment variable web.port
+        // When run from app-runner, you must use the port set in the environment variable web.port
         int port = Integer.parseInt(firstNonNull(System.getenv("web.port"), "8080"));
         Server jettyServer = new Server(port);
         jettyServer.setStopAtShutdown(true);
