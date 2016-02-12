@@ -35,8 +35,7 @@ public class MavenRunner {
             .setPomFile(pomFile)
             .setJavaHome(javaHome)
             .setGoals(asList("clean", "package"))
-            .setBaseDirectory(projectRoot)
-            .addShellEnvironment("web.port", String.valueOf(port));
+            .setBaseDirectory(projectRoot);
 
         Invoker invoker = new DefaultInvoker();
         try {
