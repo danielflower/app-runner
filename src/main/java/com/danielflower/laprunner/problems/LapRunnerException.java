@@ -1,4 +1,4 @@
-package com.danielflower.laprunner;
+package com.danielflower.laprunner.problems;
 
 public class LapRunnerException extends RuntimeException {
     public LapRunnerException(String message) {

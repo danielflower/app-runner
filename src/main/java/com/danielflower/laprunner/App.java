@@ -1,5 +1,6 @@
 package com.danielflower.laprunner;
 
+import com.danielflower.laprunner.web.WebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

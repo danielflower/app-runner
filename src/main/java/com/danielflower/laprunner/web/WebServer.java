@@ -1,5 +1,6 @@
-package com.danielflower.laprunner;
+package com.danielflower.laprunner.web;
 
+import com.danielflower.laprunner.problems.LapRunnerException;
 import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
