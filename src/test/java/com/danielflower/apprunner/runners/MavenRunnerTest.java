@@ -47,7 +47,7 @@ public class MavenRunnerTest {
         }
     }
 
-    private static File sampleAppDir(String subDir) {
+    public static File sampleAppDir(String subDir) {
         File samples = new File("src/main/resources/samples/" + subDir);
         if (!samples.isDirectory()) {
             throw new AppRunnerException("Could not find sample dir at " + FileUtils.dirPath(samples));

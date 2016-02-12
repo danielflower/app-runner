@@ -1,5 +1,6 @@
 package com.danielflower.apprunner;
 
+import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +10,7 @@ public class App {
 
     public static void main(String[] args) {
         try {
-            WebServer webServer = new WebServer(1337);
+            WebServer webServer = new WebServer(1337, new ProxyMap());
             webServer.start();
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Shutdown invoked");
