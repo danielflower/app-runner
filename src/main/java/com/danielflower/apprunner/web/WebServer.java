@@ -2,15 +2,17 @@ package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.problems.AppRunnerException;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
-import org.eclipse.jetty.proxy.ProxyServlet;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +38,7 @@ public class WebServer implements AutoCloseable {
         jettyServer = new Server(port);
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
+        handlers.addHandler(createRestService());
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
 
@@ -43,6 +46,20 @@ public class WebServer implements AutoCloseable {
 
         port = ((ServerConnector) jettyServer.getConnectors()[0]).getLocalPort();
         log.info("Started web server at " + baseUrl());
+    }
+
+    private Handler createRestService() {
+        ServletContextHandler sch = new ServletContextHandler();
+        sch.setContextPath("/api");
+
+        AppResource resource = new AppResource(estate);
+        ResourceConfig rc = new ResourceConfig();
+        rc.register(resource);
+
+        ServletContainer sc = new ServletContainer(rc);
+        ServletHolder holder = new ServletHolder(sc);
+        sch.addServlet(holder, "/*");
+        return sch;
     }
 
     private Handler createHomeRedirect() {

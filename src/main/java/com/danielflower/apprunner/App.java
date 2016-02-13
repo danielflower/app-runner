@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
@@ -20,7 +19,7 @@ public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
     private final Config config;
     private WebServer webServer;
-    private ArrayList<AppManager> managers;
+    private final AppEstate estate = new AppEstate();
 
     public static void main(String[] args) {
         try {
@@ -41,11 +40,10 @@ public class App {
         FileSandbox fileSandbox = new FileSandbox(config.getDir(Config.DATA_DIR));
         GitRepoLoader gitRepoLoader = getGitRepoLoader(config);
         ProxyMap proxyMap = new ProxyMap();
-        managers = new ArrayList<>();
         for (String repo : gitRepoLoader.loadAll()) {
             AppManager appMan = AppManager.create(repo, fileSandbox);
             appMan.addListener(proxyMap::add);
-            managers.add(appMan);
+            estate.add(appMan);
             appMan.update();
         }
         webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap);
@@ -74,14 +72,7 @@ public class App {
             } catch (Exception e) {
                 log.info("Error while stopping", e);
             }
-            for (AppManager manager : managers) {
-                log.info("Stopping " + manager.name);
-                try {
-                    manager.stopApp();
-                } catch (Exception e) {
-                    log.warn("Error while stopping " + manager.name, e);
-                }
-            }
+            estate.shutdown();
             log.info("Shutdown complete");
         }
     }

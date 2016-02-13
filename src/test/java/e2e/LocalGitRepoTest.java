@@ -6,15 +6,20 @@ import com.danielflower.apprunner.problems.AppRunnerException;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
+import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
 import scaffolding.Photocopier;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
@@ -71,6 +76,15 @@ public class LocalGitRepoTest {
         resp = client.GET(appRunnerUrl + "/maven/");
         assertThat(resp.getStatus(), is(200));
         assertThat(resp.getContentAsString(), containsString("My Maven App"));
+    }
+
+    @Test
+    public void theRestAPILives() throws Exception {
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
+        assertThat(resp.getStatus(), is(200));
+        String json = resp.getContentAsString();
+        JSONAssert.assertEquals("{apps:[ {name: \"maven\"} ]}", json, JSONCompareMode.LENIENT);
+
     }
 
 }
