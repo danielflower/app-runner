@@ -60,8 +60,15 @@ public class LocalGitRepoTest {
     }
 
     @Test
-    public void canCloneARepoAndStartIt() throws Exception {
+    public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
         ContentResponse resp = client.GET(appRunnerUrl + "/maven/");
+        assertThat(resp.getStatus(), is(200));
+        assertThat(resp.getContentAsString(), containsString("My Maven App"));
+
+        app.shutdown();
+        app.start();
+
+        resp = client.GET(appRunnerUrl + "/maven/");
         assertThat(resp.getStatus(), is(200));
         assertThat(resp.getContentAsString(), containsString("My Maven App"));
     }

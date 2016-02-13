@@ -7,6 +7,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.util.FS;
@@ -46,22 +47,18 @@ public class AppManager {
         File instanceDir = fileSandbox.appDir(name, "instances");
 
         Git git;
-        if (RepositoryCache.FileKey.isGitRepository(gitDir, FS.DETECTED)) {
+        try {
             try {
                 git = Git.open(gitDir);
-            } catch (IOException e) {
-                throw new AppRunnerException("Could not open existing git repo at " + gitDir, e);
-            }
-        } else {
-            try {
+            } catch (RepositoryNotFoundException e) {
                 git = Git.cloneRepository()
                     .setURI(gitUrl)
                     .setBare(false)
                     .setDirectory(gitDir)
                     .call();
-            } catch (GitAPIException e) {
-                throw new AppRunnerException("Could not initialise git repo from URL " + gitUrl, e);
             }
+        } catch (IOException | GitAPIException e) {
+            throw new AppRunnerException("Could not open or create git repo at " + gitDir, e);
         }
         StoredConfig config = git.getRepository().getConfig();
         config.setString("remote", "origin", "url", gitUrl);
