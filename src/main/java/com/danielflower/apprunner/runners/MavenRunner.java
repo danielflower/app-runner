@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static com.danielflower.apprunner.FileUtils.dirPath;
+import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
 
 public class MavenRunner {

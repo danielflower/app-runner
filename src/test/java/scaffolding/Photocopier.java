@@ -1,0 +1,37 @@
+package scaffolding;
+
+import org.apache.commons.io.FileUtils;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.UUID;
+
+import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static org.apache.commons.io.FilenameUtils.separatorsToSystem;
+
+public class Photocopier {
+    public static File copyTestProjectToTemporaryLocation(String sampleAppName) throws IOException {
+        String pathname = separatorsToSystem("src/main/resources/samples/" + sampleAppName);
+        File source = new File(pathname);
+        if (!source.isDirectory()) {
+            source = new File(separatorsToSystem("../") + pathname);
+        }
+        if (!source.isDirectory()) {
+            throw new RuntimeException("Could not find module " + sampleAppName + " at " + new File(pathname) + " nor " + dirPath(source));
+        }
+
+        File target = folderForSampleProject(sampleAppName);
+        FileUtils.copyDirectory(source, target);
+        return target;
+    }
+
+    public static File folderForSampleProject(String moduleName) {
+        return new File(separatorsToSystem("target/samples/" + UUID.randomUUID() + "/" + moduleName));
+    }
+
+    public static File tempFile(String name) throws IOException {
+        File file = new File(separatorsToSystem("target/temp/" + UUID.randomUUID() + "/" + name));
+        FileUtils.touch(file);
+        return file;
+    }
+}

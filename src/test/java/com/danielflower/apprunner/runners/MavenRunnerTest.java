@@ -1,6 +1,6 @@
 package com.danielflower.apprunner.runners;
 
-import com.danielflower.apprunner.FileUtils;
+import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -50,7 +50,7 @@ public class MavenRunnerTest {
     public static File sampleAppDir(String subDir) {
         File samples = new File("src/main/resources/samples/" + subDir);
         if (!samples.isDirectory()) {
-            throw new AppRunnerException("Could not find sample dir at " + FileUtils.dirPath(samples));
+            throw new AppRunnerException("Could not find sample dir at " + FileSandbox.dirPath(samples));
         }
         return samples;
     }
