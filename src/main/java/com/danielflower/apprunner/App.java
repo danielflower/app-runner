@@ -10,7 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.Writer;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 import static com.danielflower.apprunner.FileSandbox.dirPath;
@@ -44,9 +45,9 @@ public class App {
             AppManager appMan = AppManager.create(repo, fileSandbox);
             appMan.addListener(proxyMap::add);
             estate.add(appMan);
-            appMan.update();
+            appMan.update(new Slf4jWriterBridge());
         }
-        webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap);
+        webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap, estate);
         webServer.start();
     }
 
@@ -74,6 +75,21 @@ public class App {
             }
             estate.shutdown();
             log.info("Shutdown complete");
+        }
+    }
+
+    private static class Slf4jWriterBridge extends Writer {
+        @Override
+        public void write(char[] cbuf, int off, int len) throws IOException {
+            log.info("Update output: " + new String(cbuf, off, len));
+        }
+
+        @Override
+        public void flush() throws IOException {
+        }
+
+        @Override
+        public void close() throws IOException {
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.web;
 
+import com.danielflower.apprunner.AppEstate;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.server.Request;
@@ -33,7 +34,7 @@ public class WebServerTest {
         client = new HttpClient(new SslContextFactory(true));
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap);
+        webServer = new WebServer(0, proxyMap, new AppEstate());
         webServer.start();
 
         appServer = new TestServer();

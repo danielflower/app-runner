@@ -78,7 +78,7 @@ public class MavenRunner {
         try {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
             executor.execute(command, env, handler);
-            handler.waitFor(TimeUnit.SECONDS.toMillis(5));
+            handler.waitFor(TimeUnit.SECONDS.toMillis(2));
             if (handler.hasResult()) {
                 throw new ProjectCannotStartException("The project at " + dirPath(projectRoot) + " started but exited all too soon. Output was: " + output);
             }

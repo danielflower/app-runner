@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.web;
 
+import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
 import org.eclipse.jetty.server.Handler;
@@ -28,17 +29,19 @@ public class WebServer implements AutoCloseable {
     private int port;
     private final ProxyMap proxyMap;
     private Server jettyServer;
+    private final AppEstate estate;
 
-    public WebServer(int port, ProxyMap proxyMap) {
+    public WebServer(int port, ProxyMap proxyMap, AppEstate estate) {
         this.port = port;
         this.proxyMap = proxyMap;
+        this.estate = estate;
     }
 
     public void start() throws Exception {
         jettyServer = new Server(port);
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
-        handlers.addHandler(createRestService());
+        handlers.addHandler(createRestService(estate));
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
 
@@ -48,7 +51,7 @@ public class WebServer implements AutoCloseable {
         log.info("Started web server at " + baseUrl());
     }
 
-    private Handler createRestService() {
+    private Handler createRestService(AppEstate estate) {
         ServletContextHandler sch = new ServletContextHandler();
         sch.setContextPath("/api");
 

@@ -8,24 +8,23 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
-import org.eclipse.jgit.lib.RepositoryCache;
 import org.eclipse.jgit.lib.StoredConfig;
-import org.eclipse.jgit.util.FS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Writer;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AppManager {
+public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
 
-    public final String gitUrl;
-    public final String name;
+    private final String gitUrl;
+    private final String name;
     private final Git git;
     private final File instanceDir;
     private MavenRunner currentRunner = null;
@@ -38,6 +37,14 @@ public class AppManager {
         this.instanceDir = instanceDir;
     }
 
+    @Override
+    public String name() {
+        return name;
+    }
+    @Override
+    public String gitUrl() {
+        return gitUrl;
+    }
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox) {
         String name = StringUtils.removeEndIgnoreCase(StringUtils.removeEnd(gitUrl, "/"), ".git");
@@ -78,7 +85,8 @@ public class AppManager {
         }
     }
 
-    public synchronized void update() throws Exception {
+    @Override
+    public synchronized void update(Writer writer) throws Exception {
         git.pull().setRemote("origin").call();
         File id = copyToNewInstanceDir();
         currentRunner = new MavenRunner(id);
