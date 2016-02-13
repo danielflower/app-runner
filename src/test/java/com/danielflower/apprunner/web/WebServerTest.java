@@ -31,6 +31,7 @@ public class WebServerTest {
     @Before
     public void setup() throws Exception {
         client = new HttpClient(new SslContextFactory(true));
+        client.setFollowRedirects(false);
         client.start();
         webServer = new WebServer(0, proxyMap);
         webServer.start();
@@ -50,7 +51,7 @@ public class WebServerTest {
     public void aRequestToTheRootResultsInARedirect() throws Exception {
         ContentResponse resp = client.GET(webServer.baseUrl() + "/");
         assertThat(resp.getStatus(), is(302));
-        assertThat(resp.getHeaders().get("Location"), is("/app-runner-home"));
+        assertThat(resp.getHeaders().get("Location"), is(webServer.baseUrl() + "/app-runner-home"));
     }
 
     @Test

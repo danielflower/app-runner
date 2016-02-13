@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,5 +38,11 @@ public class ReverseProxy extends AsyncProxyServlet {
         }
         log.info("No proxy target configured for " + uri);
         return null;
+    }
+
+    @Override
+    protected void onProxyRewriteFailed(HttpServletRequest clientRequest, HttpServletResponse proxyResponse) {
+        // this is called if rewriteTarget returns null2
+        sendProxyResponseError(clientRequest, proxyResponse, 404);
     }
 }
