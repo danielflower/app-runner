@@ -92,7 +92,7 @@ public class AppManager implements AppDescription {
         MavenRunner oldRunner = currentRunner;
         currentRunner = new MavenRunner(id);
         int port = getAFreePort();
-        currentRunner.start(port);
+        currentRunner.start(writer, port);
         for (AppChangeListener listener : listeners) {
             listener.onAppStarted(name, new URL("http://localhost:" + port + "/" + name));
         }

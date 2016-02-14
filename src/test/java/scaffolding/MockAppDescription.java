@@ -1,9 +1,7 @@
 package scaffolding;
 
 import com.danielflower.apprunner.mgmt.AppDescription;
-import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 
-import java.io.IOException;
 import java.io.Writer;
 
 public class MockAppDescription implements AppDescription {

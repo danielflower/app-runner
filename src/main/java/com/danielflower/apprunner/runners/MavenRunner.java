@@ -4,14 +4,19 @@ import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.shared.invoker.*;
 import org.eclipse.jetty.io.WriterOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
+import java.io.IOException;
+import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -20,6 +25,7 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
 
 public class MavenRunner {
+    public static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     private final File projectRoot;
     private ExecuteWatchdog watchDog;
     private StringBuilder output;
@@ -28,15 +34,18 @@ public class MavenRunner {
         this.projectRoot = projectRoot;
     }
 
-    public void start(int port) throws ProjectCannotStartException {
+    public void start(Writer writer, int port) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
         File javaHome = new File(System.getenv("JAVA_HOME"));
         InvocationRequest request = new DefaultInvocationRequest()
             .setPomFile(pomFile)
             .setJavaHome(javaHome)
+            .setOutputHandler(new OutputToWriterBridge(writer))
+            .setErrorHandler(new OutputToWriterBridge(writer))
             .setGoals(asList("clean", "package"))
             .setBaseDirectory(projectRoot);
 
+        log.info("Building maven project at " + dirPath(projectRoot));
         Invoker invoker = new DefaultInvoker();
         try {
             InvocationResult result = invoker.execute(request);
@@ -46,6 +55,7 @@ public class MavenRunner {
         } catch (Exception e) {
             throw new ProjectCannotStartException("Error while building " + projectRoot.getAbsolutePath(), e);
         }
+        log.info("Build successful. Going to start app.");
 
         String jarName;
         try {
@@ -76,6 +86,11 @@ public class MavenRunner {
         Map<String, String> env = new HashMap<>();
         env.put("web.port", String.valueOf(port));
         try {
+            writer.write("Running: " + String.join(" ", command.toStrings()) + "\n");
+        } catch (IOException e) {
+            log.info("Error while writing", e);
+        }
+        try {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
             executor.execute(command, env, handler);
             handler.waitFor(TimeUnit.SECONDS.toMillis(2));
@@ -86,9 +101,35 @@ public class MavenRunner {
             throw new ProjectCannotStartException("Built successfully, but error on start for " + dirPath(projectRoot), e);
         }
 
+        try {
+            writer.write("Current output from app:\n");
+            writer.write(output.toString() + "\n");
+        } catch (IOException e) {
+            log.info("Error while writing to output", e);
+        }
+
+        log.info("Started " + jarName);
     }
 
     public void shutdown() {
         watchDog.destroyProcess();
+    }
+
+    private static class OutputToWriterBridge implements InvocationOutputHandler {
+        private final Writer writer;
+
+        public OutputToWriterBridge(Writer writer) {
+            this.writer = writer;
+        }
+
+        @Override
+        public void consumeLine(String line) {
+            try {
+                writer.write(line + "\n");
+                writer.flush();
+            } catch (IOException e) {
+                log.info("Error while writing", e);
+            }
+        }
     }
 }

@@ -124,8 +124,13 @@
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
-            <artifactId>jersey-container-jetty-servlet</artifactId>
+            <artifactId>jersey-container-servlet-core</artifactId>
             <version>2.22.1</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>javax.ws.rs-api</artifactId>
+            <version>2.0.1</version>
         </dependency>
         <!-- end web server stuff -->
 
@@ -135,26 +140,31 @@
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
             <version>0.1.51</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch.agentproxy.sshagent</artifactId>
             <version>${jsch.agentproxy.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch.agentproxy.core</artifactId>
             <version>${jsch.agentproxy.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch.agentproxy.jsch</artifactId>
             <version>${jsch.agentproxy.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch.agentproxy.usocket-nc</artifactId>
             <version>${jsch.agentproxy.version}</version>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>

@@ -24,6 +24,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -86,27 +87,16 @@ public class LocalGitRepoTest {
         appRepo.origin.add().addFilepattern(".").call();
         appRepo.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
 
-        System.out.println("Sending request");
-        resp = client.newRequest(appRunnerUrl + "/api/v1/apps/maven")
-            .method("PUT")
-            .send();
+        resp = client.POST(appRunnerUrl + "/api/v1/apps/maven").send();
+
         assertThat(resp.getStatus(), is(200));
-//        assertThat(resp.getContentAsString(), is("Blah blah"));
-        System.out.println("Response consumed");
+        assertThat(resp.getContentAsString(), allOf(
+            containsString("Going to build and deploy maven"), containsString("Success")));
 
         resp = client.GET(appRunnerUrl + "/maven/");
         assertThat(resp.getStatus(), is(200));
         assertThat(resp.getContentAsString(), containsString("My new and improved maven app!"));
     }
-
-
-
-    @Test
-    public void blah() throws InterruptedException, ExecutionException, TimeoutException {
-        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/test");
-        assertThat(resp.getStatus(), is(200));
-    }
-
 
     @Test
     public void theRestAPILives() throws Exception {
@@ -115,9 +105,7 @@ public class LocalGitRepoTest {
         String json = resp.getContentAsString();
         JSONAssert.assertEquals("{apps:[ {name: \"maven\"} ]}", json, JSONCompareMode.LENIENT);
 
-        resp = client.newRequest(appRunnerUrl + "/api/v1/apps/invalid-app-name")
-            .method("PUT")
-            .send();
+        resp = client.POST(appRunnerUrl + "/api/v1/apps/invalid-app-name").send();
         assertThat(resp.getStatus(), is(404));
         assertThat(resp.getContentAsString(), is("No app found with name 'invalid-app-name'. Valid names: maven"));
     }

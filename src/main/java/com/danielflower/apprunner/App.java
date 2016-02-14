@@ -45,7 +45,7 @@ public class App {
             AppManager appMan = AppManager.create(repo, fileSandbox);
             appMan.addListener(proxyMap::add);
             estate.add(appMan);
-            appMan.update(new Slf4jWriterBridge());
+            appMan.update(new NullWriter());
         }
         webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap, estate);
         webServer.start();
@@ -80,10 +80,9 @@ public class App {
         }
     }
 
-    private static class Slf4jWriterBridge extends Writer {
+    private static class NullWriter extends Writer {
         @Override
         public void write(char[] cbuf, int off, int len) throws IOException {
-            log.info("Update output: " + new String(cbuf, off, len));
         }
 
         @Override
