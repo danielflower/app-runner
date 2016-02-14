@@ -68,12 +68,14 @@ public class App {
     public void shutdown() {
         log.info("Shutdown invoked");
         if (webServer != null) {
+            log.info("Stopping apps");
+            estate.shutdown();
+            log.info("Stopping web server");
             try {
                 webServer.close();
             } catch (Exception e) {
                 log.info("Error while stopping", e);
             }
-            estate.shutdown();
             log.info("Shutdown complete");
         }
     }
