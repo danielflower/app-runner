@@ -1,11 +1,13 @@
 package com.danielflower.apprunner.web;
 
+import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.net.URI;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,6 +21,21 @@ public class ReverseProxy extends AsyncProxyServlet {
 
     public ReverseProxy(ProxyMap proxyMap) {
         this.proxyMap = proxyMap;
+    }
+
+    @Override
+    protected String filterServerResponseHeader(HttpServletRequest clientRequest, Response serverResponse, String headerName, String headerValue) {
+        if (headerName.equalsIgnoreCase("location")) {
+            URI targetUri = serverResponse.getRequest().getURI();
+            String toReplace = targetUri.getScheme() + "://" + targetUri.getAuthority();
+            if (headerValue.startsWith(toReplace)) {
+                headerValue = clientRequest.getScheme() + "://" + clientRequest.getHeader("host")
+                    + headerValue.substring(toReplace.length());
+                log.info("Rewrote location header to " + headerValue);
+                return headerValue;
+            }
+        }
+        return super.filterServerResponseHeader(clientRequest, serverResponse, headerName, headerValue);
     }
 
     @Override

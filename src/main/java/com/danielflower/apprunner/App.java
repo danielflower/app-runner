@@ -24,7 +24,7 @@ public class App {
 
     public static void main(String[] args) {
         try {
-            App app = new App(new Config(System.getenv()));
+            App app = new App(Config.load(args));
             app.start();
             Runtime.getRuntime().addShutdownHook(new Thread(app::shutdown));
         } catch (Throwable t) {
@@ -47,7 +47,8 @@ public class App {
             estate.add(appMan);
             appMan.update(new NullWriter());
         }
-        webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap, estate);
+        String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
+        webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap, estate, defaultAppName);
         webServer.start();
     }
 

@@ -7,7 +7,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,15 +17,10 @@ import scaffolding.Photocopier;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class LocalGitRepoTest {
@@ -35,7 +29,6 @@ public class LocalGitRepoTest {
     private AppRepo appRepo;
     private String appRunnerUrl;
     private HttpClient client;
-    private HashMap<String, String> config;
 
     @Before
     public void start() throws Exception {
@@ -48,7 +41,7 @@ public class LocalGitRepoTest {
         File gitRepoFile = Photocopier.tempFile("gitrepos.txt");
         FileUtils.writeLines(gitRepoFile, asList(appRepo.gitUrl()));
 
-        config = new HashMap<>();
+        HashMap<String, String> config = new HashMap<>();
         config.put(Config.SERVER_PORT, port);
         config.put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
         config.put(Config.REPO_FILE_PATH, dirPath(gitRepoFile));

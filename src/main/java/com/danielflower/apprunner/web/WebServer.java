@@ -1,7 +1,9 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
+import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.problems.AppRunnerException;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
@@ -30,11 +32,13 @@ public class WebServer implements AutoCloseable {
     private final ProxyMap proxyMap;
     private Server jettyServer;
     private final AppEstate estate;
+    private final String defaultAppName;
 
-    public WebServer(int port, ProxyMap proxyMap, AppEstate estate) {
+    public WebServer(int port, ProxyMap proxyMap, AppEstate estate, String defaultAppName) {
         this.port = port;
         this.proxyMap = proxyMap;
         this.estate = estate;
+        this.defaultAppName = defaultAppName;
     }
 
     public void start() throws Exception {
@@ -70,7 +74,11 @@ public class WebServer implements AutoCloseable {
             @Override
             public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
                 if ("/".equals(target)) {
-                    response.sendRedirect("/app-runner-home");
+                    if (StringUtils.isNotEmpty(defaultAppName)) {
+                        response.sendRedirect("/" + defaultAppName);
+                    } else {
+                        response.sendError(400, "You can set a default app by setting the " + Config.DEFAULT_APP_NAME + " property.");
+                    }
                     baseRequest.setHandled(true);
                 }
             }

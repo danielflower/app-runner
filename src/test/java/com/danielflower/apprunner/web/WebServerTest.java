@@ -31,10 +31,10 @@ public class WebServerTest {
 
     @Before
     public void setup() throws Exception {
-        client = new HttpClient(new SslContextFactory(true));
+        client = new HttpClient();
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap, new AppEstate());
+        webServer = new WebServer(0, proxyMap, new AppEstate(), "test-app");
         webServer.start();
 
         appServer = new TestServer();
@@ -50,9 +50,17 @@ public class WebServerTest {
 
     @Test
     public void aRequestToTheRootResultsInARedirect() throws Exception {
+        proxyMap.add("test-app", appServer.url);
+
         ContentResponse resp = client.GET(webServer.baseUrl() + "/");
         assertThat(resp.getStatus(), is(302));
-        assertThat(resp.getHeaders().get("Location"), is(webServer.baseUrl() + "/app-runner-home"));
+        String location = resp.getHeaders().get("Location");
+        assertThat(location, is(webServer.baseUrl() + "/test-app"));
+        resp = client.GET(location);
+        location = resp.getHeaders().get("Location");
+        assertThat(resp.getStatus(), is(302));
+        assertThat(location, is(webServer.baseUrl() + "/test-app/"));
+
     }
 
     @Test
@@ -80,8 +88,12 @@ public class WebServerTest {
             jettyServer.setHandler(new AbstractHandler() {
                 @Override
                 public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-                    response.setHeader("Server", "Test-Server");
-                    response.getWriter().append("Hello from test server").close();
+                    if (target.equals("/test-app")) {
+                        response.sendRedirect("/test-app/");
+                    } else {
+                        response.setHeader("Server", "Test-Server");
+                        response.getWriter().append("Hello from test server").close();
+                    }
                     baseRequest.setHandled(true);
                 }
             });
