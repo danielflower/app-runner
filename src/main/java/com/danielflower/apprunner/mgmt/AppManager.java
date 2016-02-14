@@ -89,11 +89,16 @@ public class AppManager implements AppDescription {
     public synchronized void update(Writer writer) throws Exception {
         git.pull().setRemote("origin").call();
         File id = copyToNewInstanceDir();
+        MavenRunner oldRunner = currentRunner;
         currentRunner = new MavenRunner(id);
         int port = getAFreePort();
         currentRunner.start(port);
         for (AppChangeListener listener : listeners) {
             listener.onAppStarted(name, new URL("http://localhost:" + port + "/" + name));
+        }
+        if (oldRunner != null) {
+            log.info("Shutting down previous version of " + name);
+            oldRunner.shutdown();
         }
     }
 

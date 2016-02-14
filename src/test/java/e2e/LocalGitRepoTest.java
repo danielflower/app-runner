@@ -72,13 +72,13 @@ public class LocalGitRepoTest {
         assertThat(resp.getStatus(), is(200));
         assertThat(resp.getContentAsString(), containsString("My Maven App"));
 
-        app.shutdown();
-        app = new App(new Config(config));
-        app.start();
-
-        resp = client.GET(appRunnerUrl + "/maven/");
-        assertThat(resp.getStatus(), is(200));
-        assertThat(resp.getContentAsString(), containsString("My Maven App"));
+//        app.shutdown();
+//        app = new App(new Config(config));
+//        app.start();
+//
+//        resp = client.GET(appRunnerUrl + "/maven/");
+//        assertThat(resp.getStatus(), is(200));
+//        assertThat(resp.getContentAsString(), containsString("My Maven App"));
 
         File indexHtml = new File(appRepo.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
         String newVersion = FileUtils.readFileToString(indexHtml).replace("My Maven App", "My new and improved maven app!");
@@ -98,6 +98,15 @@ public class LocalGitRepoTest {
         assertThat(resp.getStatus(), is(200));
         assertThat(resp.getContentAsString(), containsString("My new and improved maven app!"));
     }
+
+
+
+    @Test
+    public void blah() throws InterruptedException, ExecutionException, TimeoutException {
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/test");
+        assertThat(resp.getStatus(), is(200));
+    }
+
 
     @Test
     public void theRestAPILives() throws Exception {

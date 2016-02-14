@@ -2,6 +2,7 @@ package com.danielflower.apprunner;
 
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
+import com.danielflower.apprunner.problems.AppNotFoundException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +51,6 @@ public class AppEstate {
             .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
             .map(AppDescription::name)
             .collect(Collectors.joining(", "));
-        throw new IllegalArgumentException("No app found with name '" + name + "'. Valid names: " + valid);
+        throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + valid);
     }
 }
