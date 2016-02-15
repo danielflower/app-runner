@@ -6,14 +6,17 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
+import scaffolding.AppRepo;
 import scaffolding.MockAppDescription;
 
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.*;
 
-import java.io.IOException;
+import java.net.URI;
+import java.util.List;
 
+import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
+import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -21,7 +24,7 @@ public class AppResourceTest {
 
     private final MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
     private final MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    AppEstate estate = new AppEstate();
+    AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox());
     AppResource appResource = new AppResource(estate);
 
     @Test
@@ -34,6 +37,19 @@ public class AppResourceTest {
             "{ name: \"an-app\", gitUrl: \"git://something/.git\" }," +
             "{ name: \"my-app\", gitUrl: \"git://something/.git\" }" +
             "]}", json, JSONCompareMode.STRICT_ORDER);
+    }
+
+    @Test
+    public void appsAreCreatedByPostingAndItImmediatelyBuilds() {
+        AppRepo repo = AppRepo.create("maven");
+
+        UriInfo uriInfo = new MockUriInfo("http://localhost:1234/api/v1/apps");
+        Response response = appResource.create(uriInfo, repo.gitUrl());
+        assertThat(response.getStatus(), is(201));
+        assertThat(response.getHeaderString("Location"), is("http://localhost:1234/api/v1/apps/maven"));
+
+        long matched = estate.all().filter(a -> a.name().equals("maven") && a.gitUrl().equals(repo.gitUrl())).count();
+        assertThat(matched, is(1L));
     }
 
     @Test
@@ -62,6 +78,110 @@ public class AppResourceTest {
         } catch (WebApplicationException e) {
             assertThat(e.getResponse().getStatus(), is(404));
             assertThat(e.getResponse().getEntity(), is("No app found with name 'unreal-app'. Valid names: an-app, my-app"));
+        }
+    }
+
+    private static class MockUriInfo implements UriInfo {
+
+        private String uri;
+
+        private MockUriInfo(String uri) {
+            this.uri = uri;
+        }
+
+        @Override
+        public String getPath() {
+            return null;
+        }
+
+        @Override
+        public String getPath(boolean decode) {
+            return null;
+        }
+
+        @Override
+        public List<PathSegment> getPathSegments() {
+            return null;
+        }
+
+        @Override
+        public List<PathSegment> getPathSegments(boolean decode) {
+            return null;
+        }
+
+        @Override
+        public URI getRequestUri() {
+            return URI.create(uri);
+        }
+
+        @Override
+        public UriBuilder getRequestUriBuilder() {
+            return null;
+        }
+
+        @Override
+        public URI getAbsolutePath() {
+            return null;
+        }
+
+        @Override
+        public UriBuilder getAbsolutePathBuilder() {
+            return null;
+        }
+
+        @Override
+        public URI getBaseUri() {
+            return null;
+        }
+
+        @Override
+        public UriBuilder getBaseUriBuilder() {
+            return null;
+        }
+
+        @Override
+        public MultivaluedMap<String, String> getPathParameters() {
+            return null;
+        }
+
+        @Override
+        public MultivaluedMap<String, String> getPathParameters(boolean decode) {
+            return null;
+        }
+
+        @Override
+        public MultivaluedMap<String, String> getQueryParameters() {
+            return null;
+        }
+
+        @Override
+        public MultivaluedMap<String, String> getQueryParameters(boolean decode) {
+            return null;
+        }
+
+        @Override
+        public List<String> getMatchedURIs() {
+            return null;
+        }
+
+        @Override
+        public List<String> getMatchedURIs(boolean decode) {
+            return null;
+        }
+
+        @Override
+        public List<Object> getMatchedResources() {
+            return null;
+        }
+
+        @Override
+        public URI resolve(URI uri) {
+            return null;
+        }
+
+        @Override
+        public URI relativize(URI uri) {
+            return null;
         }
     }
 }

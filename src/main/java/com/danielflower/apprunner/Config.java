@@ -15,8 +15,6 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 
 public class Config {
     public static final String SERVER_PORT = "appserver.port";
-    public static final String REPO_FILE_PATH = "appserver.git.repo.list.path";
-    public static final String STASH_PROJECT_URL = "appserver.git.stash.project.url";
     public static final String DATA_DIR = "appserver.data.dir";
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
     private final Map<String, String> raw;

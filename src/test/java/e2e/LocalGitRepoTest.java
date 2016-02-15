@@ -7,6 +7,9 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.util.Fields;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,16 +41,21 @@ public class LocalGitRepoTest {
         appRunnerUrl = "http://localhost:" + port;
         appRepo = AppRepo.create("maven");
 
-        File gitRepoFile = Photocopier.tempFile("gitrepos.txt");
-        FileUtils.writeLines(gitRepoFile, asList(appRepo.gitUrl()));
-
         HashMap<String, String> config = new HashMap<>();
         config.put(Config.SERVER_PORT, port);
         config.put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
-        config.put(Config.REPO_FILE_PATH, dirPath(gitRepoFile));
         app = new App(new Config(config));
         app.start();
 
+        Fields fields = new Fields();
+        fields.add("gitUrl", appRepo.gitUrl());
+        String appResourceUri = appRunnerUrl + "/api/v1/apps";
+        ContentResponse created = client.POST(appResourceUri)
+            .content(new FormContentProvider(fields))
+            .send();
+        assertThat(created.getStatus(), is(201));
+        ContentResponse update = client.POST(appResourceUri + "/maven").send();
+        assertThat(update.getStatus(), is(200));
     }
 
     @After

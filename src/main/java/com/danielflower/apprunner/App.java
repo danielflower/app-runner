@@ -1,9 +1,7 @@
 package com.danielflower.apprunner;
 
-import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.problems.InvalidConfigException;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import org.slf4j.Logger;
@@ -14,13 +12,12 @@ import java.io.IOException;
 import java.io.Writer;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
-import static com.danielflower.apprunner.FileSandbox.dirPath;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
     private final Config config;
     private WebServer webServer;
-    private final AppEstate estate = new AppEstate();
+    private AppEstate estate;
 
     public static void main(String[] args) {
         try {
@@ -38,33 +35,28 @@ public class App {
     }
 
     public void start() throws Exception {
-        FileSandbox fileSandbox = new FileSandbox(config.getDir(Config.DATA_DIR));
-        GitRepoLoader gitRepoLoader = getGitRepoLoader(config);
+        File dataDir = config.getDir(Config.DATA_DIR);
+        FileSandbox fileSandbox = new FileSandbox(dataDir);
+        GitRepoLoader gitRepoLoader = FileBasedGitRepoLoader.getGitRepoLoader(dataDir);
         ProxyMap proxyMap = new ProxyMap();
+
+        estate = new AppEstate(proxyMap, fileSandbox);
         for (String repo : gitRepoLoader.loadAll()) {
-            AppManager appMan = AppManager.create(repo, fileSandbox);
-            appMan.addListener(proxyMap::add);
-            estate.add(appMan);
-            appMan.update(new NullWriter());
+            estate.addApp(repo);
         }
+
+        estate.all().forEach(a -> {
+            try {
+                estate.update(a.name(), new NullWriter());
+            } catch (Exception e) {
+                log.warn("Error while starting up " + a.name(), e);
+            }
+        });
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
         webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap, estate, defaultAppName);
         webServer.start();
     }
 
-    private static GitRepoLoader getGitRepoLoader(Config config) {
-        GitRepoLoader gitRepoLoader = null;
-        String gitRepoProps = config.get(Config.REPO_FILE_PATH, null);
-        if (gitRepoProps != null) {
-            File repoFile = new File(gitRepoProps);
-            log.info("Using file-based git provider: " + dirPath(repoFile));
-            gitRepoLoader = new FileBasedGitRepoLoader(repoFile);
-        }
-        if (gitRepoLoader == null) {
-            throw new InvalidConfigException("There is no git repo source. Please set " + Config.REPO_FILE_PATH + " or " + Config.STASH_PROJECT_URL);
-        }
-        return gitRepoLoader;
-    }
 
     public void shutdown() {
         log.info("Shutdown invoked");

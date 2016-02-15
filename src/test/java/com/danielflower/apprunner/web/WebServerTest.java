@@ -1,6 +1,8 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
+import com.danielflower.apprunner.FileSandbox;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.server.Request;
@@ -15,8 +17,10 @@ import org.junit.Test;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -34,11 +38,21 @@ public class WebServerTest {
         client = new HttpClient();
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap, new AppEstate(), "test-app");
+        webServer = new WebServer(0, proxyMap, new AppEstate(proxyMap, fileSandbox()), "test-app");
         webServer.start();
 
         appServer = new TestServer();
 
+    }
+
+    public static FileSandbox fileSandbox() {
+        File root = new File("target/test-sandboxes/" + UUID.randomUUID());
+        try {
+            FileUtils.forceMkdir(root);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return new FileSandbox(root);
     }
 
     @After
