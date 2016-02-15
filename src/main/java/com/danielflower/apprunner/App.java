@@ -1,5 +1,6 @@
 package com.danielflower.apprunner;
 
+import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.web.ProxyMap;
@@ -44,6 +45,7 @@ public class App {
         for (String repo : gitRepoLoader.loadAll()) {
             estate.addApp(repo);
         }
+        estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
 
         estate.all().forEach(a -> {
             try {

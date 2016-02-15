@@ -43,6 +43,7 @@ public class AppResource {
     @POST
     @Produces(MediaType.TEXT_PLAIN)
     public Response create(@Context UriInfo uriInfo, @FormParam("gitUrl") String gitUrl) {
+        log.info("Received request to create " + gitUrl);
         if (StringUtils.isBlank(gitUrl)) {
             return Response.status(400).entity("No gitUrl was specified").build();
         }

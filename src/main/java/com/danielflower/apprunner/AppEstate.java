@@ -7,6 +7,7 @@ import com.danielflower.apprunner.web.ProxyMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,14 +20,18 @@ public class AppEstate {
     private final List<AppDescription> managers = new ArrayList<>();
     private final ProxyMap proxyMap;
     private final FileSandbox fileSandbox;
+    private final List<AppAddedListener> appAddedListeners = new ArrayList<>();
 
     public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox) {
         this.proxyMap = proxyMap;
         this.fileSandbox = fileSandbox;
     }
 
-    public void add(AppDescription appMan) {
+    public void add(AppDescription appMan) throws IOException {
         this.managers.add(appMan);
+        for (AppAddedListener appAddedListener : appAddedListeners) {
+            appAddedListener.onAppAdded(appMan);
+        }
     }
 
     public Stream<AppDescription> all() {
@@ -65,5 +70,13 @@ public class AppEstate {
             .map(AppDescription::name)
             .collect(Collectors.joining(", "));
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + valid);
+    }
+
+    public void addAppAddedListener(AppAddedListener listener) {
+        this.appAddedListeners.add(listener);
+    }
+
+    public interface AppAddedListener {
+        void onAppAdded(AppDescription app) throws IOException;
     }
 }
