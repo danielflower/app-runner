@@ -1,6 +1,5 @@
 package com.danielflower.apprunner;
 
-import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.web.ProxyMap;
@@ -36,12 +35,12 @@ public class App {
     }
 
     public void start() throws Exception {
-        File dataDir = config.getDir(Config.DATA_DIR);
+        File dataDir = config.getOrCreateDir(Config.DATA_DIR);
         FileSandbox fileSandbox = new FileSandbox(dataDir);
         GitRepoLoader gitRepoLoader = FileBasedGitRepoLoader.getGitRepoLoader(dataDir);
         ProxyMap proxyMap = new ProxyMap();
 
-        estate = new AppEstate(proxyMap, fileSandbox);
+        estate = new AppEstate(proxyMap, fileSandbox, config.getDir("JAVA_HOME"));
         for (String repo : gitRepoLoader.loadAll()) {
             estate.addApp(repo);
         }

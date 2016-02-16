@@ -27,14 +27,16 @@ public class AppManager implements AppDescription {
     private final String name;
     private final Git git;
     private final File instanceDir;
+    private final File javaHome;
     private MavenRunner currentRunner = null;
     private List<AppChangeListener> listeners = new ArrayList<>();
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, File javaHome) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
+        this.javaHome = javaHome;
     }
 
     @Override
@@ -46,7 +48,7 @@ public class AppManager implements AppDescription {
         return gitUrl;
     }
 
-    public static AppManager create(String gitUrl, FileSandbox fileSandbox) {
+    public static AppManager create(String gitUrl, FileSandbox fileSandbox, File javaHome) {
         String name = StringUtils.removeEndIgnoreCase(StringUtils.removeEnd(gitUrl, "/"), ".git");
         name = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1);
         File root = fileSandbox.appDir(name);
@@ -75,7 +77,7 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remove on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, gitUrl, git, instanceDir);
+        return new AppManager(name, gitUrl, git, instanceDir, javaHome);
     }
 
     public synchronized void stopApp() throws Exception {
@@ -90,7 +92,7 @@ public class AppManager implements AppDescription {
         git.pull().setRemote("origin").call();
         File id = copyToNewInstanceDir();
         MavenRunner oldRunner = currentRunner;
-        currentRunner = new MavenRunner(id);
+        currentRunner = new MavenRunner(id, javaHome);
         int port = getAFreePort();
         currentRunner.start(writer, port);
         for (AppChangeListener listener : listeners) {

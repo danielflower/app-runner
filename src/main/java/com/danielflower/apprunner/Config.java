@@ -68,6 +68,14 @@ public class Config {
 
     public File getDir(String name) {
         File f = new File(get(name));
+        if (!f.isDirectory()) {
+            throw new AppRunnerException("Could not find " + name + " directory: " + dirPath(f));
+        }
+        return f;
+    }
+
+    public File getOrCreateDir(String name) {
+        File f = new File(get(name));
         try {
             FileUtils.forceMkdir(f);
         } catch (IOException e) {

@@ -7,7 +7,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.junit.After;
@@ -16,14 +15,15 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
-import scaffolding.Photocopier;
+import scaffolding.Dirs;
 
 import java.io.File;
 import java.util.HashMap;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
-import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.allOf;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class LocalGitRepoTest {
@@ -44,6 +44,7 @@ public class LocalGitRepoTest {
         HashMap<String, String> config = new HashMap<>();
         config.put(Config.SERVER_PORT, port);
         config.put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
+        config.put("JAVA_HOME", dirPath(Dirs.javaHome));
         app = new App(new Config(config));
         app.start();
 

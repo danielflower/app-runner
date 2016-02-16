@@ -1,14 +1,23 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
-import org.apache.commons.exec.*;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecuteResultHandler;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.Executor;
+import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.shared.invoker.*;
+import org.apache.maven.shared.invoker.DefaultInvocationRequest;
+import org.apache.maven.shared.invoker.DefaultInvoker;
+import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.InvocationResult;
+import org.apache.maven.shared.invoker.Invoker;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,14 +38,15 @@ public class MavenRunner {
     private final File projectRoot;
     private ExecuteWatchdog watchDog;
     private StringBuilder output;
+    private final File javaHome;
 
-    public MavenRunner(File projectRoot) {
+    public MavenRunner(File projectRoot, File javaHome) {
         this.projectRoot = projectRoot;
+        this.javaHome = javaHome;
     }
 
     public void start(Writer writer, int port) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
-        File javaHome = new File(System.getenv("JAVA_HOME"));
         InvocationRequest request = new DefaultInvocationRequest()
             .setPomFile(pomFile)
             .setJavaHome(javaHome)

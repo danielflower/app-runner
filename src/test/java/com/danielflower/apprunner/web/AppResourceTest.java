@@ -7,16 +7,20 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
+import scaffolding.Dirs;
 import scaffolding.MockAppDescription;
 
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.*;
-
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.PathSegment;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriBuilder;
+import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
 
 import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
-import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -24,7 +28,7 @@ public class AppResourceTest {
 
     private final MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
     private final MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox());
+    AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), Dirs.javaHome);
     AppResource appResource = new AppResource(estate);
 
     @Test
