@@ -9,10 +9,10 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import scaffolding.Dirs;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -38,7 +38,7 @@ public class WebServerTest {
         client = new HttpClient();
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap, new AppEstate(proxyMap, fileSandbox()), "test-app");
+        webServer = new WebServer(0, proxyMap, new AppEstate(proxyMap, fileSandbox(), Dirs.javaHome), "test-app");
         webServer.start();
 
         appServer = new TestServer();

@@ -7,6 +7,7 @@ import com.danielflower.apprunner.web.ProxyMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -21,10 +22,12 @@ public class AppEstate {
     private final ProxyMap proxyMap;
     private final FileSandbox fileSandbox;
     private final List<AppAddedListener> appAddedListeners = new ArrayList<>();
+    private final File javaHome;
 
-    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox) {
+    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, File javaHome) {
         this.proxyMap = proxyMap;
         this.fileSandbox = fileSandbox;
+        this.javaHome = javaHome;
     }
 
     public void add(AppDescription appMan) throws IOException {
@@ -51,7 +54,7 @@ public class AppEstate {
     }
 
     public AppDescription addApp(String gitUrl) throws Exception {
-        AppManager appMan = AppManager.create(gitUrl, fileSandbox);
+        AppManager appMan = AppManager.create(gitUrl, fileSandbox, javaHome);
         appMan.addListener(proxyMap::add);
         this.add(appMan);
         return appMan;

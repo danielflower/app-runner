@@ -2,6 +2,7 @@ package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
+import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -9,6 +10,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import scaffolding.Dirs;
 
 import java.io.File;
 import java.io.Writer;
@@ -37,18 +39,23 @@ public class MavenRunnerTest {
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws InterruptedException, ExecutionException, TimeoutException {
 
-        MavenRunner runner = new MavenRunner(sampleAppDir("maven"));
+        MavenRunner runner = new MavenRunner(sampleAppDir("maven"), Dirs.javaHome);
         StringBuilder output = new StringBuilder();
         Writer writer = new StringBuilderWriter(output);
-        runner.start(writer, 45678);
-
         try {
-            ContentResponse resp = client.GET("http://localhost:45678/maven/");
-            assertThat(resp.getStatus(), is(200));
-            assertThat(resp.getContentAsString(), containsString("My Maven App"));
-            assertThat(output.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
-        } finally {
-            runner.shutdown();
+            runner.start(writer, 45678);
+
+            try {
+                ContentResponse resp = client.GET("http://localhost:45678/maven/");
+                assertThat(resp.getStatus(), is(200));
+                assertThat(resp.getContentAsString(), containsString("My Maven App"));
+                assertThat(output.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
+            } finally {
+                runner.shutdown();
+            }
+        } catch (ProjectCannotStartException e) {
+            System.out.println(output);
+            throw e;
         }
     }
 
