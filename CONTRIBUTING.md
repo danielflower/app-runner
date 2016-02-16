@@ -3,11 +3,7 @@ Contributing
 
 Pull requests are gratefully welcomed. It would be appreciated if the following guidelines are followed:
 
-* Make sure tests cover your change, preferrably with unit tests. There are quite a few slower tests that run the plugin 
-against sample projects in the `test-projects` folder. You amend existing tests or add a new one if necessary.
-* Follow semantic versioning and increment the minor or major version number in `pom.xml` and
-`scaffolding.TestProject.PLUGIN_VERSION_FOR_TESTS`
-* Update the the changelog: `src/site/markdown/changelog.md`
+* Make sure tests cover your change, preferably with fast unit tests rather the slow integration tests.
 * Use [.editorconfig](http://editorconfig.org/) to keep formatting consistent
 
 Deploying to Nexus
@@ -46,17 +42,9 @@ Performing a release
 
 **This section applies only to project owners**
 
-The plugin uses itself to release itself.
+The plugin uses the [Multi Module Maven Release Plugin for Git](http://danielflower.github.io/multi-module-maven-release-plugin/index.html).
 
     mvn releaser:release
-
-Note that for site generation you will need access to write to the Git repo and the following in your `settings.xml`:
-
-    <server>
-        <id>github</id>
-        <username>GitHubLogin</username>
-        <password>GitHubPassw0rd</password>
-    </server>
 
 Once released, go to the Nexus instance at https://oss.sonatype.org and log in, and then click on the "Staging Repositories"
 link where you should find a repository in the list that looks something like `comgithubdanielflower-1010`. Select that

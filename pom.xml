@@ -8,7 +8,8 @@
     <artifactId>app-runner</artifactId>
     <version>0.1-SNAPSHOT</version>
 
-    <description>App Runner - the little app runner that hosts java, clojure and nodejs apps</description>
+    <name>App Runner</name>
+    <description>The little web app runner that hosts java, clojure and nodejs apps</description>
     <url>https://github.com/danielflower/app-runner</url>
 
     <properties>
@@ -22,6 +23,11 @@
         <system>travis-ci</system>
         <url>https://travis-ci.org/danielflower/app-runner</url>
     </ciManagement>
+
+    <scm>
+        <url>https://github.com/danielflower/app-runner</url>
+        <connection>scm:git:git@github.com:danielflower/app-runner.git</connection>
+    </scm>
 
     <inceptionYear>2016</inceptionYear>
 
