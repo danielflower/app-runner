@@ -1,6 +1,5 @@
 package com.danielflower.apprunner.mgmt;
 
-import com.danielflower.apprunner.problems.InvalidConfigException;
 import org.apache.commons.io.FileUtils;
 
 import java.io.File;
@@ -14,18 +13,25 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
-
 public class FileBasedGitRepoLoader implements GitRepoLoader {
+
+    public static GitRepoLoader getGitRepoLoader(File dataDir) throws IOException {
+        File dataStore = new File(dataDir, "repos.properties");
+        FileUtils.touch(dataStore);
+
+        Properties properties = new Properties();
+        try (FileReader reader = new FileReader(dataStore)) {
+            properties.load(reader);
+        }
+
+        return new FileBasedGitRepoLoader(dataStore, properties);
+    }
 
     private final File file;
     private final Properties properties;
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    public FileBasedGitRepoLoader(File file, Properties properties) {
-        if (!file.isFile()) {
-            throw new InvalidConfigException("Could not find git repo list at " + dirPath(file));
-        }
+    private FileBasedGitRepoLoader(File file, Properties properties) {
         this.file = file;
         this.properties = properties;
     }
@@ -55,15 +61,5 @@ public class FileBasedGitRepoLoader implements GitRepoLoader {
         } finally {
             l.unlock();
         }
-    }
-
-    public static GitRepoLoader getGitRepoLoader(File dataDir) throws IOException {
-        File dataStore = new File(dataDir, "repos.properties");
-        FileUtils.touch(dataStore);
-        Properties properties = new Properties();
-        try (FileReader reader=new FileReader(dataStore)){
-            properties.load(reader);
-        }
-        return new FileBasedGitRepoLoader(dataStore, properties);
     }
 }

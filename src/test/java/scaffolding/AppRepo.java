@@ -9,15 +9,6 @@ import static scaffolding.Photocopier.copyTestProjectToTemporaryLocation;
 
 public class AppRepo {
 
-    public final File originDir;
-    public final Git origin;
-
-    private AppRepo(File originDir, Git origin) {
-        this.originDir = originDir;
-        this.origin = origin;
-    }
-
-
     public static AppRepo create(String name) {
         try {
             File originDir = copyTestProjectToTemporaryLocation(name);
@@ -33,6 +24,14 @@ public class AppRepo {
         } catch (Exception e) {
             throw new RuntimeException("Error while creating git repo", e);
         }
+    }
+
+    public final File originDir;
+    public final Git origin;
+
+    private AppRepo(File originDir, Git origin) {
+        this.originDir = originDir;
+        this.origin = origin;
     }
 
     public String gitUrl() {

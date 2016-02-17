@@ -50,7 +50,6 @@ public class AppEstate {
                 log.warn("Error while stopping " + manager.name(), e);
             }
         }
-
     }
 
     public AppDescription addApp(String gitUrl) throws Exception {
