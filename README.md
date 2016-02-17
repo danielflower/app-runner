@@ -2,8 +2,8 @@ Running locally
 ---------------
 
 Run `com.danielflower.apprunner.RunLocal.main` from your IDE. This will use the settings in
-`sample-config.properties` and download apps specified in `sample-repo-list.txt` which can
-be useful for local development.
+`sample-config.properties`. Try POSTing `gitUrl=https://github.com/danielflower/app-runner`
+as a form-encoded request to `/api/v1/apps` to download, build and run an app.
 
 Configuration
 -------------
