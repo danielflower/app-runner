@@ -6,8 +6,6 @@ import java.io.File;
 import java.io.IOException;
 
 public class FileSandbox {
-    private final File root;
-
     public static String dirPath(File samples) {
         try {
             return samples.getCanonicalPath();
@@ -16,17 +14,22 @@ public class FileSandbox {
         }
     }
 
+
+    private final File root;
+
     public FileSandbox(File root) {
         this.root = root;
     }
 
+    public File logDir(String name) {
+        return ensureExists("logs/" + name);
+    }
     public File appDir(String name) {
         return ensureExists("apps/" + name);
     }
     public File appDir(String name, String sub) {
         return ensureExists("apps/" + name + "/" + sub);
     }
-
 
     private File ensureExists(String relativePath) {
         String path = FilenameUtils.concat(dirPath(root), FilenameUtils.separatorsToSystem(relativePath));

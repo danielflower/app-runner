@@ -39,13 +39,14 @@ public class LocalGitRepoTest {
     }}));
 
     final HttpClient client = new HttpClient();
+    private final String appId = "maven";
 
     AppRepo appRepo;
 
     @Before public void start() throws Exception {
         client.start();
 
-        appRepo = AppRepo.create("maven");
+        appRepo = AppRepo.create(appId);
         app.start();
 
         ContentResponse created = client.POST(appResourceUri)
@@ -56,7 +57,7 @@ public class LocalGitRepoTest {
 
         assertThat(created.getStatus(), is(201));
 
-        ContentResponse update = client.POST(appResourceUri + "/maven").send();
+        ContentResponse update = client.POST(appResourceUri + "/" + appId).send();
         assertThat(update.getStatus(), is(200));
     }
 
@@ -71,7 +72,7 @@ public class LocalGitRepoTest {
     @Test
     public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
         assertThat(
-            client.GET(appRunnerUrl + "/maven/"),
+            client.GET(appRunnerUrl + "/" + appId + "/"),
             is(equalTo(200, containsString("My Maven App"))));
 
 //        app.shutdown();
@@ -89,14 +90,20 @@ public class LocalGitRepoTest {
         appRepo.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
 
         assertThat(
-            client.POST(appRunnerUrl + "/api/v1/apps/maven").send(),
+            client.POST(appRunnerUrl + "/api/v1/apps/" + appId).send(),
             is(equalTo(200, allOf(
-                containsString("Going to build and deploy maven"),
+                containsString("Going to build and deploy " + appId),
                 containsString("Success")))));
 
         assertThat(
-            client.GET(appRunnerUrl + "/maven/"),
+            client.GET(appRunnerUrl + "/" + appId + "/"),
             is(equalTo(200, containsString("My new and improved maven app!"))));
+
+/*
+        assertThat(
+            client.GET(appRunnerUrl + "/logs/" + appId + "/build.log"),
+            is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
+*/
     }
 
     @Test

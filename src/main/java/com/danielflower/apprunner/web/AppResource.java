@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -75,6 +76,10 @@ public class AppResource {
 
         @Override
         public void write(OutputStream output) throws IOException, WebApplicationException {
+            Writer fileWriter = new FileWriter("build.log");
+            Writer compositeWriter = new CompositeWriter();
+
+
             try (Writer writer = new OutputStreamWriter(output)) {
                 writer.write("Going to build and deploy " + name + "\n");
                 log.info("Going to update " + name);
@@ -92,6 +97,20 @@ public class AppResource {
                         throw (IOException) e;
                     }
                 }
+            }
+        }
+
+        private class CompositeWriter extends Writer {
+            public void write(char[] cbuf, int off, int len) throws IOException {
+
+            }
+
+            public void flush() throws IOException {
+
+            }
+
+            public void close() throws IOException {
+
             }
         }
     }
