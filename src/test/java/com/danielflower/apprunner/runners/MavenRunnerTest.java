@@ -66,5 +66,4 @@ public class MavenRunnerTest {
         }
         return samples;
     }
-
 }

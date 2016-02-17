@@ -1,7 +1,5 @@
 package com.danielflower.apprunner;
 
-import com.danielflower.apprunner.problems.AppRunnerException;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;

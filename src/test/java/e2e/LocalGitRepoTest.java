@@ -2,7 +2,6 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
-import com.danielflower.apprunner.problems.AppRunnerException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.client.HttpClient;
@@ -25,55 +24,55 @@ import static org.hamcrest.CoreMatchers.allOf;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class LocalGitRepoTest {
 
-    private App app;
-    private AppRepo appRepo;
-    private String appRunnerUrl;
-    private HttpClient client;
+    final String port = "48183";
+    final String appRunnerUrl = "http://localhost:" + port;
+    final String appResourceUri = appRunnerUrl + "/api/v1/apps";
 
-    @Before
-    public void start() throws Exception {
-        client = new HttpClient();
+    final App app = new App(new Config(new HashMap() {{
+        put(Config.SERVER_PORT, port);
+        put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
+        put("JAVA_HOME", dirPath(Dirs.javaHome));
+    }}));
+
+    final HttpClient client = new HttpClient();
+
+    AppRepo appRepo;
+
+    @Before public void start() throws Exception {
         client.start();
-        String port = "48183";
-        appRunnerUrl = "http://localhost:" + port;
-        appRepo = AppRepo.create("maven");
 
-        HashMap<String, String> config = new HashMap<>();
-        config.put(Config.SERVER_PORT, port);
-        config.put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
-        config.put("JAVA_HOME", dirPath(Dirs.javaHome));
-        app = new App(new Config(config));
+        appRepo = AppRepo.create("maven");
         app.start();
 
-        Fields fields = new Fields();
-        fields.add("gitUrl", appRepo.gitUrl());
-        String appResourceUri = appRunnerUrl + "/api/v1/apps";
         ContentResponse created = client.POST(appResourceUri)
-            .content(new FormContentProvider(fields))
+            .content(new FormContentProvider(new Fields() {{
+                add("gitUrl", appRepo.gitUrl());
+            }}))
             .send();
+
         assertThat(created.getStatus(), is(201));
+
         ContentResponse update = client.POST(appResourceUri + "/maven").send();
         assertThat(update.getStatus(), is(200));
     }
 
-    @After
-    public void stop() {
-        try {
-            client.stop();
-        } catch (Exception e) {
-            throw new AppRunnerException(e);
-        }
+    @After public void stopClient() throws Exception {
+        client.stop();
+    }
+
+    @After public void shutdownApp() {
         app.shutdown();
     }
 
     @Test
     public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
-        ContentResponse resp = client.GET(appRunnerUrl + "/maven/");
-        assertThat(resp.getStatus(), is(200));
-        assertThat(resp.getContentAsString(), containsString("My Maven App"));
+        assertThat(
+            client.GET(appRunnerUrl + "/maven/"),
+            is(equalTo(200, containsString("My Maven App"))));
 
 //        app.shutdown();
 //        app = new App(new Config(config));
@@ -89,27 +88,27 @@ public class LocalGitRepoTest {
         appRepo.origin.add().addFilepattern(".").call();
         appRepo.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
 
-        resp = client.POST(appRunnerUrl + "/api/v1/apps/maven").send();
+        assertThat(
+            client.POST(appRunnerUrl + "/api/v1/apps/maven").send(),
+            is(equalTo(200, allOf(
+                containsString("Going to build and deploy maven"),
+                containsString("Success")))));
 
-        assertThat(resp.getStatus(), is(200));
-        assertThat(resp.getContentAsString(), allOf(
-            containsString("Going to build and deploy maven"), containsString("Success")));
-
-        resp = client.GET(appRunnerUrl + "/maven/");
-        assertThat(resp.getStatus(), is(200));
-        assertThat(resp.getContentAsString(), containsString("My new and improved maven app!"));
+        assertThat(
+            client.GET(appRunnerUrl + "/maven/"),
+            is(equalTo(200, containsString("My new and improved maven app!"))));
     }
 
     @Test
     public void theRestAPILives() throws Exception {
         ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
         assertThat(resp.getStatus(), is(200));
+
         String json = resp.getContentAsString();
         JSONAssert.assertEquals("{apps:[ {name: \"maven\"} ]}", json, JSONCompareMode.LENIENT);
 
-        resp = client.POST(appRunnerUrl + "/api/v1/apps/invalid-app-name").send();
-        assertThat(resp.getStatus(), is(404));
-        assertThat(resp.getContentAsString(), is("No app found with name 'invalid-app-name'. Valid names: maven"));
+        assertThat(
+            client.POST(appRunnerUrl + "/api/v1/apps/invalid-app-name").send(),
+            is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: maven"))));
     }
-
 }

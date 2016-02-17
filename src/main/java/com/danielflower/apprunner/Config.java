@@ -17,11 +17,6 @@ public class Config {
     public static final String SERVER_PORT = "appserver.port";
     public static final String DATA_DIR = "appserver.data.dir";
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
-    private final Map<String, String> raw;
-
-    public Config(Map<String, String> raw) {
-        this.raw = raw;
-    }
 
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> env = new HashMap<>(System.getenv());
@@ -44,6 +39,11 @@ public class Config {
         return new Config(env);
     }
 
+    private final Map<String, String> raw;
+
+    public Config(Map<String, String> raw) {
+        this.raw = raw;
+    }
 
     public String get(String name, String defaultVal) {
         return raw.getOrDefault(name, defaultVal);
