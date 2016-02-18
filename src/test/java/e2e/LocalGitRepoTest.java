@@ -39,7 +39,7 @@ public class LocalGitRepoTest {
     }}));
 
     final HttpClient client = new HttpClient();
-    private final String appId = "maven";
+    final String appId = "maven";
 
     AppRepo appRepo;
 
@@ -99,11 +99,9 @@ public class LocalGitRepoTest {
             client.GET(appRunnerUrl + "/" + appId + "/"),
             is(equalTo(200, containsString("My new and improved maven app!"))));
 
-/*
         assertThat(
-            client.GET(appRunnerUrl + "/logs/" + appId + "/build.log"),
+            client.GET(appRunnerUrl + "/api/v1/logs/" + appId),
             is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
-*/
     }
 
     @Test

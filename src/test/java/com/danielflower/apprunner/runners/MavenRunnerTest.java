@@ -43,7 +43,7 @@ public class MavenRunnerTest {
         StringBuilder output = new StringBuilder();
         Writer writer = new StringBuilderWriter(output);
         try {
-            runner.start(writer, 45678);
+            runner.start(45678, new OutputToWriterBridge(writer));
 
             try {
                 ContentResponse resp = client.GET("http://localhost:45678/maven/");
