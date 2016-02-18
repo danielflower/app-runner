@@ -3,13 +3,24 @@ package com.danielflower.apprunner.web;
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.problems.AppNotFoundException;
+import com.danielflower.apprunner.runners.OutputToWriterBridge;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -48,6 +59,7 @@ public class AppResource {
         if (StringUtils.isBlank(gitUrl)) {
             return Response.status(400).entity("No gitUrl was specified").build();
         }
+
         try {
             AppDescription added = estate.addApp(gitUrl);
             return Response.status(201)
@@ -77,14 +89,13 @@ public class AppResource {
         @Override
         public void write(OutputStream output) throws IOException, WebApplicationException {
             Writer fileWriter = new FileWriter("build.log");
-            Writer compositeWriter = new CompositeWriter();
-
+//            Writer compositeWriter = new CompositeWriter();
 
             try (Writer writer = new OutputStreamWriter(output)) {
                 writer.write("Going to build and deploy " + name + "\n");
                 log.info("Going to update " + name);
                 try {
-                    estate.update(name, writer);
+                    estate.update(name, new OutputToWriterBridge(writer));
                     log.info("Finished updating " + name);
                     writer.write("Success\n");
                 } catch (AppNotFoundException e) {
@@ -97,20 +108,6 @@ public class AppResource {
                         throw (IOException) e;
                     }
                 }
-            }
-        }
-
-        private class CompositeWriter extends Writer {
-            public void write(char[] cbuf, int off, int len) throws IOException {
-
-            }
-
-            public void flush() throws IOException {
-
-            }
-
-            public void close() throws IOException {
-
             }
         }
     }

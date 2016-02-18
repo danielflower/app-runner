@@ -1,8 +1,7 @@
 package scaffolding;
 
 import com.danielflower.apprunner.mgmt.AppDescription;
-
-import java.io.Writer;
+import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
 public class MockAppDescription implements AppDescription {
     private final String gitUrl;
@@ -14,22 +13,22 @@ public class MockAppDescription implements AppDescription {
         this.name = name;
     }
 
-    @Override
     public String name() {
         return name;
     }
 
-    @Override
     public String gitUrl() {
         return gitUrl;
     }
 
-    @Override
+    public String latestBuildLog() {
+        return "";
+    }
+
     public void stopApp() {
     }
 
-    @Override
-    public void update(Writer writer) throws Exception {
+    public void update(InvocationOutputHandler outputHandler) throws Exception {
         ++updateCount;
     }
 }

@@ -2,6 +2,7 @@ package com.danielflower.apprunner;
 
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
+import com.danielflower.apprunner.runners.OutputToWriterBridge;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import org.slf4j.Logger;
@@ -48,16 +49,16 @@ public class App {
 
         estate.all().forEach(a -> {
             try {
-                estate.update(a.name(), new NullWriter());
+                estate.update(a.name(), new OutputToWriterBridge(new NullWriter()));
             } catch (Exception e) {
                 log.warn("Error while starting up " + a.name(), e);
             }
         });
+
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
         webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap, estate, defaultAppName);
         webServer.start();
     }
-
 
     public void shutdown() {
         log.info("Shutdown invoked");
@@ -75,16 +76,8 @@ public class App {
     }
 
     private static class NullWriter extends Writer {
-        @Override
-        public void write(char[] cbuf, int off, int len) throws IOException {
-        }
-
-        @Override
-        public void flush() throws IOException {
-        }
-
-        @Override
-        public void close() throws IOException {
-        }
+        public void write(char[] cbuf, int off, int len) throws IOException { }
+        public void flush() throws IOException { }
+        public void close() throws IOException { }
     }
 }

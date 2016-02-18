@@ -39,10 +39,10 @@ public class WebServer implements AutoCloseable {
         this.proxyMap = proxyMap;
         this.estate = estate;
         this.defaultAppName = defaultAppName;
+        jettyServer = new Server(port);
     }
 
     public void start() throws Exception {
-        jettyServer = new Server(port);
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
         handlers.addHandler(createRestService(estate));
@@ -56,22 +56,20 @@ public class WebServer implements AutoCloseable {
     }
 
     private Handler createRestService(AppEstate estate) {
+        ResourceConfig rc = new ResourceConfig();
+        rc.register(new AppResource(estate));
+        rc.register(new BuildLogsResource(estate));
+
+        ServletHolder holder = new ServletHolder(new ServletContainer(rc));
+
         ServletContextHandler sch = new ServletContextHandler();
         sch.setContextPath("/api");
-
-        AppResource resource = new AppResource(estate);
-        ResourceConfig rc = new ResourceConfig();
-        rc.register(resource);
-
-        ServletContainer sc = new ServletContainer(rc);
-        ServletHolder holder = new ServletHolder(sc);
         sch.addServlet(holder, "/*");
         return sch;
     }
 
     private Handler createHomeRedirect() {
         return new AbstractHandler() {
-            @Override
             public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
                 if ("/".equals(target)) {
                     if (StringUtils.isNotEmpty(defaultAppName)) {
@@ -85,17 +83,17 @@ public class WebServer implements AutoCloseable {
         };
     }
 
-    private static ServletHandler createReverseProxy(ProxyMap proxyMap) {
-        ServletHandler proxyHandler = new ServletHandler();
+    private ServletHandler createReverseProxy(ProxyMap proxyMap) {
         AsyncProxyServlet servlet = new ReverseProxy(proxyMap);
         ServletHolder proxyServletHolder = new ServletHolder(servlet);
         proxyServletHolder.setAsyncSupported(true);
         proxyServletHolder.setInitParameter("maxThreads", "100");
+
+        ServletHandler proxyHandler = new ServletHandler();
         proxyHandler.addServletWithMapping(proxyServletHolder, "/*");
         return proxyHandler;
     }
 
-    @Override
     public void close() throws Exception {
         jettyServer.stop();
         jettyServer.join();
@@ -109,5 +107,4 @@ public class WebServer implements AutoCloseable {
             throw new AppRunnerException(e);
         }
     }
-
 }

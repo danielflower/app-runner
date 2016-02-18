@@ -24,8 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -45,13 +43,14 @@ public class MavenRunner {
         this.javaHome = javaHome;
     }
 
-    public void start(Writer writer, int port) throws ProjectCannotStartException {
+    public void start(int port, InvocationOutputHandler outputHandler) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
+
         InvocationRequest request = new DefaultInvocationRequest()
             .setPomFile(pomFile)
             .setJavaHome(javaHome)
-            .setOutputHandler(new OutputToWriterBridge(writer))
-            .setErrorHandler(new OutputToWriterBridge(writer))
+            .setOutputHandler(outputHandler)
+            .setErrorHandler(outputHandler)
             .setGoals(asList("clean", "package"))
             .setBaseDirectory(projectRoot);
 
@@ -95,11 +94,12 @@ public class MavenRunner {
         command.addArgument("-jar").addArgument(jarName);
         Map<String, String> env = new HashMap<>();
         env.put("web.port", String.valueOf(port));
-        try {
-            writer.write("Running: " + String.join(" ", command.toStrings()) + "\n");
-        } catch (IOException e) {
-            log.info("Error while writing", e);
-        }
+//        try {
+            outputHandler.consumeLine("Running: " + String.join(" ", command.toStrings()));
+//            writer.write("Running: " + String.join(" ", command.toStrings()) + "\n");
+//        } catch (IOException e) {
+//            log.info("Error while writing", e);
+//        }
         try {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
             executor.execute(command, env, handler);
@@ -111,35 +111,21 @@ public class MavenRunner {
             throw new ProjectCannotStartException("Built successfully, but error on start for " + dirPath(projectRoot), e);
         }
 
+        outputHandler.consumeLine("Current output from app:\n");
+        outputHandler.consumeLine(output.toString() + "\n");
+/*
         try {
             writer.write("Current output from app:\n");
             writer.write(output.toString() + "\n");
         } catch (IOException e) {
             log.info("Error while writing to output", e);
         }
+*/
 
         log.info("Started " + jarName);
     }
 
     public void shutdown() {
         watchDog.destroyProcess();
-    }
-
-    private static class OutputToWriterBridge implements InvocationOutputHandler {
-        private final Writer writer;
-
-        public OutputToWriterBridge(Writer writer) {
-            this.writer = writer;
-        }
-
-        @Override
-        public void consumeLine(String line) {
-            try {
-                writer.write(line + "\n");
-                writer.flush();
-            } catch (IOException e) {
-                log.info("Error while writing", e);
-            }
-        }
     }
 }

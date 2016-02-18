@@ -4,12 +4,12 @@ import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.web.ProxyMap;
+import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -59,19 +59,15 @@ public class AppEstate {
         return appMan;
     }
 
-
-    public void update(String name, Writer writer) throws Exception {
+    public void update(String name, InvocationOutputHandler outputHandler) throws Exception {
         for (AppDescription manager : managers) {
             if (manager.name().equalsIgnoreCase(name)) {
-                manager.update(writer);
+                manager.update(outputHandler);
                 return;
             }
         }
-        String valid = all()
-            .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
-            .map(AppDescription::name)
-            .collect(Collectors.joining(", "));
-        throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + valid);
+
+        throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + allAppNames());
     }
 
     public void addAppAddedListener(AppAddedListener listener) {
@@ -80,5 +76,12 @@ public class AppEstate {
 
     public interface AppAddedListener {
         void onAppAdded(AppDescription app) throws IOException;
+    }
+
+    public String allAppNames() {
+        return all()
+            .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
+            .map(AppDescription::name)
+            .collect(Collectors.joining(", "));
     }
 }
