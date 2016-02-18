@@ -88,7 +88,7 @@ public class AppResource {
 
         @Override
         public void write(OutputStream output) throws IOException, WebApplicationException {
-            Writer fileWriter = new FileWriter("build.log");
+//            Writer fileWriter = new FileWriter("build.log");
 //            Writer compositeWriter = new CompositeWriter();
 
             try (Writer writer = new OutputStreamWriter(output)) {
