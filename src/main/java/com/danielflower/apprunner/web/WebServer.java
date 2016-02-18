@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.ServerSocket;
 import java.net.URL;
 
 public class WebServer implements AutoCloseable {
@@ -40,6 +41,12 @@ public class WebServer implements AutoCloseable {
         this.estate = estate;
         this.defaultAppName = defaultAppName;
         jettyServer = new Server(port);
+    }
+
+    public static int getAFreePort() throws IOException {
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            return serverSocket.getLocalPort();
+        }
     }
 
     public void start() throws Exception {

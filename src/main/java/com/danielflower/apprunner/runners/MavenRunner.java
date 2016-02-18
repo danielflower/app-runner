@@ -43,7 +43,7 @@ public class MavenRunner {
         this.javaHome = javaHome;
     }
 
-    public void start(int port, InvocationOutputHandler outputHandler) throws ProjectCannotStartException {
+    public void start(int port, InvocationOutputHandler outputHandler, String name) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
 
         InvocationRequest request = new DefaultInvocationRequest()
@@ -93,7 +93,8 @@ public class MavenRunner {
         CommandLine command = new CommandLine(javaExec);
         command.addArgument("-jar").addArgument(jarName);
         Map<String, String> env = new HashMap<>();
-        env.put("web.port", String.valueOf(port));
+        env.put("APP_PORT", String.valueOf(port));
+        env.put("APP_NAME", name);
 //        try {
             outputHandler.consumeLine("Running: " + String.join(" ", command.toStrings()));
 //            writer.write("Running: " + String.join(" ", command.toStrings()) + "\n");

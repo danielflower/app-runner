@@ -6,12 +6,12 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
 
 public class FileBasedGitRepoLoader implements GitRepoLoader {
 
@@ -37,13 +37,15 @@ public class FileBasedGitRepoLoader implements GitRepoLoader {
     }
 
     @Override
-    public List<String> loadAll() throws Exception {
+    public Map<String, String> loadAll() throws Exception {
         Lock l = lock.readLock();
         l.lock();
         try {
-            return properties.stringPropertyNames().stream()
-                .map(properties::getProperty)
-                .collect(Collectors.toList());
+            Map<String,String> all = new HashMap<>();
+            for (String key : properties.stringPropertyNames()) {
+                all.put(key, properties.getProperty(key));
+            }
+            return all;
         } finally {
             l.unlock();
         }

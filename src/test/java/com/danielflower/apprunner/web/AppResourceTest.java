@@ -48,7 +48,7 @@ public class AppResourceTest {
         AppRepo repo = AppRepo.create("maven");
 
         UriInfo uriInfo = new MockUriInfo("http://localhost:1234/api/v1/apps");
-        Response response = appResource.create(uriInfo, repo.gitUrl());
+        Response response = appResource.create(uriInfo, repo.gitUrl(), null);
         assertThat(response.getStatus(), is(201));
         assertThat(response.getHeaderString("Location"), is("http://localhost:1234/api/v1/apps/maven"));
 

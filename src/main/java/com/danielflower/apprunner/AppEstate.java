@@ -52,8 +52,8 @@ public class AppEstate {
         }
     }
 
-    public AppDescription addApp(String gitUrl) throws Exception {
-        AppManager appMan = AppManager.create(gitUrl, fileSandbox, javaHome);
+    public AppDescription addApp(String gitUrl, String appName) throws Exception {
+        AppManager appMan = AppManager.create(gitUrl, fileSandbox, javaHome, appName);
         appMan.addListener(proxyMap::add);
         this.add(appMan);
         return appMan;

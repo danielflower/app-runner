@@ -2,32 +2,23 @@ package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.mgmt.AppDescription;
+import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.OutputToWriterBridge;
-import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriInfo;
-import java.io.FileWriter;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Path("/v1/apps")
 public class AppResource {
@@ -54,14 +45,15 @@ public class AppResource {
 
     @POST
     @Produces(MediaType.TEXT_PLAIN)
-    public Response create(@Context UriInfo uriInfo, @FormParam("gitUrl") String gitUrl) {
+    public Response create(@Context UriInfo uriInfo, @FormParam("gitUrl") String gitUrl, @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
-        if (StringUtils.isBlank(gitUrl)) {
+        if (isBlank(gitUrl)) {
             return Response.status(400).entity("No gitUrl was specified").build();
         }
 
         try {
-            AppDescription added = estate.addApp(gitUrl);
+            appName = isBlank(appName) ? AppManager.nameFromUrl(gitUrl) : appName;
+            AppDescription added = estate.addApp(gitUrl, appName);
             return Response.status(201)
                 .header("Location", uriInfo.getRequestUri() + "/" + added.name()).build();
         } catch (Exception e) {

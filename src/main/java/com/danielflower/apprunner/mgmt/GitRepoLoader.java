@@ -1,10 +1,10 @@
 package com.danielflower.apprunner.mgmt;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.Map;
 
 public interface GitRepoLoader {
-    List<String> loadAll() throws Exception;
+    Map<String, String> loadAll() throws Exception;
 
     void save(String name, String gitUrl) throws IOException;
 }

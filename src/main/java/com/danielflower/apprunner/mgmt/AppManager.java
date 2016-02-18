@@ -3,6 +3,7 @@ package com.danielflower.apprunner.mgmt;
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.runners.MavenRunner;
+import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -15,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,9 +23,7 @@ import java.util.List;
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
 
-    public static AppManager create(String gitUrl, FileSandbox fileSandbox, File javaHome) {
-        String name = StringUtils.removeEndIgnoreCase(StringUtils.removeEnd(gitUrl, "/"), ".git");
-        name = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1);
+    public static AppManager create(String gitUrl, FileSandbox fileSandbox, File javaHome, String name) {
         File root = fileSandbox.appDir(name);
         File gitDir = fileSandbox.appDir(name, "repo");
         File instanceDir = fileSandbox.appDir(name, "instances");
@@ -103,8 +101,8 @@ public class AppManager implements AppDescription {
         File id = copyToNewInstanceDir();
         MavenRunner oldRunner = currentRunner;
         currentRunner = new MavenRunner(id, javaHome);
-        int port = getAFreePort();
-        currentRunner.start(port, actualOutputHandler);
+        int port = WebServer.getAFreePort();
+        currentRunner.start(port, actualOutputHandler, name());
         for (AppChangeListener listener : listeners) {
             listener.onAppStarted(name, new URL("http://localhost:" + port + "/" + name));
         }
@@ -122,16 +120,16 @@ public class AppManager implements AppDescription {
         void onAppStarted(String name, URL newUrl);
     }
 
-    private int getAFreePort() throws IOException {
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            return serverSocket.getLocalPort();
-        }
-    }
-
     private File copyToNewInstanceDir() throws IOException {
         File dest = new File(instanceDir, String.valueOf(System.currentTimeMillis()));
         dest.mkdir();
         FileUtils.copyDirectory(git.getRepository().getWorkTree(), dest, pathname -> !pathname.getName().equals(".git"));
         return dest;
+    }
+
+    public static String nameFromUrl(String gitUrl) {
+        String name = StringUtils.removeEndIgnoreCase(StringUtils.removeEnd(gitUrl, "/"), ".git");
+        name = name.substring(Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\')) + 1);
+        return name;
     }
 }

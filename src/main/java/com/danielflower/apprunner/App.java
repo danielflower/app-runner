@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Map;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 
@@ -42,8 +43,8 @@ public class App {
         ProxyMap proxyMap = new ProxyMap();
 
         estate = new AppEstate(proxyMap, fileSandbox, config.getDir("JAVA_HOME"));
-        for (String repo : gitRepoLoader.loadAll()) {
-            estate.addApp(repo);
+        for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
+            estate.addApp(repo.getValue(), repo.getKey());
         }
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
 
