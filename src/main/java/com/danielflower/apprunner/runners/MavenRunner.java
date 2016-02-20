@@ -24,7 +24,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -43,7 +42,7 @@ public class MavenRunner {
         this.javaHome = javaHome;
     }
 
-    public void start(int port, InvocationOutputHandler outputHandler, String name) throws ProjectCannotStartException {
+    public void start(InvocationOutputHandler outputHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
 
         InvocationRequest request = new DefaultInvocationRequest()
@@ -92,11 +91,6 @@ public class MavenRunner {
         File javaExec = FileUtils.getFile(javaHome, "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
         CommandLine command = new CommandLine(javaExec);
         command.addArgument("-jar").addArgument(jarName);
-        Map<String, String> env = new HashMap<>();
-        env.put("APP_PORT", String.valueOf(port));
-        env.put("APP_NAME", name);
-        env.put("APP_ENV", "prod");
-        env.put("APP_REST_URL_BASE_V1", "/api/v1");
 //        try {
             outputHandler.consumeLine("Running: " + String.join(" ", command.toStrings()));
 //            writer.write("Running: " + String.join(" ", command.toStrings()) + "\n");
@@ -105,7 +99,7 @@ public class MavenRunner {
 //        }
         try {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
-            executor.execute(command, env, handler);
+            executor.execute(command, envVarsForApp, handler);
             handler.waitFor(TimeUnit.SECONDS.toMillis(2));
             if (handler.hasResult()) {
                 throw new ProjectCannotStartException("The project at " + dirPath(projectRoot) + " started but exited all too soon. Output was: " + output);

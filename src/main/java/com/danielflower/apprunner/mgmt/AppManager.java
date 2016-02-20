@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class AppManager implements AppDescription {
@@ -102,7 +103,10 @@ public class AppManager implements AppDescription {
         MavenRunner oldRunner = currentRunner;
         currentRunner = new MavenRunner(id, javaHome);
         int port = WebServer.getAFreePort();
-        currentRunner.start(port, actualOutputHandler, name());
+
+        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name);
+
+        currentRunner.start(actualOutputHandler, envVarsForApp);
         for (AppChangeListener listener : listeners) {
             listener.onAppStarted(name, new URL("http://localhost:" + port + "/" + name));
         }
@@ -112,6 +116,15 @@ public class AppManager implements AppDescription {
 
             // TODO: delete old instance dir
         }
+    }
+
+    public static HashMap<String, String> createAppEnvVars(int port, String name) {
+        HashMap<String, String> envVarsForApp = new HashMap<>();
+        envVarsForApp.put("APP_PORT", String.valueOf(port));
+        envVarsForApp.put("APP_NAME", name);
+        envVarsForApp.put("APP_ENV", "prod");
+        envVarsForApp.put("APP_REST_URL_BASE_V1", "/api/v1");
+        return envVarsForApp;
     }
 
     public void addListener(AppChangeListener appChangeListener) {

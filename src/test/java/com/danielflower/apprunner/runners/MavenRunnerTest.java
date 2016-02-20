@@ -1,6 +1,7 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.FileSandbox;
+import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -14,6 +15,7 @@ import scaffolding.Dirs;
 
 import java.io.File;
 import java.io.Writer;
+import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -39,14 +41,15 @@ public class MavenRunnerTest {
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws InterruptedException, ExecutionException, TimeoutException {
 
-        MavenRunner runner = new MavenRunner(sampleAppDir("maven"), Dirs.javaHome);
+        String appName = "maven";
+        MavenRunner runner = new MavenRunner(sampleAppDir(appName), Dirs.javaHome);
         StringBuilder output = new StringBuilder();
         Writer writer = new StringBuilderWriter(output);
         try {
-            runner.start(45678, new OutputToWriterBridge(writer), "maven");
+            runner.start(new OutputToWriterBridge(writer), AppManager.createAppEnvVars(45678, appName));
 
             try {
-                ContentResponse resp = client.GET("http://localhost:45678/maven/");
+                ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));
                 assertThat(resp.getContentAsString(), containsString("My Maven App"));
                 assertThat(output.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
