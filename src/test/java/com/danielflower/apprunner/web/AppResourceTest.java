@@ -39,8 +39,8 @@ public class AppResourceTest {
         String json = appResource.apps(new MockUriInfo("http://localhost:1234/api/v1/apps"));
         JSONAssert.assertEquals("{apps:[ " +
             "{ name: \"an-app\", url: \"http://localhost:1234/an-app/\", " +
-            "buildLogUrl: \"http://localhost:1234/api/v1/apps/an-app/logs/build.log\", " +
-            "consoleLogUrl: \"http://localhost:1234/api/v1/apps/an-app/logs/console.log\", " +
+            "buildLogUrl: \"http://localhost:1234/api/v1/apps/an-app/build.log\", " +
+            "consoleLogUrl: \"http://localhost:1234/api/v1/apps/an-app/console.log\", " +
             "gitUrl: \"git://something/.git\" }," +
             "{ name: \"my-app\", url: \"http://localhost:1234/my-app/\", gitUrl: \"git://something/.git\" }" +
             "]}", json, JSONCompareMode.STRICT_ORDER);

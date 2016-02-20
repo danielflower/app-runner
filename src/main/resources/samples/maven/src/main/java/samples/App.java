@@ -25,13 +25,15 @@ public class App {
         // All URLs must be prefixed with the app name, which is got via the APP_NAME env var.
         String appName = firstNonNull(System.getenv("APP_NAME"), "my-app");
 
+        String env = firstNonNull(System.getenv("APP_ENV"), "local"); // "prod" or "local"
+        boolean isLocal = "local".equals(env);
 
         Server jettyServer = new Server(new InetSocketAddress("localhost", port));
         jettyServer.setStopAtShutdown(true);
 
         HandlerList handlers = new HandlerList();
         // TODO: set your own handlers
-        handlers.addHandler(resourceHandler());
+        handlers.addHandler(resourceHandler(isLocal));
 
         // you must serve everything from a directory named after your app
         ContextHandler ch = new ContextHandler();
@@ -51,11 +53,15 @@ public class App {
         jettyServer.join();
     }
 
-    private static Handler resourceHandler() {
+    private static Handler resourceHandler(boolean useFileSystem) {
         ResourceHandler resourceHandler = new ResourceHandler();
-        resourceHandler.setBaseResource(Resource.newClassPathResource("/web", false, false));
+        if (useFileSystem) {
+            resourceHandler.setResourceBase("src/main/resources/web");
+            resourceHandler.setMinMemoryMappedContentLength(-1);
+        } else {
+            resourceHandler.setBaseResource(Resource.newClassPathResource("/web", true, false));
+        }
         resourceHandler.setWelcomeFiles(new String[] {"index.html"});
-        resourceHandler.setMinMemoryMappedContentLength(-1);
         return resourceHandler;
     }
 

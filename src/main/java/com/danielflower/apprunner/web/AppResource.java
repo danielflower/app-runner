@@ -60,7 +60,7 @@ public class AppResource {
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("/{name}/logs/build.log")
+    @Path("/{name}/build.log")
     public String logs(@PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
@@ -73,8 +73,8 @@ public class AppResource {
 
         return new JSONObject()
             .put("name", app.name())
-            .put("buildLogUrl", restURI.resolve("apps/" + app.name() + "/logs/build.log"))
-            .put("consoleLogUrl", restURI.resolve("apps/" + app.name() + "/logs/console.log"))
+            .put("buildLogUrl", restURI.resolve("apps/" + app.name() + "/build.log"))
+            .put("consoleLogUrl", restURI.resolve("apps/" + app.name() + "/console.log"))
             .put("url", uri.resolve("/" + app.name() + "/"))
             .put("gitUrl", app.gitUrl());
     }
