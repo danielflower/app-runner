@@ -109,6 +109,8 @@ public class AppManager implements AppDescription {
         if (oldRunner != null) {
             log.info("Shutting down previous version of " + name);
             oldRunner.shutdown();
+
+            // TODO: delete old instance dir
         }
     }
 

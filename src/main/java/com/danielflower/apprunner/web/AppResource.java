@@ -15,8 +15,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -32,15 +34,49 @@ public class AppResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public String apps() {
+    public String apps(@Context UriInfo uriInfo) {
+
         JSONObject result = new JSONObject();
         List<JSONObject> apps = new ArrayList<>();
         estate.all()
             .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
             .forEach(d -> apps.add(
-                new JSONObject().put("name", d.name()).put("gitUrl", d.gitUrl())));
+                appJson(uriInfo.getRequestUri(), d)));
         result.put("apps", apps);
         return result.toString();
+    }
+
+    @GET
+    @Path("/{name}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response app(@Context UriInfo uriInfo, @PathParam("name") String name) {
+        Optional<AppDescription> app = estate.app(name);
+        if (app.isPresent()) {
+            return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString()).build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).build();
+        }
+    }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/{name}/logs/build.log")
+    public String logs(@PathParam("name") String name) {
+        Optional<AppDescription> namedApp = estate.app(name);
+        if (namedApp.isPresent())
+            return namedApp.get().latestBuildLog();
+        throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
+    }
+
+    public static JSONObject appJson(URI uri, AppDescription app) {
+        URI restURI = uri.resolve("/api/v1/");
+
+        return new JSONObject()
+            .put("name", app.name())
+            .put("buildLogUrl", restURI.resolve("apps/" + app.name() + "/logs/build.log"))
+            .put("consoleLogUrl", restURI.resolve("apps/" + app.name() + "/logs/console.log"))
+            .put("url", uri.resolve("/" + app.name() + "/"))
+            .put("gitUrl", app.gitUrl());
     }
 
     @POST
@@ -65,7 +101,7 @@ public class AppResource {
 
     @POST /* Maybe should be PUT, but too many hooks only use POST */
     @Produces(MediaType.TEXT_PLAIN)
-    @Path("/{name}")
+    @Path("/{name}/deploy")
     public Response update(@PathParam("name") String name) {
         StreamingOutput stream = new UpdateStreamer(name);
         return Response.ok(stream).build();

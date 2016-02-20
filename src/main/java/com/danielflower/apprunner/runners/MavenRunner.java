@@ -95,6 +95,8 @@ public class MavenRunner {
         Map<String, String> env = new HashMap<>();
         env.put("APP_PORT", String.valueOf(port));
         env.put("APP_NAME", name);
+        env.put("APP_ENV", "prod");
+        env.put("APP_REST_URL_BASE_V1", "/api/v1");
 //        try {
             outputHandler.consumeLine("Running: " + String.join(" ", command.toStrings()));
 //            writer.write("Running: " + String.join(" ", command.toStrings()) + "\n");

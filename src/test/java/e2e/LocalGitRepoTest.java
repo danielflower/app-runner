@@ -8,6 +8,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +58,7 @@ public class LocalGitRepoTest {
 
         assertThat(created.getStatus(), is(201));
 
-        ContentResponse update = client.POST(appResourceUri + "/" + appId).send();
+        ContentResponse update = client.POST(appResourceUri + "/" + appId + "/deploy").send();
         assertThat(update.getStatus(), is(200));
     }
 
@@ -90,17 +91,19 @@ public class LocalGitRepoTest {
         appRepo.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
 
         assertThat(
-            client.POST(appRunnerUrl + "/api/v1/apps/" + appId).send(),
+            client.POST(appRunnerUrl + "/api/v1/apps/" + appId + "/deploy").send(),
             is(equalTo(200, allOf(
                 containsString("Going to build and deploy " + appId),
                 containsString("Success")))));
 
+        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + appId).getContentAsString());
+
         assertThat(
-            client.GET(appRunnerUrl + "/" + appId + "/"),
+            client.GET(appInfo.getString("url")),
             is(equalTo(200, containsString("My new and improved maven app!"))));
 
         assertThat(
-            client.GET(appRunnerUrl + "/api/v1/logs/" + appId),
+            client.GET(appInfo.getString("buildLogUrl")),
             is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
     }
 
@@ -109,11 +112,20 @@ public class LocalGitRepoTest {
         ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
         assertThat(resp.getStatus(), is(200));
 
-        String json = resp.getContentAsString();
-        JSONAssert.assertEquals("{apps:[ {name: \"maven\"} ]}", json, JSONCompareMode.LENIENT);
+        JSONObject all = new JSONObject(resp.getContentAsString());
+
+        JSONAssert.assertEquals("{apps:[ {" +
+            "name: \"maven\"," +
+            "url: \"" + appRunnerUrl + "/maven/\"" +
+            "} ]}", all, JSONCompareMode.LENIENT);
 
         assertThat(
-            client.POST(appRunnerUrl + "/api/v1/apps/invalid-app-name").send(),
+            client.POST(appRunnerUrl + "/api/v1/apps/invalid-app-name/deploy").send(),
             is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: maven"))));
+
+        resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
+        assertThat(resp.getStatus(), is(200));
+        JSONObject single = new JSONObject(resp.getContentAsString());
+        JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(0), single, JSONCompareMode.STRICT_ORDER);
     }
 }

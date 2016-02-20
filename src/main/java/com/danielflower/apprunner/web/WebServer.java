@@ -65,7 +65,6 @@ public class WebServer implements AutoCloseable {
     private Handler createRestService(AppEstate estate) {
         ResourceConfig rc = new ResourceConfig();
         rc.register(new AppResource(estate));
-        rc.register(new BuildLogsResource(estate));
 
         ServletHolder holder = new ServletHolder(new ServletContainer(rc));
 

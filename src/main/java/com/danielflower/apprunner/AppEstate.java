@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -72,6 +73,10 @@ public class AppEstate {
 
     public void addAppAddedListener(AppAddedListener listener) {
         this.appAddedListeners.add(listener);
+    }
+
+    public Optional<AppDescription> app(String name) {
+        return all().filter(a -> a.name().equals(name)).findFirst();
     }
 
     public interface AppAddedListener {

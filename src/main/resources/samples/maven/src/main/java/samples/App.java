@@ -21,7 +21,7 @@ public class App {
     public static void main(String[] args) throws Exception {
 
         // When run from app-runner, you must use the port set in the environment variable APP_PORT
-        int port = Integer.parseInt(firstNonNull(System.getenv("APP_PORT"), "8080"));
+        int port = Integer.parseInt(firstNonNull(System.getenv("APP_PORT"), "8081"));
         // All URLs must be prefixed with the app name, which is got via the APP_NAME env var.
         String appName = firstNonNull(System.getenv("APP_NAME"), "my-app");
 
@@ -39,7 +39,12 @@ public class App {
         ch.setHandler(handlers);
         jettyServer.setHandler(ch);
 
-        jettyServer.start();
+        try {
+            jettyServer.start();
+        } catch (Throwable e) {
+            log.error("Error on start", e);
+            System.exit(1);
+        }
 
         log.info("Started app at http://localhost:" + port + ch.getContextPath());
 
