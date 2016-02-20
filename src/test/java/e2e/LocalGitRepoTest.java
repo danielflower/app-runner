@@ -105,6 +105,9 @@ public class LocalGitRepoTest {
         assertThat(
             client.GET(appInfo.getString("buildLogUrl")),
             is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
+        assertThat(
+            client.GET(appInfo.getString("consoleLogUrl")),
+            is(equalTo(200, containsString("Starting maven in prod"))));
     }
 
     @Test

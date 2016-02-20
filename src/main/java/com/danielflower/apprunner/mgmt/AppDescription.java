@@ -9,6 +9,8 @@ public interface AppDescription {
 
     String latestBuildLog();
 
+    String latestConsoleLog();
+
     void stopApp() throws Exception;
 
     void update(InvocationOutputHandler outputHandler) throws Exception;

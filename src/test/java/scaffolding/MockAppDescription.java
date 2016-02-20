@@ -25,6 +25,11 @@ public class MockAppDescription implements AppDescription {
         return "";
     }
 
+    @Override
+    public String latestConsoleLog() {
+        return "";
+    }
+
     public void stopApp() {
     }
 

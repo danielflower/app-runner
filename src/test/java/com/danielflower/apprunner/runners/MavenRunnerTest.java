@@ -15,7 +15,6 @@ import scaffolding.Dirs;
 
 import java.io.File;
 import java.io.Writer;
-import java.util.HashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -43,21 +42,22 @@ public class MavenRunnerTest {
 
         String appName = "maven";
         MavenRunner runner = new MavenRunner(sampleAppDir(appName), Dirs.javaHome);
-        StringBuilder output = new StringBuilder();
-        Writer writer = new StringBuilderWriter(output);
+        StringBuilderWriter buildLog = new StringBuilderWriter();
+        StringBuilderWriter consoleLog = new StringBuilderWriter();
         try {
-            runner.start(new OutputToWriterBridge(writer), AppManager.createAppEnvVars(45678, appName));
+            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName));
 
             try {
                 ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));
                 assertThat(resp.getContentAsString(), containsString("My Maven App"));
-                assertThat(output.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
+                assertThat(buildLog.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
             } finally {
                 runner.shutdown();
             }
         } catch (ProjectCannotStartException e) {
-            System.out.println(output);
+            System.out.println(buildLog);
+            System.out.println(consoleLog);
             throw e;
         }
     }

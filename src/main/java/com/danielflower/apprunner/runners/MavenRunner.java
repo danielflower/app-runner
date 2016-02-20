@@ -8,7 +8,6 @@ import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -34,7 +33,6 @@ public class MavenRunner {
     public static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     private final File projectRoot;
     private ExecuteWatchdog watchDog;
-    private StringBuilder output;
     private final File javaHome;
 
     public MavenRunner(File projectRoot, File javaHome) {
@@ -42,14 +40,14 @@ public class MavenRunner {
         this.javaHome = javaHome;
     }
 
-    public void start(InvocationOutputHandler outputHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
+    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
 
         InvocationRequest request = new DefaultInvocationRequest()
             .setPomFile(pomFile)
             .setJavaHome(javaHome)
-            .setOutputHandler(outputHandler)
-            .setErrorHandler(outputHandler)
+            .setOutputHandler(buildLogHandler)
+            .setErrorHandler(buildLogHandler)
             .setGoals(asList("clean", "package"))
             .setBaseDirectory(projectRoot);
 
@@ -86,38 +84,27 @@ public class MavenRunner {
         watchDog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
         executor.setWatchdog(watchDog);
 
-        output = new StringBuilder();
-        executor.setStreamHandler(new PumpStreamHandler(new WriterOutputStream(new StringBuilderWriter(output))));
+        executor.setStreamHandler(new PumpStreamHandler(new WriterOutputStream(new WriterToOutputBridge(consoleLogHandler))));
         File javaExec = FileUtils.getFile(javaHome, "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
         CommandLine command = new CommandLine(javaExec);
         command.addArgument("-jar").addArgument(jarName);
-//        try {
-            outputHandler.consumeLine("Running: " + String.join(" ", command.toStrings()));
-//            writer.write("Running: " + String.join(" ", command.toStrings()) + "\n");
-//        } catch (IOException e) {
-//            log.info("Error while writing", e);
-//        }
+        buildLogHandler.consumeLine("Running: " + String.join(" ", command.toStrings()));
+
         try {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
             executor.execute(command, envVarsForApp, handler);
             handler.waitFor(TimeUnit.SECONDS.toMillis(2));
             if (handler.hasResult()) {
-                throw new ProjectCannotStartException("The project at " + dirPath(projectRoot) + " started but exited all too soon. Output was: " + output);
+                String message = "The project at " + dirPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
+                buildLogHandler.consumeLine(message);
+                throw new ProjectCannotStartException(message);
             }
         } catch (Exception e) {
-            throw new ProjectCannotStartException("Built successfully, but error on start for " + dirPath(projectRoot), e);
+            String message = "Built successfully, but error on start for " + dirPath(projectRoot);
+            buildLogHandler.consumeLine(message);
+            buildLogHandler.consumeLine(e.toString());
+            throw new ProjectCannotStartException(message, e);
         }
-
-        outputHandler.consumeLine("Current output from app:\n");
-        outputHandler.consumeLine(output.toString() + "\n");
-/*
-        try {
-            writer.write("Current output from app:\n");
-            writer.write(output.toString() + "\n");
-        } catch (IOException e) {
-            log.info("Error while writing to output", e);
-        }
-*/
 
         log.info("Started " + jarName);
     }
@@ -125,4 +112,5 @@ public class MavenRunner {
     public void shutdown() {
         watchDog.destroyProcess();
     }
+
 }

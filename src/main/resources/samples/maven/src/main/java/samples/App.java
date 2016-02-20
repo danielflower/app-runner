@@ -24,9 +24,9 @@ public class App {
         int port = Integer.parseInt(firstNonNull(System.getenv("APP_PORT"), "8081"));
         // All URLs must be prefixed with the app name, which is got via the APP_NAME env var.
         String appName = firstNonNull(System.getenv("APP_NAME"), "my-app");
-
         String env = firstNonNull(System.getenv("APP_ENV"), "local"); // "prod" or "local"
         boolean isLocal = "local".equals(env);
+        log.info("Starting " + appName + " in " + env + " on port " + port);
 
         Server jettyServer = new Server(new InetSocketAddress("localhost", port));
         jettyServer.setStopAtShutdown(true);

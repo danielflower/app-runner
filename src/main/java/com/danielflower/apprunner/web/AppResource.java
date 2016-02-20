@@ -61,10 +61,20 @@ public class AppResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{name}/build.log")
-    public String logs(@PathParam("name") String name) {
+    public String buildLogs(@PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
             return namedApp.get().latestBuildLog();
+        throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
+    }
+
+    @GET
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/{name}/console.log")
+    public String consoleLogs(@PathParam("name") String name) {
+        Optional<AppDescription> namedApp = estate.app(name);
+        if (namedApp.isPresent())
+            return namedApp.get().latestConsoleLog();
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
     }
 

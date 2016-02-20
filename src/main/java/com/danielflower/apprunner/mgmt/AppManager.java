@@ -4,6 +4,7 @@ import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.runners.MavenRunner;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -20,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -62,6 +64,7 @@ public class AppManager implements AppDescription {
     private final List<AppChangeListener> listeners = new ArrayList<>();
     private MavenRunner currentRunner;
     private String latestBuildLog;
+    private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
 
     private AppManager(String name, String gitUrl, Git git, File instanceDir, File javaHome) {
         this.gitUrl = gitUrl;
@@ -83,6 +86,12 @@ public class AppManager implements AppDescription {
         return latestBuildLog;
     }
 
+    public String latestConsoleLog() {
+        synchronized (consoleLog) {
+            return consoleLog.stream().collect(Collectors.joining());
+        }
+    }
+
     public synchronized void stopApp() throws Exception {
         if (currentRunner != null) {
             currentRunner.shutdown();
@@ -91,12 +100,18 @@ public class AppManager implements AppDescription {
     }
 
     public synchronized void update(InvocationOutputHandler outputHandler) throws GitAPIException, IOException {
-        latestBuildLog = "";
+        clearLogs();
 
-        InvocationOutputHandler actualOutputHandler = line -> {
+        InvocationOutputHandler buildLogHandler = line -> {
             outputHandler.consumeLine(line);
             latestBuildLog += line + "\n";
         };
+        InvocationOutputHandler consoleLogHandler = line -> {
+            synchronized (consoleLog) {
+                consoleLog.add(line);
+            }
+        };
+
 
         git.pull().setRemote("origin").call();
         File id = copyToNewInstanceDir();
@@ -106,7 +121,7 @@ public class AppManager implements AppDescription {
 
         HashMap<String, String> envVarsForApp = createAppEnvVars(port, name);
 
-        currentRunner.start(actualOutputHandler, envVarsForApp);
+        currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp);
         for (AppChangeListener listener : listeners) {
             listener.onAppStarted(name, new URL("http://localhost:" + port + "/" + name));
         }
@@ -115,6 +130,13 @@ public class AppManager implements AppDescription {
             oldRunner.shutdown();
 
             // TODO: delete old instance dir
+        }
+    }
+
+    public void clearLogs() {
+        latestBuildLog = "";
+        synchronized (consoleLog) {
+            consoleLog.clear();
         }
     }
 
