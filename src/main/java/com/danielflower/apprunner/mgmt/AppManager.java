@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ import java.util.stream.Collectors;
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
 
-    public static AppManager create(String gitUrl, FileSandbox fileSandbox, File javaHome, String name) {
+    public static AppManager create(String gitUrl, FileSandbox fileSandbox, File javaHome, String name, URI appRunnerInternalUrl) {
         File root = fileSandbox.appDir(name);
         File gitDir = fileSandbox.appDir(name, "repo");
         File instanceDir = fileSandbox.appDir(name, "instances");
@@ -53,7 +54,7 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remove on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, gitUrl, git, instanceDir, javaHome);
+        return new AppManager(name, gitUrl, git, instanceDir, javaHome, appRunnerInternalUrl);
     }
 
     private final String gitUrl;
@@ -61,17 +62,19 @@ public class AppManager implements AppDescription {
     private final Git git;
     private final File instanceDir;
     private final File javaHome;
+    private final URI appRunnerInternalUrl;
     private final List<AppChangeListener> listeners = new ArrayList<>();
     private MavenRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir, File javaHome) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, File javaHome, URI appRunnerInternalUrl) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
         this.javaHome = javaHome;
+        this.appRunnerInternalUrl = appRunnerInternalUrl;
     }
 
     public String name() {
@@ -119,7 +122,7 @@ public class AppManager implements AppDescription {
         currentRunner = new MavenRunner(id, javaHome);
         int port = WebServer.getAFreePort();
 
-        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name);
+        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name, appRunnerInternalUrl);
 
         currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp);
         for (AppChangeListener listener : listeners) {
@@ -140,12 +143,12 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public static HashMap<String, String> createAppEnvVars(int port, String name) {
+    public static HashMap<String, String> createAppEnvVars(int port, String name, URI appRunnerInternalUrl) {
         HashMap<String, String> envVarsForApp = new HashMap<>();
         envVarsForApp.put("APP_PORT", String.valueOf(port));
         envVarsForApp.put("APP_NAME", name);
         envVarsForApp.put("APP_ENV", "prod");
-        envVarsForApp.put("APP_REST_URL_BASE_V1", "/api/v1");
+        envVarsForApp.put("APP_REST_URL_BASE_V1", appRunnerInternalUrl.resolve("/api/v1").toString());
         return envVarsForApp;
     }
 

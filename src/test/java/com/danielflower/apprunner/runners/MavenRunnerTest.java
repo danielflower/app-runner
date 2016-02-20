@@ -14,7 +14,7 @@ import org.junit.Test;
 import scaffolding.Dirs;
 
 import java.io.File;
-import java.io.Writer;
+import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -45,7 +45,7 @@ public class MavenRunnerTest {
         StringBuilderWriter buildLog = new StringBuilderWriter();
         StringBuilderWriter consoleLog = new StringBuilderWriter();
         try {
-            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName));
+            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")));
 
             try {
                 ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");

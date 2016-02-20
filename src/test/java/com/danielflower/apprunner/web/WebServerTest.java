@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.util.UUID;
 
@@ -38,7 +39,7 @@ public class WebServerTest {
         client = new HttpClient();
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap, new AppEstate(proxyMap, fileSandbox(), Dirs.javaHome), "test-app");
+        webServer = new WebServer(0, proxyMap, new AppEstate(URI.create("http://localhost"), proxyMap, fileSandbox(), Dirs.javaHome), "test-app");
         webServer.start();
 
         appServer = new TestServer();

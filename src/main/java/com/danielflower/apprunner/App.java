@@ -5,12 +5,14 @@ import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.OutputToWriterBridge;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.io.output.StringBuilderWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URI;
 import java.util.Map;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
@@ -42,22 +44,26 @@ public class App {
         GitRepoLoader gitRepoLoader = FileBasedGitRepoLoader.getGitRepoLoader(dataDir);
         ProxyMap proxyMap = new ProxyMap();
 
-        estate = new AppEstate(proxyMap, fileSandbox, config.getDir("JAVA_HOME"));
+        int appRunnerPort = config.getInt(SERVER_PORT);
+        URI appRunnerInternalUrl = URI.create("http://localhost:" + appRunnerPort);
+
+        estate = new AppEstate(appRunnerInternalUrl, proxyMap, fileSandbox, config.getDir("JAVA_HOME"));
         for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
             estate.addApp(repo.getValue(), repo.getKey());
         }
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
 
         estate.all().forEach(a -> {
+            StringBuilderWriter writer = new StringBuilderWriter();
             try {
-                estate.update(a.name(), new OutputToWriterBridge(new NullWriter()));
+                estate.update(a.name(), new OutputToWriterBridge(writer));
             } catch (Exception e) {
-                log.warn("Error while starting up " + a.name(), e);
+                log.warn("Error while starting up " + a.name() + "\nLogs:\n" + writer, e);
             }
         });
 
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
-        webServer = new WebServer(config.getInt(SERVER_PORT), proxyMap, estate, defaultAppName);
+        webServer = new WebServer(appRunnerPort, proxyMap, estate, defaultAppName);
         webServer.start();
     }
 
@@ -76,9 +82,4 @@ public class App {
         }
     }
 
-    private static class NullWriter extends Writer {
-        public void write(char[] cbuf, int off, int len) throws IOException { }
-        public void flush() throws IOException { }
-        public void close() throws IOException { }
-    }
 }
