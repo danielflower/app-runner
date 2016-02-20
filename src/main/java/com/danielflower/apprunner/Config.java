@@ -17,6 +17,7 @@ public class Config {
     public static final String SERVER_PORT = "appserver.port";
     public static final String DATA_DIR = "appserver.data.dir";
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
+    public static final String INITIAL_APP_URL = "appserver.initial.app.url";
 
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> env = new HashMap<>(System.getenv());

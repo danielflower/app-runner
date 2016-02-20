@@ -7,8 +7,9 @@ Running locally
 ---------------
 
 Run `com.danielflower.apprunner.RunLocal.main` from your IDE. This will use the settings in
-`sample-config.properties`. Try POSTing `gitUrl=https://github.com/danielflower/app-runner`
-as a form-encoded request to `/api/v1/apps` to download, build and run an app.
+`sample-config.properties`. Upon startup, it will try to download, build, and deploy the
+application specified in the config. Launch the URL that is logged on startup see the hosted
+sample app.
 
 Configuration
 -------------
