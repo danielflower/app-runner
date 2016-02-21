@@ -68,7 +68,11 @@ public class Config {
     }
 
     public File javaExecutable() {
-        return FileUtils.getFile(javaHome(), "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
+        return FileUtils.getFile(javaHome(), "bin", javaExecutableName());
+    }
+
+    public static String javaExecutableName() {
+        return SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java";
     }
 
     public File javaHome() {
