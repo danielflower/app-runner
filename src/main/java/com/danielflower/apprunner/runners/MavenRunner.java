@@ -7,20 +7,18 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.shared.invoker.*;
-import org.eclipse.jetty.io.WriterOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
 
 public class MavenRunner {
-    public static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
+    private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     private final File projectRoot;
     private ExecuteWatchdog watchDog;
     private final File javaHome;
@@ -69,34 +67,12 @@ public class MavenRunner {
             throw new ProjectCannotStartException("Could not find the jar file at " + dirPath(jar));
         }
 
-        Executor executor = new DefaultExecutor();
-        executor.setWorkingDirectory(new File(projectRoot, "target"));
-        watchDog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
-        executor.setWatchdog(watchDog);
 
-        executor.setStreamHandler(new PumpStreamHandler(new WriterOutputStream(new WriterToOutputBridge(consoleLogHandler))));
         File javaExec = FileUtils.getFile(javaHome, "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
         CommandLine command = new CommandLine(javaExec);
-        command.addArgument("-jar").addArgument(jarName);
-        consoleLogHandler.consumeLine(dirPath(executor.getWorkingDirectory()) + "> " + String.join(" ", command.toStrings()) + "\n");
+        command.addArgument("-jar").addArgument("target" + File.separator + jarName);
 
-        try {
-            DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
-            executor.execute(command, envVarsForApp, handler);
-            handler.waitFor(TimeUnit.SECONDS.toMillis(2));
-            if (handler.hasResult()) {
-                String message = "The project at " + dirPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
-                buildLogHandler.consumeLine(message);
-                throw new ProjectCannotStartException(message);
-            }
-        } catch (Exception e) {
-            String message = "Built successfully, but error on start for " + dirPath(projectRoot);
-            buildLogHandler.consumeLine(message);
-            buildLogHandler.consumeLine(e.toString());
-            throw new ProjectCannotStartException(message, e);
-        }
-
-        log.info("Started " + jarName);
+        watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot);
     }
 
     public void shutdown() {

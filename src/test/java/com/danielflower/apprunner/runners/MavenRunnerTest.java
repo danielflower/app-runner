@@ -7,7 +7,6 @@ import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,10 +24,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class MavenRunnerTest {
 
     private static HttpClient client;
+    StringBuilderWriter buildLog = new StringBuilderWriter();
+    StringBuilderWriter consoleLog = new StringBuilderWriter();
 
     @BeforeClass
     public static void setup() throws Exception {
-        client = new HttpClient(new SslContextFactory(true));
+        client = new HttpClient();
         client.start();
     }
 
@@ -42,8 +43,6 @@ public class MavenRunnerTest {
 
         String appName = "maven";
         MavenRunner runner = new MavenRunner(sampleAppDir(appName), Dirs.javaHome);
-        StringBuilderWriter buildLog = new StringBuilderWriter();
-        StringBuilderWriter consoleLog = new StringBuilderWriter();
         try {
             runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")));
 

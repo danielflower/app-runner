@@ -1,11 +1,14 @@
 package com.danielflower.apprunner;
 
 import org.apache.commons.io.FilenameUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 
 public class FileSandbox {
+    public static final Logger log = LoggerFactory.getLogger(FileSandbox.class);
     public static String dirPath(File samples) {
         try {
             return samples.getCanonicalPath();
@@ -14,13 +17,15 @@ public class FileSandbox {
         }
     }
 
-
     private final File root;
 
     public FileSandbox(File root) {
         this.root = root;
     }
 
+    public File tempDir(String name) {
+        return ensureExists("temp/" + name);
+    }
     public File logDir(String name) {
         return ensureExists("logs/" + name);
     }

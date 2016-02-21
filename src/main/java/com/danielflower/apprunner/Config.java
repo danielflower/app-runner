@@ -3,6 +3,7 @@ package com.danielflower.apprunner;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.InvalidConfigException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,6 +51,10 @@ public class Config {
         return raw.getOrDefault(name, defaultVal);
     }
 
+    public boolean hasItem(String name) {
+        return StringUtils.isNotBlank(get(name, null));
+    }
+
     public String get(String name) {
         String s = get(name, null);
         if (s == null) {
@@ -81,6 +86,14 @@ public class Config {
             FileUtils.forceMkdir(f);
         } catch (IOException e) {
             throw new AppRunnerException("Could not create " + dirPath(f));
+        }
+        return f;
+    }
+
+    public File getFile(String name) {
+        File f = new File(get(name));
+        if (!f.isFile()) {
+            throw new AppRunnerException("Could not find " + name + " file: " + dirPath(f));
         }
         return f;
     }
