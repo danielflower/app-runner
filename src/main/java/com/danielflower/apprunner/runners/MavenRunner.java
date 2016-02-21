@@ -1,12 +1,16 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
-import org.apache.commons.exec.*;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.SystemUtils;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.shared.invoker.*;
+import org.apache.maven.shared.invoker.DefaultInvocationRequest;
+import org.apache.maven.shared.invoker.DefaultInvoker;
+import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.InvocationResult;
+import org.apache.maven.shared.invoker.Invoker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,12 +25,12 @@ import static java.util.Arrays.asList;
 public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     private final File projectRoot;
+    private final JavaHomeProvider javaHomeProvider;
     private ExecuteWatchdog watchDog;
-    private final File javaHome;
 
-    public MavenRunner(File projectRoot, File javaHome) {
+    public MavenRunner(File projectRoot, JavaHomeProvider javaHomeProvider) {
         this.projectRoot = projectRoot;
-        this.javaHome = javaHome;
+        this.javaHomeProvider = javaHomeProvider;
     }
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
@@ -34,11 +38,12 @@ public class MavenRunner implements AppRunner {
 
         InvocationRequest request = new DefaultInvocationRequest()
             .setPomFile(pomFile)
-            .setJavaHome(javaHome)
             .setOutputHandler(buildLogHandler)
             .setErrorHandler(buildLogHandler)
             .setGoals(asList("clean", "package"))
             .setBaseDirectory(projectRoot);
+
+        request = javaHomeProvider.mungeMavenInvocationRequest(request);
 
         log.info("Building maven project at " + dirPath(projectRoot));
         Invoker invoker = new DefaultInvoker();
@@ -68,9 +73,7 @@ public class MavenRunner implements AppRunner {
             throw new ProjectCannotStartException("Could not find the jar file at " + dirPath(jar));
         }
 
-
-        File javaExec = FileUtils.getFile(javaHome, "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
-        CommandLine command = new CommandLine(javaExec);
+        CommandLine command = javaHomeProvider.javaCommandLine();
         command.addArgument("-jar").addArgument("target" + File.separator + jarName);
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot);
@@ -83,17 +86,17 @@ public class MavenRunner implements AppRunner {
 
     public static class Factory implements AppRunner.Factory {
 
-        private final File javaHome;
+        private final JavaHomeProvider javaHomeProvider;
 
-        public Factory(File javaHome) {
-            this.javaHome = javaHome;
+        public Factory(JavaHomeProvider javaHomeProvider) {
+            this.javaHomeProvider = javaHomeProvider;
         }
 
         @Override
         public Optional<AppRunner> forProject(String appName, File projectRoot) {
             File pom = new File(projectRoot, "pom.xml");
             if (pom.isFile()) {
-                AppRunner runner = new MavenRunner(projectRoot, javaHome);
+                AppRunner runner = new MavenRunner(projectRoot, javaHomeProvider);
                 return Optional.of(runner);
             } else {
                 return Optional.empty();
@@ -101,8 +104,7 @@ public class MavenRunner implements AppRunner {
         }
 
         public String toString() {
-            return "Maven builder for Java using " + dirPath(javaHome);
+            return "Maven builder for Java using " + javaHomeProvider.toString();
         }
     }
-
 }

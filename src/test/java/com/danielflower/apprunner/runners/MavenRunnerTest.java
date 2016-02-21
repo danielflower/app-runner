@@ -11,7 +11,6 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import scaffolding.TestConfig;
 
 import java.io.File;
 import java.net.URI;
@@ -21,7 +20,6 @@ import java.util.concurrent.TimeoutException;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static scaffolding.TestConfig.config;
 
 public class MavenRunnerTest {
 
@@ -44,7 +42,7 @@ public class MavenRunnerTest {
     public void canStartAMavenProcessByPackagingAndRunning() throws InterruptedException, ExecutionException, TimeoutException {
 
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(sampleAppDir(appName), config.javaHome());
+        MavenRunner runner = new MavenRunner(sampleAppDir(appName), JavaHomeProvider.default_java_home);
         try {
             runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")));
 

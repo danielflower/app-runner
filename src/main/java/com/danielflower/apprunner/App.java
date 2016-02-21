@@ -4,13 +4,15 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.*;
+import com.danielflower.apprunner.runners.AppRunner;
+import com.danielflower.apprunner.runners.ExplicitJavaHome;
+import com.danielflower.apprunner.runners.LeinRunner;
+import com.danielflower.apprunner.runners.MavenRunner;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +21,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 
@@ -82,22 +83,17 @@ public class App {
         List<AppRunner.Factory> runnerFactories = new ArrayList<>();
 
         if (config.hasItem("JAVA_HOME")) {
-
             File javaHome = config.javaHome();
 
-            Optional<File> leinJar = config.leinJar();
-            if (leinJar.isPresent()) {
-                runnerFactories.add(new LeinRunner.Factory(
-                    leinJar.get(), config.leinJavaExecutable(), fileSandbox));
-            }
+            config.leinJar().ifPresent(lj -> runnerFactories.add(new LeinRunner.Factory(lj, config.leinJavaExecutable(), fileSandbox)));
 
-            runnerFactories.add(new MavenRunner.Factory(javaHome));
+            runnerFactories.add(new MavenRunner.Factory(new ExplicitJavaHome(javaHome)));
         }
-
 
         for (AppRunner.Factory runnerFactory : runnerFactories) {
             log.info("Registered " + runnerFactory);
         }
+
         return new RunnerProvider(runnerFactories);
     }
 
