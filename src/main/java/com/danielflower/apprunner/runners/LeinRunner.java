@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
@@ -15,12 +16,13 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 
-public class LeinRunner {
+public class LeinRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(LeinRunner.class);
     private final File projectRoot;
     private final File leinJar;
@@ -83,7 +85,38 @@ public class LeinRunner {
 
 
     public void shutdown() {
-        watchDog.destroyProcess();
+        if (watchDog != null) {
+            watchDog.destroyProcess();
+            watchDog.stop();
+        }
+    }
+
+    public static class Factory implements AppRunner.Factory {
+
+        private final File leinJar;
+        private final File javaExec;
+        private final FileSandbox fileSandbox;
+
+        public Factory(File leinJar, File javaExec, FileSandbox fileSandbox) {
+            this.leinJar = leinJar;
+            this.javaExec = javaExec;
+            this.fileSandbox = fileSandbox;
+        }
+
+        @Override
+        public Optional<AppRunner> forProject(String appName, File projectRoot) {
+            File projectClj = new File(projectRoot, "project.clj");
+            if (projectClj.isFile()) {
+                LeinRunner runner = new LeinRunner(projectRoot, leinJar, javaExec, fileSandbox.tempDir(appName));
+                return Optional.of(runner);
+            } else {
+                return Optional.empty();
+            }
+        }
+
+        public String toString() {
+            return "Leiningin runner for Clojure apps using " + leinJar.getName();
+        }
     }
 
 }

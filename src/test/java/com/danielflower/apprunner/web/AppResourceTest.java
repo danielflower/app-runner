@@ -1,13 +1,13 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import org.apache.commons.io.output.NullOutputStream;
 import org.junit.Assert;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
-import scaffolding.Dirs;
 import scaffolding.MockAppDescription;
 
 import javax.ws.rs.WebApplicationException;
@@ -26,9 +26,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AppResourceTest {
 
-    private final MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
-    private final MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    AppEstate estate = new AppEstate(URI.create("http://localhost"), new ProxyMap(), fileSandbox(), Dirs.javaHome);
+    MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
+    MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
+    AppEstate estate = new AppEstate(URI.create("http://localhost"), new ProxyMap(), fileSandbox(), RunnerProvider.empty());
     AppResource appResource = new AppResource(estate);
 
     @Test

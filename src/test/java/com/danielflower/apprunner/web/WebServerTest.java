@@ -2,6 +2,7 @@ package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.FileSandbox;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -12,7 +13,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import scaffolding.Dirs;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -39,11 +39,9 @@ public class WebServerTest {
         client = new HttpClient();
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap, new AppEstate(URI.create("http://localhost"), proxyMap, fileSandbox(), Dirs.javaHome), "test-app");
+        webServer = new WebServer(0, proxyMap, new AppEstate(URI.create("http://localhost"), proxyMap, fileSandbox(), RunnerProvider.empty()), "test-app");
         webServer.start();
-
         appServer = new TestServer();
-
     }
 
     public static FileSandbox fileSandbox() {

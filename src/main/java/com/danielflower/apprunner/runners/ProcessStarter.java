@@ -18,7 +18,7 @@ public class ProcessStarter {
     public static final Logger log = LoggerFactory.getLogger(ProcessStarter.class);
 
     public static ExecuteWatchdog startDaemon(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot) {
-        log.info("Starting " + command);
+        long startTime = logStartInfo(command, projectRoot);
         ExecuteWatchdog watchDog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
         Executor executor = createExecutor(consoleLogHandler, command, projectRoot, watchDog);
 
@@ -42,12 +42,12 @@ public class ProcessStarter {
             throw new ProjectCannotStartException(message, e);
         }
 
-        log.info("Started " + envVarsForApp.get("APP_NAME"));
+        logEndTime(command, startTime);
         return watchDog;
     }
 
     public static void run(InvocationOutputHandler outputHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, long timeout) throws ProjectCannotStartException {
-        log.info(dirPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " "));
+        long startTime = logStartInfo(command, projectRoot);
         ExecuteWatchdog watchDog = new ExecuteWatchdog(timeout);
         Executor executor = createExecutor(outputHandler, command, projectRoot, watchDog);
         try {
@@ -59,11 +59,21 @@ public class ProcessStarter {
                 throw new ProjectCannotStartException(message);
             }
         } catch (Exception e) {
-            String message = "Error running " + command + " at " + dirPath(projectRoot);
+            String message = "Error running: " + dirPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " ");
             outputHandler.consumeLine(message);
             outputHandler.consumeLine(e.toString());
             throw new ProjectCannotStartException(message, e);
         }
+        logEndTime(command, startTime);
+    }
+
+    public static long logStartInfo(CommandLine command, File projectRoot) {
+        log.info("Starting " + dirPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " "));
+        return System.currentTimeMillis();
+    }
+
+    private static void logEndTime(CommandLine command, long startTime) {
+        log.info("Completed " + command.getExecutable() + " in " + (System.currentTimeMillis() - startTime) + "ms");
     }
 
     private static Executor createExecutor(InvocationOutputHandler consoleLogHandler, CommandLine command, File projectRoot, ExecuteWatchdog watchDog) {

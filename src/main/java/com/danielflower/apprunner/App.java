@@ -3,16 +3,20 @@ package com.danielflower.apprunner;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.OutputToWriterBridge;
+import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
@@ -49,7 +53,8 @@ public class App {
         int appRunnerPort = config.getInt(SERVER_PORT);
         URI appRunnerInternalUrl = URI.create("http://localhost:" + appRunnerPort);
 
-        estate = new AppEstate(appRunnerInternalUrl, proxyMap, fileSandbox, config.getDir("JAVA_HOME"));
+        RunnerProvider runnerProvider = createRunnerProvider(config, fileSandbox);
+        estate = new AppEstate(appRunnerInternalUrl, proxyMap, fileSandbox, runnerProvider);
 
 
         for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
@@ -69,6 +74,31 @@ public class App {
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
         webServer = new WebServer(appRunnerPort, proxyMap, estate, defaultAppName);
         webServer.start();
+    }
+
+    public static RunnerProvider createRunnerProvider(Config config, FileSandbox fileSandbox) {
+        List<AppRunner.Factory> runnerFactories = new ArrayList<>();
+
+        if (config.hasItem("JAVA_HOME")) {
+
+            File javaHome = config.getDir("JAVA_HOME");
+
+            if (config.hasItem("LEIN_JAR")) {
+                File leinJavaExecutable = config.hasItem("LEIN_JAVA_CMD")
+                    ? config.getFile("LEIN_JAVA_CMD")
+                    : FileUtils.getFile(javaHome, "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
+                runnerFactories.add(new LeinRunner.Factory(
+                    config.getFile("LEIN_JAR"), leinJavaExecutable, fileSandbox));
+            }
+
+            runnerFactories.add(new MavenRunner.Factory(javaHome));
+        }
+
+
+        for (AppRunner.Factory runnerFactory : runnerFactories) {
+            log.info("Registered " + runnerFactory);
+        }
+        return new RunnerProvider(runnerFactories);
     }
 
     public static void addSampleAppIfNoAppsAlreadyThere(GitRepoLoader gitRepoLoader, Config config) throws Exception {

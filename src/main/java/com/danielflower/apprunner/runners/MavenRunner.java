@@ -13,11 +13,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileReader;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
 
-public class MavenRunner {
+public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     private final File projectRoot;
     private ExecuteWatchdog watchDog;
@@ -76,7 +77,32 @@ public class MavenRunner {
     }
 
     public void shutdown() {
-        watchDog.destroyProcess();
+        if (watchDog != null)
+            watchDog.destroyProcess();
+    }
+
+    public static class Factory implements AppRunner.Factory {
+
+        private final File javaHome;
+
+        public Factory(File javaHome) {
+            this.javaHome = javaHome;
+        }
+
+        @Override
+        public Optional<AppRunner> forProject(String appName, File projectRoot) {
+            File pom = new File(projectRoot, "pom.xml");
+            if (pom.isFile()) {
+                AppRunner runner = new MavenRunner(projectRoot, javaHome);
+                return Optional.of(runner);
+            } else {
+                return Optional.empty();
+            }
+        }
+
+        public String toString() {
+            return "Maven builder for Java using " + dirPath(javaHome);
+        }
     }
 
 }

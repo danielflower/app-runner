@@ -55,11 +55,13 @@ public class LeinRunnerTest {
 
         String appName = "lein";
         LeinRunner runner = new LeinRunner(sampleAppDir(appName), Dirs.leinJar.get(), Dirs.leinJavaExecutable, tempDir);
+        int port = 45678;
         try {
-            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")));
+            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
+                AppManager.createAppEnvVars(port, appName, URI.create("http://localhost")));
 
             try {
-                ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
+                ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));
                 assertThat(resp.getContentAsString(), containsString("Hello from lein"));
                 assertThat(buildLog.toString(), containsString("Ran 1 tests containing 1 assertions"));
@@ -75,6 +77,7 @@ public class LeinRunnerTest {
             System.out.println(consoleLog);
             throw e;
         }
+
     }
 
 

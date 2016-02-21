@@ -24,7 +24,7 @@ public class Dirs {
                 : Optional.empty();
             leinJavaExecutable = config.hasItem("LEIN_JAVA_CMD")
                 ? config.getFile("LEIN_JAVA_CMD")
-                : javaHome;
+                : javaExecutable;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

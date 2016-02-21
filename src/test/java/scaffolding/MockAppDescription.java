@@ -1,6 +1,7 @@
 package scaffolding;
 
 import com.danielflower.apprunner.mgmt.AppDescription;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
 public class MockAppDescription implements AppDescription {
@@ -33,7 +34,8 @@ public class MockAppDescription implements AppDescription {
     public void stopApp() {
     }
 
-    public void update(InvocationOutputHandler outputHandler) throws Exception {
+    @Override
+    public void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         ++updateCount;
     }
 }

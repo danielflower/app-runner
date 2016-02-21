@@ -2,7 +2,8 @@ package com.danielflower.apprunner.mgmt;
 
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
-import com.danielflower.apprunner.runners.MavenRunner;
+import com.danielflower.apprunner.runners.AppRunner;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.io.FileUtils;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
 
-    public static AppManager create(String gitUrl, FileSandbox fileSandbox, File javaHome, String name, URI appRunnerInternalUrl) {
+    public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name, URI appRunnerInternalUrl) {
         File root = fileSandbox.appDir(name);
         File gitDir = fileSandbox.appDir(name, "repo");
         File instanceDir = fileSandbox.appDir(name, "instances");
@@ -54,26 +55,24 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remove on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, gitUrl, git, instanceDir, javaHome, appRunnerInternalUrl);
+        return new AppManager(name, gitUrl, git, instanceDir, appRunnerInternalUrl);
     }
 
     private final String gitUrl;
     private final String name;
     private final Git git;
     private final File instanceDir;
-    private final File javaHome;
     private final URI appRunnerInternalUrl;
     private final List<AppChangeListener> listeners = new ArrayList<>();
-    private MavenRunner currentRunner;
+    private AppRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir, File javaHome, URI appRunnerInternalUrl) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, URI appRunnerInternalUrl) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
-        this.javaHome = javaHome;
         this.appRunnerInternalUrl = appRunnerInternalUrl;
     }
 
@@ -102,7 +101,7 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public synchronized void update(InvocationOutputHandler outputHandler) throws GitAPIException, IOException {
+    public synchronized void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws GitAPIException, IOException {
         clearLogs();
 
         InvocationOutputHandler buildLogHandler = line -> {
@@ -116,10 +115,12 @@ public class AppManager implements AppDescription {
         };
 
 
+
         git.pull().setRemote("origin").call();
         File id = copyToNewInstanceDir();
-        MavenRunner oldRunner = currentRunner;
-        currentRunner = new MavenRunner(id, javaHome);
+
+        AppRunner oldRunner = currentRunner;
+        currentRunner = runnerProvider.runnerFor(name(), id);
         int port = WebServer.getAFreePort();
 
         HashMap<String, String> envVarsForApp = createAppEnvVars(port, name, appRunnerInternalUrl);

@@ -27,7 +27,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
 
-public class LocalGitRepoTest {
+public class MavenTest {
 
     final String port = "48183";
     final String appRunnerUrl = "http://localhost:" + port;

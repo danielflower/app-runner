@@ -3,12 +3,12 @@ package com.danielflower.apprunner;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import com.danielflower.apprunner.web.ProxyMap;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
@@ -25,13 +25,13 @@ public class AppEstate {
     private final ProxyMap proxyMap;
     private final FileSandbox fileSandbox;
     private final List<AppAddedListener> appAddedListeners = new ArrayList<>();
-    private final File javaHome;
+    private final RunnerProvider runnerProvider;
 
-    public AppEstate(URI appRunnerInternalUrl, ProxyMap proxyMap, FileSandbox fileSandbox, File javaHome) {
+    public AppEstate(URI appRunnerInternalUrl, ProxyMap proxyMap, FileSandbox fileSandbox, RunnerProvider runnerProvider) {
         this.appRunnerInternalUrl = appRunnerInternalUrl;
         this.proxyMap = proxyMap;
         this.fileSandbox = fileSandbox;
-        this.javaHome = javaHome;
+        this.runnerProvider = runnerProvider;
     }
 
     public void add(AppDescription appMan) throws IOException {
@@ -57,7 +57,7 @@ public class AppEstate {
     }
 
     public AppDescription addApp(String gitUrl, String appName) throws Exception {
-        AppManager appMan = AppManager.create(gitUrl, fileSandbox, javaHome, appName, appRunnerInternalUrl);
+        AppManager appMan = AppManager.create(gitUrl, fileSandbox, appName, appRunnerInternalUrl);
         appMan.addListener(proxyMap::add);
         this.add(appMan);
         return appMan;
@@ -66,7 +66,7 @@ public class AppEstate {
     public void update(String name, InvocationOutputHandler outputHandler) throws Exception {
         for (AppDescription manager : managers) {
             if (manager.name().equalsIgnoreCase(name)) {
-                manager.update(outputHandler);
+                manager.update(runnerProvider, outputHandler);
                 return;
             }
         }
