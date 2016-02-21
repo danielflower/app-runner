@@ -3,6 +3,7 @@ package com.danielflower.apprunner;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.InvalidConfigException;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
@@ -61,9 +62,15 @@ public class Config {
             : Optional.empty();
     }
 
+    public Optional<File> nodeExecutable() {
+        return hasItem("NODE_HOME")
+            ? Optional.of(new File(getDir("NODE_HOME"), windowsinize("node")))
+            : Optional.empty();
+    }
+
     public Optional<File> npmExecutable() {
-        return hasItem("NPM_CMD")
-            ? Optional.of(getFile("NPM_CMD"))
+        return hasItem("NODE_HOME")
+            ? Optional.of(new File(getDir("NODE_HOME"), FilenameUtils.separatorsToSystem("node_modules\\npm\\bin\\npm-cli.js")))
             : Optional.empty();
     }
 
@@ -72,7 +79,11 @@ public class Config {
     }
 
     public static String javaExecutableName() {
-        return SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java";
+        return windowsinize("java");
+    }
+
+    private static String windowsinize(String command) {
+        return SystemUtils.IS_OS_WINDOWS ? command + ".exe" : command;
     }
 
     public File javaHome() {

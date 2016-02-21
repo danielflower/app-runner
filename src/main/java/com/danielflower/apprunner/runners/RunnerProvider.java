@@ -26,7 +26,7 @@ public class RunnerProvider {
                 return actual;
             }
         }
-        throw new UnsupportedProjectTypeException("No app runner found for " + projectRoot.getName());
+        throw new UnsupportedProjectTypeException("No app runner found for " + appName);
     }
 
     public static RunnerProvider empty() {

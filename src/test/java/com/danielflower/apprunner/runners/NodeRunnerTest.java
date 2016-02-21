@@ -25,7 +25,7 @@ public class NodeRunnerTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        Assume.assumeTrue("Skipping tests as NPM not detected", config.npmExecutable().isPresent());
+        Assume.assumeTrue("Skipping tests as NPM not detected", config.nodeExecutable().isPresent());
 
         client = new HttpClient();
         client.start();
@@ -39,18 +39,17 @@ public class NodeRunnerTest {
     }
 
     @Test
-    @Ignore
-    public void canStartAndStopLeinProjects() throws InterruptedException, ExecutionException, TimeoutException {
+    public void canStartAndStopNpmProjects() throws InterruptedException, ExecutionException, TimeoutException {
         // doing it twice proves the port was cleaned up
-        canStartALeinProject(1);
-        canStartALeinProject(2);
+        run(1);
+        run(2);
     }
 
-    public void canStartALeinProject(int attempt) throws InterruptedException, ExecutionException, TimeoutException {
+    public void run(int attempt) throws InterruptedException, ExecutionException, TimeoutException {
 
-        String appName = "lein";
-        NodeRunner runner = new NodeRunner(sampleAppDir(appName), config.npmExecutable().get());
-        int port = 45678;
+        String appName = "nodejs";
+        NodeRunner runner = new NodeRunner(sampleAppDir(appName), config.nodeExecutable().get(), config.npmExecutable().get());
+        int port = 45688;
         try {
             runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
                 AppManager.createAppEnvVars(port, appName, URI.create("http://localhost")));
@@ -58,8 +57,8 @@ public class NodeRunnerTest {
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));
-                assertThat(resp.getContentAsString(), containsString("Hello from lein"));
-                assertThat(buildLog.toString(), containsString("Ran 1 tests containing 1 assertions"));
+                assertThat(resp.getContentAsString(), containsString("Hello from nodejs!"));
+                assertThat(buildLog.toString(), containsString("Running npm install"));
             } finally {
                 runner.shutdown();
             }

@@ -4,11 +4,7 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.AppRunner;
-import com.danielflower.apprunner.runners.ExplicitJavaHome;
-import com.danielflower.apprunner.runners.LeinRunner;
-import com.danielflower.apprunner.runners.MavenRunner;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -90,10 +86,11 @@ public class App {
             runnerFactories.add(new MavenRunner.Factory(new ExplicitJavaHome(javaHome)));
         }
 
+        config.nodeExecutable().ifPresent(node -> runnerFactories.add(new NodeRunner.Factory(node, config.npmExecutable().get())));
+
         for (AppRunner.Factory runnerFactory : runnerFactories) {
             log.info("Registered " + runnerFactory);
         }
-
         return new RunnerProvider(runnerFactories);
     }
 

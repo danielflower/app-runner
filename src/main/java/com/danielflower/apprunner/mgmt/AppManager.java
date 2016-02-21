@@ -145,7 +145,7 @@ public class AppManager implements AppDescription {
     }
 
     public static HashMap<String, String> createAppEnvVars(int port, String name, URI appRunnerInternalUrl) {
-        HashMap<String, String> envVarsForApp = new HashMap<>();
+        HashMap<String, String> envVarsForApp = new HashMap<>(System.getenv());
         envVarsForApp.put("APP_PORT", String.valueOf(port));
         envVarsForApp.put("APP_NAME", name);
         envVarsForApp.put("APP_ENV", "prod");

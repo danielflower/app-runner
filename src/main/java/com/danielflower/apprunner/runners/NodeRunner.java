@@ -17,27 +17,29 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 public class NodeRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(NodeRunner.class);
     private final File projectRoot;
+    private final File nodeExec;
     private final File npmExec;
     private ExecuteWatchdog watchDog;
 
-    public NodeRunner(File projectRoot, File npmExec) {
+    public NodeRunner(File projectRoot, File nodeExec, File npmExec) {
         this.projectRoot = projectRoot;
+        this.nodeExec = nodeExec;
         this.npmExec = npmExec;
     }
-
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
         runNPM(buildLogHandler, envVarsForApp, "install");
         runNPM(buildLogHandler, envVarsForApp, "test");
 
-        CommandLine command = new CommandLine(npmExec);
-        command.addArgument("start");
+        CommandLine command = new CommandLine(nodeExec)
+            .addArgument("server.js");
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot);
     }
 
     public void runNPM(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String argument) {
-        CommandLine command = new CommandLine(npmExec)
+        CommandLine command = new CommandLine(nodeExec)
+            .addArgument(dirPath(npmExec))
             .addArgument(argument);
         buildLogHandler.consumeLine("Running npm " + argument);
         ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, TimeUnit.MINUTES.toMillis(20));
@@ -53,9 +55,11 @@ public class NodeRunner implements AppRunner {
 
     public static class Factory implements AppRunner.Factory {
 
+        private final File nodeExec;
         private final File npmExec;
 
-        public Factory(File npmExec) {
+        public Factory(File nodeExec, File npmExec) {
+            this.nodeExec = nodeExec;
             this.npmExec = npmExec;
         }
 
@@ -63,7 +67,7 @@ public class NodeRunner implements AppRunner {
         public Optional<AppRunner> forProject(String appName, File projectRoot) {
             File projectClj = new File(projectRoot, "package.json");
             return projectClj.isFile()
-                ? Optional.of(new NodeRunner(projectRoot, npmExec))
+                ? Optional.of(new NodeRunner(projectRoot, nodeExec, npmExec))
                 : Optional.empty();
         }
 

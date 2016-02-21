@@ -5,5 +5,9 @@
   "scripts": {
     "start": "",
     "test": "echo \"No test specified\""
-  }
+  },
+  "dependencies": {
+    "stringutils": "0.0.1"
+  },
+  "private": true
 }

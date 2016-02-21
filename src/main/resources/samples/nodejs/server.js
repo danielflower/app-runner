@@ -9,5 +9,6 @@ var requestListener = function (req, res) {
 };
 
 var server = http.createServer(requestListener);
-server.listen(port);
-console.log('Service started at http://localhost:' + port + '/' + appName + '/');
+server.listen(port, 'localhost', function () {
+    console.log('Service started at http://localhost:' + port + '/' + appName + '/');
+});
