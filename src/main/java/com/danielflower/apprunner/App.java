@@ -1,5 +1,6 @@
 package com.danielflower.apprunner;
 
+import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
@@ -18,6 +19,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 
@@ -81,14 +83,12 @@ public class App {
 
         if (config.hasItem("JAVA_HOME")) {
 
-            File javaHome = config.getDir("JAVA_HOME");
+            File javaHome = config.javaHome();
 
-            if (config.hasItem("LEIN_JAR")) {
-                File leinJavaExecutable = config.hasItem("LEIN_JAVA_CMD")
-                    ? config.getFile("LEIN_JAVA_CMD")
-                    : FileUtils.getFile(javaHome, "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
+            Optional<File> leinJar = config.leinJar();
+            if (leinJar.isPresent()) {
                 runnerFactories.add(new LeinRunner.Factory(
-                    config.getFile("LEIN_JAR"), leinJavaExecutable, fileSandbox));
+                    leinJar.get(), config.leinJavaExecutable(), fileSandbox));
             }
 
             runnerFactories.add(new MavenRunner.Factory(javaHome));

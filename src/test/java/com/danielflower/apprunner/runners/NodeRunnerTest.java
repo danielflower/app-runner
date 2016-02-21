@@ -2,17 +2,11 @@ package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.junit.AfterClass;
-import org.junit.Assume;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import scaffolding.TestConfig;
+import org.junit.*;
 
-import java.io.File;
 import java.net.URI;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
@@ -23,20 +17,18 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.TestConfig.config;
 
-public class LeinRunnerTest {
+public class NodeRunnerTest {
 
     private static HttpClient client;
     private StringBuilderWriter buildLog = new StringBuilderWriter();
     private StringBuilderWriter consoleLog = new StringBuilderWriter();
-    private static File tempDir = new File("target/temp");
 
     @BeforeClass
     public static void setup() throws Exception {
-        Assume.assumeTrue("Skipping tests as LEIN not detected", config.leinJar().isPresent());
+        Assume.assumeTrue("Skipping tests as NPM not detected", config.npmExecutable().isPresent());
 
         client = new HttpClient();
         client.start();
-        FileUtils.forceMkdir(tempDir);
     }
 
     @AfterClass
@@ -47,6 +39,7 @@ public class LeinRunnerTest {
     }
 
     @Test
+    @Ignore
     public void canStartAndStopLeinProjects() throws InterruptedException, ExecutionException, TimeoutException {
         // doing it twice proves the port was cleaned up
         canStartALeinProject(1);
@@ -56,7 +49,7 @@ public class LeinRunnerTest {
     public void canStartALeinProject(int attempt) throws InterruptedException, ExecutionException, TimeoutException {
 
         String appName = "lein";
-        LeinRunner runner = new LeinRunner(sampleAppDir(appName), config.leinJar().get(), config.leinJavaExecutable(), tempDir);
+        NodeRunner runner = new NodeRunner(sampleAppDir(appName), config.npmExecutable().get());
         int port = 45678;
         try {
             runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),

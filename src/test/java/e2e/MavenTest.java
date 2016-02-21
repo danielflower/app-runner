@@ -15,17 +15,15 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
-import scaffolding.Dirs;
 
 import java.io.File;
 import java.util.HashMap;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
-import static org.hamcrest.CoreMatchers.allOf;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
+import static scaffolding.TestConfig.config;
 
 public class MavenTest {
 
@@ -33,10 +31,10 @@ public class MavenTest {
     final String appRunnerUrl = "http://localhost:" + port;
     final String appResourceUri = appRunnerUrl + "/api/v1/apps";
 
-    final App app = new App(new Config(new HashMap() {{
+    final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_PORT, port);
         put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
-        put("JAVA_HOME", dirPath(Dirs.javaHome));
+        put("JAVA_HOME", dirPath(config.javaHome()));
     }}));
 
     final HttpClient client = new HttpClient();

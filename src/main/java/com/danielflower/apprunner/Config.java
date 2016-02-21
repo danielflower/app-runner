@@ -4,12 +4,14 @@ import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.InvalidConfigException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
@@ -45,6 +47,32 @@ public class Config {
 
     public Config(Map<String, String> raw) {
         this.raw = raw;
+    }
+
+    public File leinJavaExecutable() {
+        return hasItem("LEIN_JAVA_CMD")
+            ? getFile("LEIN_JAVA_CMD")
+            : javaExecutable();
+    }
+
+    public Optional<File> leinJar() {
+        return hasItem("LEIN_JAR")
+            ? Optional.of(getFile("LEIN_JAR"))
+            : Optional.empty();
+    }
+
+    public Optional<File> npmExecutable() {
+        return hasItem("NPM_CMD")
+            ? Optional.of(getFile("NPM_CMD"))
+            : Optional.empty();
+    }
+
+    public File javaExecutable() {
+        return FileUtils.getFile(javaHome(), "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java");
+    }
+
+    public File javaHome() {
+        return getDir("JAVA_HOME");
     }
 
     public String get(String name, String defaultVal) {

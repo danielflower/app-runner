@@ -1,4 +1,4 @@
-package com.danielflower.apprunner.runners;
+package com.danielflower.apprunner.io;
 
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 

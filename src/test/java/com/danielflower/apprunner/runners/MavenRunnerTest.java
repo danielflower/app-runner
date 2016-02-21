@@ -1,6 +1,7 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.FileSandbox;
+import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
@@ -10,7 +11,7 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import scaffolding.Dirs;
+import scaffolding.TestConfig;
 
 import java.io.File;
 import java.net.URI;
@@ -20,6 +21,7 @@ import java.util.concurrent.TimeoutException;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static scaffolding.TestConfig.config;
 
 public class MavenRunnerTest {
 
@@ -42,7 +44,7 @@ public class MavenRunnerTest {
     public void canStartAMavenProcessByPackagingAndRunning() throws InterruptedException, ExecutionException, TimeoutException {
 
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(sampleAppDir(appName), Dirs.javaHome);
+        MavenRunner runner = new MavenRunner(sampleAppDir(appName), config.javaHome());
         try {
             runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")));
 

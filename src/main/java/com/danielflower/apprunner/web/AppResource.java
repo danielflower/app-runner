@@ -4,7 +4,7 @@ import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
-import com.danielflower.apprunner.runners.OutputToWriterBridge;
+import com.danielflower.apprunner.io.OutputToWriterBridge;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

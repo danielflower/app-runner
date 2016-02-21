@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.io.WriterToOutputBridge;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.*;
 import org.apache.commons.lang3.StringUtils;

@@ -1,0 +1,9 @@
+{
+  "name": "nodeapp",
+  "version": "1.0.0",
+  "description": "Sample node app",
+  "scripts": {
+    "start": "",
+    "test": "echo \"No test specified\""
+  }
+}

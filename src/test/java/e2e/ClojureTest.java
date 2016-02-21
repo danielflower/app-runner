@@ -8,7 +8,6 @@ import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.junit.*;
 import scaffolding.AppRepo;
-import scaffolding.Dirs;
 
 import java.io.File;
 import java.util.HashMap;
@@ -18,6 +17,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
+import static scaffolding.TestConfig.config;
 
 public class ClojureTest {
 
@@ -25,11 +25,11 @@ public class ClojureTest {
     final String appRunnerUrl = "http://localhost:" + port;
     final String appResourceUri = appRunnerUrl + "/api/v1/apps";
 
-    final App app = new App(new Config(new HashMap() {{
+    final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_PORT, port);
         put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
-        put("JAVA_HOME", dirPath(Dirs.javaHome));
-        put("LEIN_JAR", dirPath(Dirs.leinJar.get()));
+        put("JAVA_HOME", dirPath(config.javaHome()));
+        put("LEIN_JAR", dirPath(config.leinJar().get()));
     }}));
 
     final HttpClient client = new HttpClient();
@@ -39,7 +39,7 @@ public class ClojureTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        Assume.assumeTrue("Skipping tests as LEIN not detected", Dirs.leinJar.isPresent());
+        Assume.assumeTrue("Skipping tests as LEIN not detected", config.leinJar().isPresent());
     }
 
     @Before public void start() throws Exception {
