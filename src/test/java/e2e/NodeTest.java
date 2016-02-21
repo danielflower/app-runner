@@ -2,12 +2,9 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.util.FormContentProvider;
-import org.eclipse.jetty.util.Fields;
 import org.junit.*;
 import scaffolding.AppRepo;
+import scaffolding.RestClient;
 
 import java.io.File;
 import java.util.HashMap;
@@ -21,9 +18,16 @@ import static scaffolding.TestConfig.config;
 
 public class NodeTest {
 
+    @BeforeClass
+    public static void skipIfUnsupported() throws Exception {
+        Assume.assumeTrue("Skipping tests as Node not detected", config.nodeExecutable().isPresent());
+    }
+
     final String port = "48189";
     final String appRunnerUrl = "http://localhost:" + port;
-    final String appResourceUri = appRunnerUrl + "/api/v1/apps";
+    final RestClient restClient = RestClient.create(appRunnerUrl);
+    final String appId = "nodejs";
+    final AppRepo appRepo = AppRepo.create(appId);
 
     final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_PORT, port);
@@ -31,48 +35,20 @@ public class NodeTest {
         put("NODE_HOME", dirPath(config.nodeExecutable().get().getParentFile()));
     }}));
 
-    final HttpClient client = new HttpClient();
-    final String appId = "nodejs";
-
-    AppRepo appRepo;
-
-    @BeforeClass
-    public static void setup() throws Exception {
-        Assume.assumeTrue("Skipping tests as LEIN not detected", config.leinJar().isPresent());
-    }
-
     @Before public void start() throws Exception {
-        client.start();
-
-        appRepo = AppRepo.create(appId);
         app.start();
-
-        ContentResponse created = client.POST(appResourceUri)
-            .content(new FormContentProvider(new Fields() {{
-                add("gitUrl", appRepo.gitUrl());
-            }}))
-            .send();
-
-        assertThat(created.getStatus(), is(201));
-
-        ContentResponse update = client.POST(appResourceUri + "/" + appId + "/deploy").send();
-        assertThat(update.getStatus(), is(200));
-    }
-
-    @After public void stopClient() throws Exception {
-        client.stop();
     }
 
     @After public void shutdownApp() {
+        restClient.stop();
         app.shutdown();
     }
 
     @Test
-    public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
-        assertThat(
-            client.GET(appRunnerUrl + "/" + appId + "/"),
-            is(equalTo(200, containsString("Hello from nodejs!"))));
-
+    public void canCreateAnAppViaTheRestAPI() throws Exception {
+        assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
+        assertThat(restClient.deploy(appId).getStatus(), is(200));
+        assertThat(restClient.homepage(appId), is(equalTo(200, containsString("Hello from nodejs!"))));
     }
 
 }
