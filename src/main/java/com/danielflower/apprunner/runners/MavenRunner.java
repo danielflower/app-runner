@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -24,13 +25,16 @@ import static java.util.Arrays.asList;
 
 public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
+    public static final List<String> CLEAN_AND_PACKAGE = asList("clean", "package");
     private final File projectRoot;
     private final JavaHomeProvider javaHomeProvider;
     private ExecuteWatchdog watchDog;
+    private final List<String> goals;
 
-    public MavenRunner(File projectRoot, JavaHomeProvider javaHomeProvider) {
+    public MavenRunner(File projectRoot, JavaHomeProvider javaHomeProvider, List<String> goals) {
         this.projectRoot = projectRoot;
         this.javaHomeProvider = javaHomeProvider;
+        this.goals = goals;
     }
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
@@ -40,7 +44,7 @@ public class MavenRunner implements AppRunner {
             .setPomFile(pomFile)
             .setOutputHandler(buildLogHandler)
             .setErrorHandler(buildLogHandler)
-            .setGoals(asList("clean", "package"))
+            .setGoals(goals)
             .setBaseDirectory(projectRoot);
 
         request = javaHomeProvider.mungeMavenInvocationRequest(request);
@@ -57,16 +61,8 @@ public class MavenRunner implements AppRunner {
         }
         log.info("Build successful. Going to start app.");
 
-        String jarName;
-        try {
-            MavenXpp3Reader reader = new MavenXpp3Reader();
-            try (FileReader pomReader = new FileReader(pomFile)) {
-                Model model = reader.read(pomReader);
-                jarName = model.getArtifactId() + "-" + model.getVersion() + ".jar";
-            }
-        } catch (Exception e) {
-            throw new ProjectCannotStartException("Error while reading maven meta data", e);
-        }
+        Model model = loadPomModel(pomFile);
+        String jarName = model.getArtifactId() + "-" + model.getVersion() + ".jar";
 
         File jar = new File(new File(projectRoot, "target"), jarName);
         if (!jar.isFile()) {
@@ -79,9 +75,23 @@ public class MavenRunner implements AppRunner {
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot);
     }
 
+    public static Model loadPomModel(File pomFile) {
+        Model model;
+        try {
+            MavenXpp3Reader reader = new MavenXpp3Reader();
+            try (FileReader pomReader = new FileReader(pomFile)) {
+                model = reader.read(pomReader);
+            }
+        } catch (Exception e) {
+            throw new ProjectCannotStartException("Error while reading maven meta data", e);
+        }
+        return model;
+    }
+
     public void shutdown() {
-        if (watchDog != null)
+        if (watchDog != null) {
             watchDog.destroyProcess();
+        }
     }
 
     public static class Factory implements AppRunner.Factory {
@@ -96,7 +106,7 @@ public class MavenRunner implements AppRunner {
         public Optional<AppRunner> forProject(String appName, File projectRoot) {
             File pom = new File(projectRoot, "pom.xml");
             if (pom.isFile()) {
-                AppRunner runner = new MavenRunner(projectRoot, javaHomeProvider);
+                AppRunner runner = new MavenRunner(projectRoot, javaHomeProvider, CLEAN_AND_PACKAGE);
                 return Optional.of(runner);
             } else {
                 return Optional.empty();

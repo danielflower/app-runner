@@ -13,6 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,6 +119,7 @@ public class App {
                 log.info("Error while stopping", e);
             }
             log.info("Shutdown complete");
+            webServer = null;
         }
     }
 

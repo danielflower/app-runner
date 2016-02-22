@@ -1,77 +1,113 @@
 package e2e;
 
-import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
+import com.danielflower.apprunner.runners.JavaHomeProvider;
+import com.danielflower.apprunner.runners.MavenRunner;
+import com.danielflower.apprunner.web.AppResource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.apache.maven.shared.invoker.SystemOutHandler;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.util.Fields;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
 import scaffolding.RestClient;
+import scaffolding.TestConfig;
 
+import java.io.EOFException;
 import java.io.File;
+import java.io.IOException;
+import java.net.ConnectException;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
-import static scaffolding.TestConfig.config;
 
 public class SystemTest {
 
-    final String port = "48183";
-    final String appRunnerUrl = "http://localhost:" + port;
+    static final String port = "48183";
+    static final String appRunnerUrl = "http://localhost:" + port;
     final RestClient restClient = RestClient.create(appRunnerUrl);
-    final HttpClient client = new HttpClient();
+    static final HttpClient client = new HttpClient();
     final String appId = "maven";
     final AppRepo appRepo = AppRepo.create(appId);
-    final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
-    App app = startedApp();
+    static final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
+    static MavenRunner mavenRunner;
 
-    private App startedApp() {
-        App app = new App(new Config(new HashMap<String, String>() {{
+
+    @BeforeClass
+    public static void buildAndStartUberJar() throws MavenInvocationException {
+        mavenRunner = new MavenRunner(new File("."), JavaHomeProvider.default_java_home,
+            asList("-DskipTests=true", "package"));
+        Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
             put(Config.SERVER_PORT, port);
             put(Config.DATA_DIR, dirPath(dataDir));
-            put("JAVA_HOME", dirPath(config.javaHome()));
-        }}));
+            put("JAVA_HOME", dirPath(TestConfig.config.javaHome()));
+        }};
+        InvocationOutputHandler logHandler = line -> System.out.println("Test build output > " + line);
+        mavenRunner.start(logHandler, logHandler, env);
+    }
+
+    @AfterClass
+    public static void shutDownAppRunner() throws InterruptedException, ExecutionException, TimeoutException {
         try {
-            app.start();
-        } catch (Exception e) {
-            throw new RuntimeException("Couldn't start test app", e);
+            client.POST(appRunnerUrl + "/api/v1/apps/die")
+                .content(new FormContentProvider(new Fields() {{
+                    add("password", AppResource.deathPassword);
+                }})).send();
+        } catch (ExecutionException e) {
+            // this is expected... it dies before the execution is complete
         }
-        return app;
+        mavenRunner.shutdown();
     }
 
+    static boolean alreadyCreated = false;
 
-    @Before public void start() throws Exception {
+    @Before
+    public void start() throws Exception {
         client.start();
-        assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
-        assertThat(restClient.deploy(appId).getStatus(), is(200));
+        if (!alreadyCreated) {
+            assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
+            assertThat(restClient.deploy(appId).getStatus(), is(200));
+            alreadyCreated = true;
+            // This is so offensive and terrible. I'm sorry.
+        }
     }
 
-    @After public void stopClient() throws Exception {
+    @After
+    public void stopClient() throws Exception {
         restClient.stop();
         client.stop();
-    }
-
-    @After public void shutdownApp() {
-        app.shutdown();
     }
 
     @Test
     public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
         assertThat(restClient.homepage(appId), is(equalTo(200, containsString("My Maven App"))));
 
-        app.shutdown();
-        app = startedApp();
-
+        shutDownAppRunner();
+        buildAndStartUberJar();
+        while (true) {
+            try {
+                restClient.homepage(appId);
+                break;
+            } catch (ExecutionException e) {
+                Thread.sleep(500);
+                // it's starting up
+            }
+        }
         assertThat(restClient.homepage(appId), is(equalTo(200, containsString("My Maven App"))));
 
         File indexHtml = new File(appRepo.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));

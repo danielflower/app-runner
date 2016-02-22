@@ -109,6 +109,19 @@ public class AppResource {
     }
 
 
+    // TODO move this to a management thingy, or delete it, or something.
+    public static String deathPassword = "KJSDFHJKSHDFJKHSKJDFHISD";
+    @POST
+    @Produces(MediaType.TEXT_PLAIN)
+    @Path("/die")
+    public void die(@FormParam("password") String password) {
+        if (deathPassword.equals(password)) {
+            log.info("I was instructed to die. So I'll try.");
+            System.exit(0);
+        }
+    }
+
+
     @POST /* Maybe should be PUT, but too many hooks only use POST */
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{name}/deploy")

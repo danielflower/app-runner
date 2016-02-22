@@ -42,7 +42,7 @@ public class MavenRunnerTest {
     public void canStartAMavenProcessByPackagingAndRunning() throws InterruptedException, ExecutionException, TimeoutException {
 
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(sampleAppDir(appName), JavaHomeProvider.default_java_home);
+        MavenRunner runner = new MavenRunner(sampleAppDir(appName), JavaHomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
         try {
             runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")));
 

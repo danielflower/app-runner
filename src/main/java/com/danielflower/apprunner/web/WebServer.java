@@ -14,6 +14,7 @@ import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
@@ -65,6 +66,7 @@ public class WebServer implements AutoCloseable {
     private Handler createRestService(AppEstate estate) {
         ResourceConfig rc = new ResourceConfig();
         rc.register(new AppResource(estate));
+        rc.register(JacksonFeature.class);
 
         ServletHolder holder = new ServletHolder(new ServletContainer(rc));
 
