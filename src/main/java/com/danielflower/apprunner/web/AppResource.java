@@ -43,7 +43,7 @@ public class AppResource {
             .forEach(d -> apps.add(
                 appJson(uriInfo.getRequestUri(), d)));
         result.put("apps", apps);
-        return result.toString();
+        return result.toString(4);
     }
 
     @GET
