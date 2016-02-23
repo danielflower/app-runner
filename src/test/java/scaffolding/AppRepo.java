@@ -20,16 +20,18 @@ public class AppRepo {
             origin.add().addFilepattern(".").call();
             origin.commit().setMessage("Initial commit").call();
 
-            return new AppRepo(originDir, origin);
+            return new AppRepo(name, originDir, origin);
         } catch (Exception e) {
             throw new RuntimeException("Error while creating git repo", e);
         }
     }
 
+    public final String name;
     public final File originDir;
     public final Git origin;
 
-    private AppRepo(File originDir, Git origin) {
+    private AppRepo(String name, File originDir, Git origin) {
+        this.name = name;
         this.originDir = originDir;
         this.origin = origin;
     }

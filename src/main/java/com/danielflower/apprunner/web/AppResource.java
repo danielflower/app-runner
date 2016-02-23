@@ -108,20 +108,6 @@ public class AppResource {
         }
     }
 
-
-    // TODO move this to a management thingy, or delete it, or something.
-    public static String deathPassword = "KJSDFHJKSHDFJKHSKJDFHISD";
-    @POST
-    @Produces(MediaType.TEXT_PLAIN)
-    @Path("/die")
-    public void die(@FormParam("password") String password) {
-        if (deathPassword.equals(password)) {
-            log.info("I was instructed to die. So I'll try.");
-            System.exit(0);
-        }
-    }
-
-
     @POST /* Maybe should be PUT, but too many hooks only use POST */
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{name}/deploy")
@@ -139,9 +125,6 @@ public class AppResource {
 
         @Override
         public void write(OutputStream output) throws IOException, WebApplicationException {
-//            Writer fileWriter = new FileWriter("build.log");
-//            Writer compositeWriter = new CompositeWriter();
-
             try (Writer writer = new OutputStreamWriter(output)) {
                 writer.write("Going to build and deploy " + name + "\n");
                 log.info("Going to update " + name);

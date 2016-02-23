@@ -44,9 +44,13 @@ public class WebServer implements AutoCloseable {
         jettyServer = new Server(port);
     }
 
-    public static int getAFreePort() throws IOException {
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            return serverSocket.getLocalPort();
+    public static int getAFreePort() {
+        try {
+            try (ServerSocket serverSocket = new ServerSocket(0)) {
+                return serverSocket.getLocalPort();
+            }
+        } catch (IOException e) {
+            throw new AppRunnerException("Unable to get a port", e);
         }
     }
 

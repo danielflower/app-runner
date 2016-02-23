@@ -4,6 +4,7 @@ import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.runners.JavaHomeProvider;
 import com.danielflower.apprunner.runners.MavenRunner;
 import com.danielflower.apprunner.runners.Waiter;
+import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -20,8 +21,8 @@ import scaffolding.TestConfig;
 import java.io.File;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
@@ -32,29 +33,34 @@ import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
 
-    static final String port = "48183";
+    static final int port = WebServer.getAFreePort();
     static final String appRunnerUrl = "http://localhost:" + port;
     static final RestClient restClient = RestClient.create(appRunnerUrl);
     static final HttpClient client = new HttpClient();
-    static final String appName = "maven";
-    static final AppRepo appRepo = AppRepo.create(appName);
+    static final AppRepo leinApp = AppRepo.create("lein");
+    static final AppRepo mavenApp = AppRepo.create("maven");
+    static final AppRepo nodeApp = AppRepo.create("nodejs");
     static final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
     static MavenRunner mavenRunner;
+    private static List<AppRepo> apps = asList(mavenApp, nodeApp, leinApp);
 
 
     @BeforeClass
     public static void setup() throws Exception {
-        buildAndStartUberJar();
         client.start();
-        assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
-        assertThat(restClient.deploy(appName).getStatus(), is(200));
+        buildAndStartUberJar();
+
+        for (AppRepo app : apps) {
+            assertThat(restClient.createApp(app.gitUrl()).getStatus(), is(201));
+            assertThat(restClient.deploy(app.name).getStatus(), is(200));
+        }
     }
 
     public static void buildAndStartUberJar() throws Exception {
         mavenRunner = new MavenRunner(new File("."), JavaHomeProvider.default_java_home,
             asList("-DskipTests=true", "package"));
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
-            put(Config.SERVER_PORT, port);
+            put(Config.SERVER_PORT, String.valueOf(port));
             put(Config.DATA_DIR, dirPath(dataDir));
             put("JAVA_HOME", dirPath(TestConfig.config.javaHome()));
         }};
@@ -66,7 +72,9 @@ public class SystemTest {
     }
 
     public static void shutDownAppRunner() throws Exception {
-        restClient.stop(appName);
+        for (AppRepo app : apps) {
+            restClient.stop(app.name);
+        }
         mavenRunner.shutdown();
     }
 
@@ -77,28 +85,41 @@ public class SystemTest {
         client.stop();
     }
 
+    @Test
+    public void leinAppsWork() throws Exception {
+        assertThat(restClient.homepage(leinApp.name),
+            is(equalTo(200, containsString("Hello from lein"))));
+    }
+
+    @Test
+    public void nodeAppsWork() throws Exception {
+        assertThat(restClient.homepage(nodeApp.name),
+            is(equalTo(200, containsString("Hello from nodejs!"))));
+    }
 
     @Test
     public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
-        assertThat(restClient.homepage(appName), is(equalTo(200, containsString("My Maven App"))));
+        assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
 
         shutDownAppRunner();
         buildAndStartUberJar();
 
-        assertThat(restClient.homepage(appName), is(equalTo(200, containsString("My Maven App"))));
+        assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
+        leinAppsWork();
+        nodeAppsWork();
 
-        File indexHtml = new File(appRepo.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
+        File indexHtml = new File(mavenApp.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
         String newVersion = FileUtils.readFileToString(indexHtml).replace("My Maven App", "My new and improved maven app!");
         FileUtils.write(indexHtml, newVersion, false);
-        appRepo.origin.add().addFilepattern(".").call();
-        appRepo.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
+        mavenApp.origin.add().addFilepattern(".").call();
+        mavenApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
 
-        assertThat(restClient.deploy(appName),
+        assertThat(restClient.deploy(mavenApp.name),
             is(equalTo(200, allOf(
-                containsString("Going to build and deploy " + appName),
+                containsString("Going to build and deploy " + mavenApp.name),
                 containsString("Success")))));
 
-        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + appName).getContentAsString());
+        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + mavenApp.name).getContentAsString());
 
         assertThat(
             client.GET(appInfo.getString("url")),
@@ -119,17 +140,18 @@ public class SystemTest {
 
         JSONObject all = new JSONObject(resp.getContentAsString());
 
-        JSONAssert.assertEquals("{apps:[ {" +
-            "name: \"maven\"," +
-            "url: \"" + appRunnerUrl + "/maven/\"" +
-            "} ]}", all, JSONCompareMode.LENIENT);
+        JSONAssert.assertEquals("{apps:[" +
+            "{ name: \"lein\" }," +
+            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\"}," +
+            "{ name: \"nodejs\" }" +
+            "]}", all, JSONCompareMode.LENIENT);
 
         assertThat(restClient.deploy("invalid-app-name"),
-            is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: maven"))));
+            is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: lein, maven, nodejs"))));
 
         resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
         assertThat(resp.getStatus(), is(200));
         JSONObject single = new JSONObject(resp.getContentAsString());
-        JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(0), single, JSONCompareMode.STRICT_ORDER);
+        JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(1), single, JSONCompareMode.STRICT_ORDER);
     }
 }
