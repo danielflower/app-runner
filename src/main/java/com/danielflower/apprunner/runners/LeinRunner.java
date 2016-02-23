@@ -38,7 +38,7 @@ public class LeinRunner implements AppRunner {
     }
 
 
-    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
+    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         runLein(buildLogHandler, envVarsForApp, "test");
         runLein(buildLogHandler, envVarsForApp, "uberjar");
 
@@ -52,7 +52,7 @@ public class LeinRunner implements AppRunner {
         String jarName = artifactId + "-" + version + "-standalone.jar";
         command.addArgument("-jar").addArgument("target" + File.separator + jarName);
 
-        watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot);
+        watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
     public static Properties loadBuildProperties(File projectRoot) {

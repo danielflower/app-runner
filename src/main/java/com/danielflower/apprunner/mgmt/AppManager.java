@@ -4,6 +4,7 @@ import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.runners.AppRunner;
 import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.Waiter;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.io.FileUtils;
@@ -101,7 +102,7 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public synchronized void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws GitAPIException, IOException {
+    public synchronized void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         clearLogs();
 
         InvocationOutputHandler buildLogHandler = line -> {
@@ -125,7 +126,9 @@ public class AppManager implements AppDescription {
 
         HashMap<String, String> envVarsForApp = createAppEnvVars(port, name, appRunnerInternalUrl);
 
-        currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp);
+        try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
+            currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
+        }
         for (AppChangeListener listener : listeners) {
             listener.onAppStarted(name, new URL("http://localhost:" + port + "/" + name));
         }

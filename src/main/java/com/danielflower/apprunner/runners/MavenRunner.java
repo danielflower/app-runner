@@ -37,7 +37,7 @@ public class MavenRunner implements AppRunner {
         this.goals = goals;
     }
 
-    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
+    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
 
         InvocationRequest request = new DefaultInvocationRequest()
@@ -72,7 +72,7 @@ public class MavenRunner implements AppRunner {
         CommandLine command = javaHomeProvider.javaCommandLine();
         command.addArgument("-jar").addArgument("target" + File.separator + jarName);
 
-        watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot);
+        watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
     public static Model loadPomModel(File pomFile) {

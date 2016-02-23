@@ -3,12 +3,12 @@ package e2e;
 import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.runners.JavaHomeProvider;
 import com.danielflower.apprunner.runners.MavenRunner;
+import com.danielflower.apprunner.runners.Waiter;
 import com.danielflower.apprunner.web.AppResource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.apache.maven.shared.invoker.MavenInvocationException;
-import org.apache.maven.shared.invoker.SystemOutHandler;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
@@ -21,13 +21,12 @@ import scaffolding.AppRepo;
 import scaffolding.RestClient;
 import scaffolding.TestConfig;
 
-import java.io.EOFException;
 import java.io.File;
-import java.io.IOException;
-import java.net.ConnectException;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
@@ -49,7 +48,7 @@ public class SystemTest {
 
 
     @BeforeClass
-    public static void buildAndStartUberJar() throws MavenInvocationException {
+    public static void buildAndStartUberJar() throws Exception {
         mavenRunner = new MavenRunner(new File("."), JavaHomeProvider.default_java_home,
             asList("-DskipTests=true", "package"));
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
@@ -58,7 +57,9 @@ public class SystemTest {
             put("JAVA_HOME", dirPath(TestConfig.config.javaHome()));
         }};
         InvocationOutputHandler logHandler = line -> System.out.println("Test build output > " + line);
-        mavenRunner.start(logHandler, logHandler, env);
+        try (Waiter startupWaiter = Waiter.waitFor("AppRunner uber jar", URI.create("http://localhost:" + port + "/"), 2, TimeUnit.MINUTES)) {
+            mavenRunner.start(logHandler, logHandler, env, startupWaiter);
+        }
     }
 
     @AfterClass

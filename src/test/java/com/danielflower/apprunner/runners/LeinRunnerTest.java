@@ -10,7 +10,6 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import scaffolding.TestConfig;
 
 import java.io.File;
 import java.net.URI;
@@ -47,21 +46,22 @@ public class LeinRunnerTest {
     }
 
     @Test
-    public void canStartAndStopLeinProjects() throws InterruptedException, ExecutionException, TimeoutException {
+    public void canStartAndStopLeinProjects() throws Exception {
         // doing it twice proves the port was cleaned up
         canStartALeinProject(1);
         canStartALeinProject(2);
     }
 
-    public void canStartALeinProject(int attempt) throws InterruptedException, ExecutionException, TimeoutException {
+    public void canStartALeinProject(int attempt) throws Exception {
 
         String appName = "lein";
         LeinRunner runner = new LeinRunner(sampleAppDir(appName), config.leinJar().get(), config.leinJavaExecutable(), tempDir);
         int port = 45678;
         try {
-            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                AppManager.createAppEnvVars(port, appName, URI.create("http://localhost")));
-
+            try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
+                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
+                    AppManager.createAppEnvVars(port, appName, URI.create("http://localhost")), startupWaiter);
+            }
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));

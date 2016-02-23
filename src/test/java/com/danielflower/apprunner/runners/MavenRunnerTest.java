@@ -14,8 +14,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.URI;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -39,13 +37,14 @@ public class MavenRunnerTest {
     }
 
     @Test
-    public void canStartAMavenProcessByPackagingAndRunning() throws InterruptedException, ExecutionException, TimeoutException {
+    public void canStartAMavenProcessByPackagingAndRunning() throws Exception {
 
         String appName = "maven";
         MavenRunner runner = new MavenRunner(sampleAppDir(appName), JavaHomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
         try {
-            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")));
-
+            try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
+                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")), startupWaiter);
+            }
             try {
                 ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));

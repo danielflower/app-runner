@@ -27,14 +27,14 @@ public class NodeRunner implements AppRunner {
         this.npmExec = npmExec;
     }
 
-    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException {
+    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         runNPM(buildLogHandler, envVarsForApp, "install");
         runNPM(buildLogHandler, envVarsForApp, "test");
 
         CommandLine command = new CommandLine(nodeExec)
             .addArgument("server.js");
 
-        watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot);
+        watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
     public void runNPM(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String argument) {

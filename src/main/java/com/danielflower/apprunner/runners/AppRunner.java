@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public interface AppRunner {
-    void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp) throws ProjectCannotStartException;
+    void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException;
 
     void shutdown();
 

@@ -10,8 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -20,7 +18,7 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 public class ProcessStarter {
     public static final Logger log = LoggerFactory.getLogger(ProcessStarter.class);
 
-    public static ExecuteWatchdog startDaemon(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot) {
+    public static ExecuteWatchdog startDaemon(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, Waiter startupWaiter) {
         long startTime = logStartInfo(command, projectRoot);
         ExecuteWatchdog watchDog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
         Executor executor = createExecutor(consoleLogHandler, command, projectRoot, watchDog);
@@ -29,7 +27,9 @@ public class ProcessStarter {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
             executor.execute(command, envVarsForApp, handler);
 
-            handler.waitFor(TimeUnit.SECONDS.toMillis(10));
+            startupWaiter.or(c -> handler.hasResult()); // stop waiting if the process exist
+            startupWaiter.blockUntilReady();
+
             if (handler.hasResult()) {
                 String message = "The project at " + dirPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
                 buildLogHandler.consumeLine(message);

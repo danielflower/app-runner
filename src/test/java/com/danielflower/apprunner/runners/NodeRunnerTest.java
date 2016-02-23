@@ -39,21 +39,22 @@ public class NodeRunnerTest {
     }
 
     @Test
-    public void canStartAndStopNpmProjects() throws InterruptedException, ExecutionException, TimeoutException {
+    public void canStartAndStopNpmProjects() throws Exception {
         // doing it twice proves the port was cleaned up
         run(1);
         run(2);
     }
 
-    public void run(int attempt) throws InterruptedException, ExecutionException, TimeoutException {
+    public void run(int attempt) throws Exception {
 
         String appName = "nodejs";
         NodeRunner runner = new NodeRunner(sampleAppDir(appName), config.nodeExecutable().get(), config.npmExecutable().get());
         int port = 45688;
         try {
-            runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                AppManager.createAppEnvVars(port, appName, URI.create("http://localhost")));
-
+            try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
+                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
+                    AppManager.createAppEnvVars(port, appName, URI.create("http://localhost")), startupWaiter);
+            }
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));
