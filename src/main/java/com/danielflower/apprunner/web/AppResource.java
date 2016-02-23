@@ -162,4 +162,23 @@ public class AppResource {
             }
         }
     }
+
+    @PUT
+    @Path("/{name}/stop")
+    public Response stop(@PathParam("name") String name) {
+        Optional<AppDescription> app = estate.app(name);
+        if (app.isPresent()) {
+            try {
+                log.info("Going to stop " + name);
+                app.get().stopApp();
+                return Response.ok().build();
+            } catch (Exception e) {
+                log.error("Couldn't stop app via REST call", e);
+                return Response.serverError().entity(e.toString()).build();
+            }
+        } else {
+            return Response.status(404).build();
+        }
+    }
+
 }

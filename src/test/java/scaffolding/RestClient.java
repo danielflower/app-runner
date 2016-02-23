@@ -39,6 +39,10 @@ public class RestClient {
         return client.POST(appRunnerUrl + "/api/v1/apps/" + app + "/deploy").send();
     }
 
+    public ContentResponse stop(String app) throws Exception {
+        return client.newRequest(appRunnerUrl + "/api/v1/apps/" + app + "/stop").method("PUT").send();
+    }
+
     public ContentResponse homepage(String appName) throws Exception {
         return client.GET(appRunnerUrl + "/" + appName + "/");
     }

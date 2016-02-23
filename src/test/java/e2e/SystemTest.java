@@ -4,15 +4,11 @@ import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.runners.JavaHomeProvider;
 import com.danielflower.apprunner.runners.MavenRunner;
 import com.danielflower.apprunner.runners.Waiter;
-import com.danielflower.apprunner.web.AppResource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
-import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.client.util.FormContentProvider;
-import org.eclipse.jetty.util.Fields;
 import org.json.JSONObject;
 import org.junit.*;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -27,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
@@ -39,15 +34,22 @@ public class SystemTest {
 
     static final String port = "48183";
     static final String appRunnerUrl = "http://localhost:" + port;
-    final RestClient restClient = RestClient.create(appRunnerUrl);
+    static final RestClient restClient = RestClient.create(appRunnerUrl);
     static final HttpClient client = new HttpClient();
-    final String appId = "maven";
-    final AppRepo appRepo = AppRepo.create(appId);
+    static final String appName = "maven";
+    static final AppRepo appRepo = AppRepo.create(appName);
     static final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
     static MavenRunner mavenRunner;
 
 
     @BeforeClass
+    public static void setup() throws Exception {
+        buildAndStartUberJar();
+        client.start();
+        assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
+        assertThat(restClient.deploy(appName).getStatus(), is(200));
+    }
+
     public static void buildAndStartUberJar() throws Exception {
         mavenRunner = new MavenRunner(new File("."), JavaHomeProvider.default_java_home,
             asList("-DskipTests=true", "package"));
@@ -57,59 +59,33 @@ public class SystemTest {
             put("JAVA_HOME", dirPath(TestConfig.config.javaHome()));
         }};
         InvocationOutputHandler logHandler = line -> System.out.println("Test build output > " + line);
-        try (Waiter startupWaiter = Waiter.waitFor("AppRunner uber jar", URI.create("http://localhost:" + port + "/"), 2, TimeUnit.MINUTES)) {
+        URI appRunnerURL = URI.create(appRunnerUrl + "/");
+        try (Waiter startupWaiter = Waiter.waitFor("AppRunner uber jar", appRunnerURL, 2, TimeUnit.MINUTES)) {
             mavenRunner.start(logHandler, logHandler, env, startupWaiter);
         }
     }
 
-    @AfterClass
-    public static void shutDownAppRunner() throws InterruptedException, ExecutionException, TimeoutException {
-        try {
-            client.POST(appRunnerUrl + "/api/v1/apps/die")
-                .content(new FormContentProvider(new Fields() {{
-                    add("password", AppResource.deathPassword);
-                }})).send();
-        } catch (ExecutionException e) {
-            // this is expected... it dies before the execution is complete
-        }
+    public static void shutDownAppRunner() throws Exception {
+        restClient.stop(appName);
         mavenRunner.shutdown();
     }
 
-    static boolean alreadyCreated = false;
-
-    @Before
-    public void start() throws Exception {
-        client.start();
-        if (!alreadyCreated) {
-            assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
-            assertThat(restClient.deploy(appId).getStatus(), is(200));
-            alreadyCreated = true;
-            // This is so offensive and terrible. I'm sorry.
-        }
-    }
-
-    @After
-    public void stopClient() throws Exception {
+    @AfterClass
+    public static void cleanup() throws Exception {
+        shutDownAppRunner();
         restClient.stop();
         client.stop();
     }
 
+
     @Test
     public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
-        assertThat(restClient.homepage(appId), is(equalTo(200, containsString("My Maven App"))));
+        assertThat(restClient.homepage(appName), is(equalTo(200, containsString("My Maven App"))));
 
         shutDownAppRunner();
         buildAndStartUberJar();
-        while (true) {
-            try {
-                restClient.homepage(appId);
-                break;
-            } catch (ExecutionException e) {
-                Thread.sleep(500);
-                // it's starting up
-            }
-        }
-        assertThat(restClient.homepage(appId), is(equalTo(200, containsString("My Maven App"))));
+
+        assertThat(restClient.homepage(appName), is(equalTo(200, containsString("My Maven App"))));
 
         File indexHtml = new File(appRepo.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
         String newVersion = FileUtils.readFileToString(indexHtml).replace("My Maven App", "My new and improved maven app!");
@@ -117,12 +93,12 @@ public class SystemTest {
         appRepo.origin.add().addFilepattern(".").call();
         appRepo.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
 
-        assertThat(restClient.deploy(appId),
+        assertThat(restClient.deploy(appName),
             is(equalTo(200, allOf(
-                containsString("Going to build and deploy " + appId),
+                containsString("Going to build and deploy " + appName),
                 containsString("Success")))));
 
-        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + appId).getContentAsString());
+        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + appName).getContentAsString());
 
         assertThat(
             client.GET(appInfo.getString("url")),
