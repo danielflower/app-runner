@@ -22,37 +22,36 @@ public class LeinRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(LeinRunner.class);
     private final File projectRoot;
     private final File leinJar;
-    private final File javaExec;
     private final File tempDir;
+    private final JavaCommandLineProvider cmds;
     private ExecuteWatchdog watchDog;
 
-    public LeinRunner(File projectRoot, File leinJar, File javaExec, File tempDir) {
+    public LeinRunner(File projectRoot, File leinJar, File tempDir, JavaCommandLineProvider cmds) {
         this.projectRoot = projectRoot;
         this.leinJar = leinJar;
-        this.javaExec = javaExec;
         this.tempDir = tempDir;
+        this.cmds = cmds;
     }
-
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         runLein(buildLogHandler, envVarsForApp, "do", "test,", "uberjar,", "pom");
 
-        CommandLine command = new CommandLine(javaExec);
-
         Model model = loadPomModel(new File(projectRoot, "pom.xml"));
         String jarName = model.getArtifactId() + "-" + model.getVersion() + "-standalone.jar";
+
+        CommandLine command = cmds.javaCommandLine();
         command.addArgument("-jar").addArgument("target" + File.separator + jarName);
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
     public void runLein(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String... arguments) {
-
-        CommandLine command = new CommandLine(javaExec)
+        CommandLine command = cmds.javaCommandLine()
             .addArgument("-cp")
             .addArgument(dirPath(leinJar))
             .addArgument("-Djava.io.tmpdir=" + dirPath(tempDir))
             .addArgument("clojure.main").addArgument("-m").addArgument("leiningen.core.main");
+
         for (String argument : arguments) {
             command.addArgument(argument);
         }
@@ -60,7 +59,6 @@ public class LeinRunner implements AppRunner {
         buildLogHandler.consumeLine("Running lein " + StringUtils.join(arguments, " ") + " with " + command);
         ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, TimeUnit.MINUTES.toMillis(20));
     }
-
 
     public void shutdown() {
         if (watchDog != null) {
@@ -72,20 +70,20 @@ public class LeinRunner implements AppRunner {
     public static class Factory implements AppRunner.Factory {
 
         private final File leinJar;
-        private final File javaExec;
         private final FileSandbox fileSandbox;
+        private final JavaCommandLineProvider cmds;
 
-        public Factory(File leinJar, File javaExec, FileSandbox fileSandbox) {
+        public Factory(File leinJar, JavaCommandLineProvider cmds, FileSandbox fileSandbox) {
             this.leinJar = leinJar;
-            this.javaExec = javaExec;
             this.fileSandbox = fileSandbox;
+            this.cmds = cmds;
         }
 
         @Override
         public Optional<AppRunner> forProject(String appName, File projectRoot) {
             File projectClj = new File(projectRoot, "project.clj");
             if (projectClj.isFile()) {
-                LeinRunner runner = new LeinRunner(projectRoot, leinJar, javaExec, fileSandbox.tempDir(appName));
+                LeinRunner runner = new LeinRunner(projectRoot, leinJar, fileSandbox.tempDir(appName), cmds);
                 return Optional.of(runner);
             } else {
                 return Optional.empty();

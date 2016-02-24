@@ -2,6 +2,10 @@ package com.danielflower.apprunner;
 
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.InvalidConfigException;
+import com.danielflower.apprunner.runners.ExplicitJavaHome;
+import com.danielflower.apprunner.runners.JavaCommandLineProvider;
+import com.danielflower.apprunner.runners.JavaHomeProvider;
+import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +26,11 @@ public class Config {
     public static final String DATA_DIR = "appserver.data.dir";
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
     public static final String INITIAL_APP_URL = "appserver.initial.app.url";
+
+    public static final String JAVA_HOME = "JAVA_HOME";
+    public static final String NODE_HOME = "NODE_HOME";
+    public static final String LEIN_JAR = "LEIN_JAR";
+    public static final String LEIN_JAVA_CMD = "LEIN_JAVA_CMD";
 
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> env = new HashMap<>(System.getenv());
@@ -50,32 +59,34 @@ public class Config {
         this.raw = raw;
     }
 
-    public File leinJavaExecutable() {
-        return hasItem("LEIN_JAVA_CMD")
-            ? getFile("LEIN_JAVA_CMD")
-            : javaExecutable();
+    public JavaCommandLineProvider leinJavaCommandProvider() {
+        return raw.containsKey(LEIN_JAVA_CMD)
+            ? (JavaCommandLineProvider) () -> new CommandLine(getFile(LEIN_JAVA_CMD))
+            : javaHomeProvider();
     }
 
     public Optional<File> leinJar() {
-        return hasItem("LEIN_JAR")
-            ? Optional.of(getFile("LEIN_JAR"))
+        return hasItem(LEIN_JAR)
+            ? Optional.of(getFile(LEIN_JAR))
             : Optional.empty();
     }
 
     public Optional<File> nodeExecutable() {
-        return hasItem("NODE_HOME")
-            ? Optional.of(new File(getDir("NODE_HOME"), windowsinize("node")))
+        return hasItem(NODE_HOME)
+            ? Optional.of(new File(getDir(NODE_HOME), windowsinize("node")))
             : Optional.empty();
     }
 
     public Optional<File> npmExecutable() {
-        return hasItem("NODE_HOME")
-            ? Optional.of(new File(getDir("NODE_HOME"), FilenameUtils.separatorsToSystem("node_modules\\npm\\bin\\npm-cli.js")))
+        return hasItem(NODE_HOME)
+            ? Optional.of(new File(getDir(NODE_HOME), FilenameUtils.separatorsToSystem("node_modules\\npm\\bin\\npm-cli.js")))
             : Optional.empty();
     }
 
-    public File javaExecutable() {
-        return FileUtils.getFile(javaHome(), "bin", javaExecutableName());
+    public JavaHomeProvider javaHomeProvider() {
+        return raw.containsKey(JAVA_HOME)
+            ? new ExplicitJavaHome(getDir(JAVA_HOME))
+            : JavaHomeProvider.default_java_home;
     }
 
     public static String javaExecutableName() {
@@ -87,7 +98,7 @@ public class Config {
     }
 
     public File javaHome() {
-        return getDir("JAVA_HOME");
+        return getDir(JAVA_HOME);
     }
 
     public String get(String name, String defaultVal) {
@@ -141,3 +152,4 @@ public class Config {
         return f;
     }
 }
+

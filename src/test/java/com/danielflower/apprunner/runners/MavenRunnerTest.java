@@ -38,7 +38,6 @@ public class MavenRunnerTest {
 
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws Exception {
-
         String appName = "maven";
         MavenRunner runner = new MavenRunner(sampleAppDir(appName), JavaHomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
         try {

@@ -36,7 +36,6 @@ public class ClojureTest {
         put("LEIN_JAR", dirPath(config.leinJar().get()));
     }}));
 
-
     @Before public void start() throws Exception {
         app.start();
     }
@@ -52,5 +51,4 @@ public class ClojureTest {
         assertThat(restClient.deploy(appId).getStatus(), is(200));
         assertThat(restClient.homepage(appId), is(equalTo(200, containsString("Hello from lein"))));
     }
-
 }

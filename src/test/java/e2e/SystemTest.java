@@ -11,12 +11,13 @@ import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.json.JSONObject;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
 import scaffolding.RestClient;
-import scaffolding.TestConfig;
 
 import java.io.File;
 import java.net.URI;
@@ -28,7 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
 
@@ -62,8 +64,8 @@ public class SystemTest {
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
             put(Config.SERVER_PORT, String.valueOf(port));
             put(Config.DATA_DIR, dirPath(dataDir));
-            put("JAVA_HOME", dirPath(TestConfig.config.javaHome()));
         }};
+
         InvocationOutputHandler logHandler = line -> System.out.println("Test build output > " + line);
         URI appRunnerURL = URI.create(appRunnerUrl + "/");
         try (Waiter startupWaiter = Waiter.waitFor("AppRunner uber jar", appRunnerURL, 2, TimeUnit.MINUTES)) {

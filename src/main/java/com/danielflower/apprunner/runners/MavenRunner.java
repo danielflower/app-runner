@@ -73,8 +73,9 @@ public class MavenRunner implements AppRunner {
             throw new ProjectCannotStartException("Could not find the jar file at " + dirPath(jar));
         }
 
-        CommandLine command = javaHomeProvider.javaCommandLine();
-        command.addArgument("-jar").addArgument("target" + File.separator + jarName);
+        CommandLine command = javaHomeProvider.javaCommandLine()
+            .addArgument("-jar")
+            .addArgument("target" + File.separator + jarName);
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }

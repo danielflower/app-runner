@@ -4,7 +4,11 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.*;
+import com.danielflower.apprunner.runners.AppRunner;
+import com.danielflower.apprunner.runners.LeinRunner;
+import com.danielflower.apprunner.runners.MavenRunner;
+import com.danielflower.apprunner.runners.NodeRunner;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -13,9 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,39 +30,30 @@ public class App {
     private WebServer webServer;
     private AppEstate estate;
 
-    public static void main(String[] args) {
-        try {
-            App app = new App(Config.load(args));
-            app.start();
-            Runtime.getRuntime().addShutdownHook(new Thread(app::shutdown));
-        } catch (Throwable t) {
-            log.error("Error during startup", t);
-            System.exit(1);
-        }
-    }
-
     public App(Config config) {
         this.config = config;
     }
 
     public void start() throws Exception {
         File dataDir = config.getOrCreateDir(Config.DATA_DIR);
-        FileSandbox fileSandbox = new FileSandbox(dataDir);
         GitRepoLoader gitRepoLoader = FileBasedGitRepoLoader.getGitRepoLoader(dataDir);
-        addSampleAppIfNoAppsAlreadyThere(gitRepoLoader, config);
+        addSampleAppIfNoAppsAlreadyThere(gitRepoLoader);
 
         ProxyMap proxyMap = new ProxyMap();
 
         int appRunnerPort = config.getInt(SERVER_PORT);
-        URI appRunnerInternalUrl = URI.create("http://localhost:" + appRunnerPort);
+        FileSandbox fileSandbox = new FileSandbox(dataDir);
 
-        RunnerProvider runnerProvider = createRunnerProvider(config, fileSandbox);
-        estate = new AppEstate(appRunnerInternalUrl, proxyMap, fileSandbox, runnerProvider);
-
+        estate = new AppEstate(
+            URI.create("http://localhost:" + appRunnerPort),
+            proxyMap,
+            fileSandbox,
+            createRunnerProvider(fileSandbox));
 
         for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
             estate.addApp(repo.getValue(), repo.getKey());
         }
+
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
 
         estate.all().forEach(a -> {
@@ -78,27 +70,8 @@ public class App {
         webServer.start();
     }
 
-    public static RunnerProvider createRunnerProvider(Config config, FileSandbox fileSandbox) {
-        List<AppRunner.Factory> runnerFactories = new ArrayList<>();
-
-        if (config.hasItem("JAVA_HOME")) {
-            File javaHome = config.javaHome();
-
-            config.leinJar().ifPresent(lj -> runnerFactories.add(new LeinRunner.Factory(lj, config.leinJavaExecutable(), fileSandbox)));
-
-            runnerFactories.add(new MavenRunner.Factory(new ExplicitJavaHome(javaHome)));
-        }
-
-        config.nodeExecutable().ifPresent(node -> runnerFactories.add(new NodeRunner.Factory(node, config.npmExecutable().get())));
-
-        for (AppRunner.Factory runnerFactory : runnerFactories) {
-            log.info("Registered " + runnerFactory);
-        }
-        return new RunnerProvider(runnerFactories);
-    }
-
-    public static void addSampleAppIfNoAppsAlreadyThere(GitRepoLoader gitRepoLoader, Config config) throws Exception {
-        if (gitRepoLoader.loadAll().size() == 0) {
+    void addSampleAppIfNoAppsAlreadyThere(GitRepoLoader gitRepoLoader) throws Exception {
+        if (gitRepoLoader.loadAll().isEmpty()) {
             String url = config.get(Config.INITIAL_APP_URL, null);
             if (StringUtils.isNotBlank(url)) {
                 log.info("Adding " + url + " as an initial app");
@@ -123,4 +96,28 @@ public class App {
         }
     }
 
+    private RunnerProvider createRunnerProvider(FileSandbox fileSandbox) {
+        List<AppRunner.Factory> runnerFactories = new ArrayList<>();
+
+        config.leinJar().ifPresent(lj -> runnerFactories.add(new LeinRunner.Factory(lj, config.leinJavaCommandProvider(), fileSandbox)));
+
+        runnerFactories.add(new MavenRunner.Factory(config.javaHomeProvider()));
+
+        config.nodeExecutable().ifPresent(node -> runnerFactories.add(new NodeRunner.Factory(node, config.npmExecutable().get())));
+
+        runnerFactories.stream().forEach( f -> log.info("Registered " + f));
+
+        return new RunnerProvider(runnerFactories);
+    }
+
+    public static void main(String[] args) {
+        try {
+            App app = new App(Config.load(args));
+            app.start();
+            Runtime.getRuntime().addShutdownHook(new Thread(app::shutdown));
+        } catch (Throwable t) {
+            log.error("Error during startup", t);
+            System.exit(1);
+        }
+    }
 }

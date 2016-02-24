@@ -13,8 +13,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.net.URI;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.runners.MavenRunnerTest.sampleAppDir;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -53,9 +51,8 @@ public class LeinRunnerTest {
     }
 
     public void canStartALeinProject(int attempt) throws Exception {
-
         String appName = "lein";
-        LeinRunner runner = new LeinRunner(sampleAppDir(appName), config.leinJar().get(), config.leinJavaExecutable(), tempDir);
+        LeinRunner runner = new LeinRunner(sampleAppDir(appName), config.leinJar().get(), tempDir, JavaHomeProvider.default_java_home);
         int port = 45678;
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
@@ -79,8 +76,5 @@ public class LeinRunnerTest {
             System.out.println(consoleLog);
             throw e;
         }
-
     }
-
-
 }

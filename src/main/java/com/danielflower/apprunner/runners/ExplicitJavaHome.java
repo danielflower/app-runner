@@ -1,8 +1,8 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.Config;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.maven.shared.invoker.InvocationRequest;
 
 import java.io.File;
@@ -21,7 +21,7 @@ public class ExplicitJavaHome implements JavaHomeProvider {
     }
 
     public CommandLine javaCommandLine() {
-        return new CommandLine(FileUtils.getFile(javaHome, "bin", SystemUtils.IS_OS_WINDOWS ? "java.exe" : "java"));
+        return new CommandLine(FileUtils.getFile(javaHome, "bin", Config.javaExecutableName()));
     }
 
     public String toString() {

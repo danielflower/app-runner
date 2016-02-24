@@ -2,7 +2,9 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import scaffolding.AppRepo;
 import scaffolding.RestClient;
 
@@ -14,7 +16,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
-import static scaffolding.TestConfig.config;
 
 public class MavenTest {
 
@@ -27,7 +28,6 @@ public class MavenTest {
     final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_PORT, port);
         put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
-        put("JAVA_HOME", dirPath(config.javaHome()));
     }}));
 
     @Before public void start() throws Exception {
@@ -45,5 +45,4 @@ public class MavenTest {
         assertThat(restClient.deploy(appId).getStatus(), is(200));
         assertThat(restClient.homepage(appId), is(equalTo(200, containsString("My Maven App"))));
     }
-
 }

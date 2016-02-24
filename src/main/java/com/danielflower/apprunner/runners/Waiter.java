@@ -42,7 +42,6 @@ public class Waiter implements AutoCloseable {
         }
 
         throw new TimeoutException();
-
     }
 
     @Override
