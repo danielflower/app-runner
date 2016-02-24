@@ -20,6 +20,7 @@ import scaffolding.TestConfig;
 
 import java.io.File;
 import java.net.URI;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ public class SystemTest {
     @BeforeClass
     public static void setup() throws Exception {
         client.start();
-        buildAndStartUberJar();
+        buildAndStartUberJar(asList("-DskipTests=true", "package"));
 
         for (AppRepo app : apps) {
             assertThat(restClient.createApp(app.gitUrl()).getStatus(), is(201));
@@ -56,9 +57,8 @@ public class SystemTest {
         }
     }
 
-    public static void buildAndStartUberJar() throws Exception {
-        mavenRunner = new MavenRunner(new File("."), JavaHomeProvider.default_java_home,
-            asList("-DskipTests=true", "package"));
+    public static void buildAndStartUberJar(List<String> goals) throws Exception {
+        mavenRunner = new MavenRunner(new File("."), JavaHomeProvider.default_java_home, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
             put(Config.SERVER_PORT, String.valueOf(port));
             put(Config.DATA_DIR, dirPath(dataDir));
@@ -102,7 +102,7 @@ public class SystemTest {
         assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
 
         shutDownAppRunner();
-        buildAndStartUberJar();
+        buildAndStartUberJar(Collections.emptyList());
 
         assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
         leinAppsWork();

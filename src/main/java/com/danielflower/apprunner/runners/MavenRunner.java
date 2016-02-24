@@ -40,26 +40,30 @@ public class MavenRunner implements AppRunner {
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
 
-        InvocationRequest request = new DefaultInvocationRequest()
-            .setPomFile(pomFile)
-            .setOutputHandler(buildLogHandler)
-            .setErrorHandler(buildLogHandler)
-            .setGoals(goals)
-            .setBaseDirectory(projectRoot);
+        if (goals.size() == 0) {
+            log.info("No goals. Skipping maven build");
+        } else {
+            InvocationRequest request = new DefaultInvocationRequest()
+                .setPomFile(pomFile)
+                .setOutputHandler(buildLogHandler)
+                .setErrorHandler(buildLogHandler)
+                .setGoals(goals)
+                .setBaseDirectory(projectRoot);
 
-        request = javaHomeProvider.mungeMavenInvocationRequest(request);
+            request = javaHomeProvider.mungeMavenInvocationRequest(request);
 
-        log.info("Building maven project at " + dirPath(projectRoot));
-        Invoker invoker = new DefaultInvoker();
-        try {
-            InvocationResult result = invoker.execute(request);
-            if (result.getExitCode() != 0) {
-                throw new ProjectCannotStartException("Build returned error", result.getExecutionException());
+            log.info("Building maven project at " + dirPath(projectRoot));
+            Invoker invoker = new DefaultInvoker();
+            try {
+                InvocationResult result = invoker.execute(request);
+                if (result.getExitCode() != 0) {
+                    throw new ProjectCannotStartException("Build returned error", result.getExecutionException());
+                }
+            } catch (Exception e) {
+                throw new ProjectCannotStartException("Error while building " + projectRoot.getAbsolutePath(), e);
             }
-        } catch (Exception e) {
-            throw new ProjectCannotStartException("Error while building " + projectRoot.getAbsolutePath(), e);
+            log.info("Build successful. Going to start app.");
         }
-        log.info("Build successful. Going to start app.");
 
         Model model = loadPomModel(pomFile);
         String jarName = model.getArtifactId() + "-" + model.getVersion() + ".jar";

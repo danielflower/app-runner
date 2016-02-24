@@ -4,6 +4,7 @@ import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.slf4j.Logger;
@@ -34,9 +35,7 @@ public class LeinRunner implements AppRunner {
 
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
-        runLein(buildLogHandler, envVarsForApp, "test");
-        runLein(buildLogHandler, envVarsForApp, "uberjar");
-        runLein(buildLogHandler, envVarsForApp, "pom");
+        runLein(buildLogHandler, envVarsForApp, "do", "test,", "uberjar,", "pom");
 
         CommandLine command = new CommandLine(javaExec);
 
@@ -47,16 +46,18 @@ public class LeinRunner implements AppRunner {
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
-    public void runLein(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String argument) {
+    public void runLein(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String... arguments) {
 
         CommandLine command = new CommandLine(javaExec)
             .addArgument("-cp")
             .addArgument(dirPath(leinJar))
             .addArgument("-Djava.io.tmpdir=" + dirPath(tempDir))
-            .addArgument("clojure.main").addArgument("-m").addArgument("leiningen.core.main")
-            .addArgument(argument);
+            .addArgument("clojure.main").addArgument("-m").addArgument("leiningen.core.main");
+        for (String argument : arguments) {
+            command.addArgument(argument);
+        }
 
-        buildLogHandler.consumeLine("Running lein " + argument + " with " + command);
+        buildLogHandler.consumeLine("Running lein " + StringUtils.join(arguments, " ") + " with " + command);
         ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, TimeUnit.MINUTES.toMillis(20));
     }
 
