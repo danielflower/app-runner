@@ -64,7 +64,7 @@ public class AppResourceTest {
         estate.add(myApp);
         estate.add(anApp);
 
-        Response response = appResource.update("my-app");
+        Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "", "my-app");
         StreamingOutput stream = (StreamingOutput) response.getEntity();
         stream.write(new NullOutputStream());
         assertThat(response.getStatus(), is(200));
@@ -77,7 +77,7 @@ public class AppResourceTest {
         estate.add(myApp);
         estate.add(anApp);
 
-        Response response = appResource.update("unreal-app");
+        Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "", "unreal-app");
         StreamingOutput stream = (StreamingOutput) response.getEntity();
         try {
             stream.write(new NullOutputStream());

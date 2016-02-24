@@ -36,7 +36,9 @@ public class RestClient {
     }
 
     public ContentResponse deploy(String app) throws Exception {
-        return client.POST(appRunnerUrl + "/api/v1/apps/" + app + "/deploy").send();
+        return client.POST(appRunnerUrl + "/api/v1/apps/" + app + "/deploy")
+            .header("Accept", "application/json") // to simulate products like the Stash commit hook
+            .send();
     }
 
     public ContentResponse stop(String app) throws Exception {

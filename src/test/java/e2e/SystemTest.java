@@ -115,9 +115,7 @@ public class SystemTest {
         mavenApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
 
         assertThat(restClient.deploy(mavenApp.name),
-            is(equalTo(200, allOf(
-                containsString("Going to build and deploy " + mavenApp.name),
-                containsString("Success")))));
+            is(equalTo(200, containsString("buildLogUrl"))));
 
         JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + mavenApp.name).getContentAsString());
 

@@ -5,6 +5,8 @@ import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
+import org.apache.commons.io.output.StringBuilderWriter;
+import org.eclipse.jetty.io.WriterOutputStream;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +54,7 @@ public class AppResource {
     public Response app(@Context UriInfo uriInfo, @PathParam("name") String name) {
         Optional<AppDescription> app = estate.app(name);
         if (app.isPresent()) {
-            return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString()).build();
+            return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString(4)).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
@@ -109,11 +111,19 @@ public class AppResource {
     }
 
     @POST /* Maybe should be PUT, but too many hooks only use POST */
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Path("/{name}/deploy")
-    public Response update(@PathParam("name") String name) {
+    public Response deploy(@Context UriInfo uriInfo, @HeaderParam("Accept") String accept, @PathParam("name") String name) throws IOException {
         StreamingOutput stream = new UpdateStreamer(name);
-        return Response.ok(stream).build();
+        if (MediaType.APPLICATION_JSON.equals(accept)) {
+            StringBuilderWriter output = new StringBuilderWriter();
+            try (WriterOutputStream writer = new WriterOutputStream(output)) {
+                stream.write(writer);
+                return app(uriInfo, name);
+            }
+        } else {
+            return Response.ok(stream).build();
+        }
     }
 
     private class UpdateStreamer implements StreamingOutput {
