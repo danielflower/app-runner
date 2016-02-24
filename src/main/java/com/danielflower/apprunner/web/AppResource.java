@@ -103,7 +103,9 @@ public class AppResource {
             appName = isBlank(appName) ? AppManager.nameFromUrl(gitUrl) : appName;
             AppDescription added = estate.addApp(gitUrl, appName);
             return Response.status(201)
-                .header("Location", uriInfo.getRequestUri() + "/" + added.name()).build();
+                .header("Location", uriInfo.getRequestUri() + "/" + added.name())
+                .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
+                .build();
         } catch (Exception e) {
             log.error("Error while adding app", e);
             return Response.serverError().entity("Error while adding app: " + e.getMessage()).build();

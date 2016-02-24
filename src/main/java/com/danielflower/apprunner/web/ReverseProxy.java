@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.web;
 
+import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.api.Response;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
 import org.slf4j.Logger;
@@ -21,6 +22,11 @@ public class ReverseProxy extends AsyncProxyServlet {
 
     public ReverseProxy(ProxyMap proxyMap) {
         this.proxyMap = proxyMap;
+    }
+
+    @Override
+    protected void addViaHeader(Request proxyRequest) {
+        super.addViaHeader(proxyRequest);
     }
 
     @Override
@@ -49,6 +55,7 @@ public class ReverseProxy extends AsyncProxyServlet {
             if (url != null) {
                 String query = isEmpty(clientRequest.getQueryString()) ? "" : "?" + clientRequest.getQueryString();
                 String newTarget = url.toString() + matcher.group(2) + query;
+//                newTarget = newTarget.replaceAll(":[0-9]+/", ":8081/");
                 log.info("Proxying to " + newTarget);
                 return newTarget;
             }
@@ -61,5 +68,12 @@ public class ReverseProxy extends AsyncProxyServlet {
     protected void onProxyRewriteFailed(HttpServletRequest clientRequest, HttpServletResponse proxyResponse) {
         // this is called if rewriteTarget returns null2
         sendProxyResponseError(clientRequest, proxyResponse, 404);
+    }
+
+    @Override
+    protected void addProxyHeaders(HttpServletRequest clientRequest, Request proxyRequest) {
+        super.addProxyHeaders(clientRequest, proxyRequest);
+        proxyRequest.getHeaders().remove("Host");
+        proxyRequest.header("Host", clientRequest.getHeader("Host"));
     }
 }
