@@ -5,10 +5,7 @@ import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.servlet.ServletContextHandler;
@@ -60,6 +57,8 @@ public class WebServer implements AutoCloseable {
         handlers.addHandler(createRestService(estate));
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
+
+        jettyServer.setRequestLog(new NCSARequestLog("access.log"));
 
         jettyServer.start();
 
