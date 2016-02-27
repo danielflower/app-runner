@@ -10,6 +10,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -164,9 +165,17 @@ public class SystemTest {
         // ensure the zips exist
         new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
 
-        ContentResponse zip = client.GET(appRunnerUrl + "/api/v1/system/samples/maven.zip");
-        assertThat(zip.getStatus(), is((200)));
+        JSONObject samples = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system/samples").getContentAsString());
+        JSONArray apps = samples.getJSONArray("apps");
+        assertThat(apps.length(), is(3));
 
-        assertThat(client.GET(appRunnerUrl + "/api/v1/system/samples/badname.zip").getStatus(), is((400)));
+        for (Object app : apps) {
+            String url = ((JSONObject) app).getString("url");
+            ContentResponse zip = client.GET(url);
+            assertThat(zip.getStatus(), is(200));
+            assertThat(zip.getHeaders().get("Content-Type"), is("application/zip"));
+        }
+
+        assertThat(client.GET(appRunnerUrl + "/api/v1/system/samples/badname.zip").getStatus(), is((404)));
     }
 }

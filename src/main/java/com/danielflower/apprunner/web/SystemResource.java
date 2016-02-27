@@ -1,6 +1,8 @@
 package com.danielflower.apprunner.web;
 
 import org.apache.commons.io.IOUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,7 +10,9 @@ import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -24,9 +28,18 @@ public class SystemResource {
 
     @GET
     @Path("/samples")
-    @Produces("text/plain")
-    public Response samples() throws IOException {
-        return Response.ok(sampleProjectNames.toString()).build();
+    @Produces("application/json")
+    public Response samples(@Context UriInfo uri) throws IOException {
+        JSONObject result = new JSONObject();
+        JSONArray apps = new JSONArray();
+        result.put("apps", apps);
+        for (String name : sampleProjectNames) {
+            JSONObject sample = new JSONObject();
+            sample.put("name", name.replace(".zip", ""));
+            sample.put("url", uri.getRequestUri().resolve("samples/" + name));
+            apps.put(sample);
+        }
+        return Response.ok(result.toString()).build();
     }
 
     @GET
@@ -34,7 +47,7 @@ public class SystemResource {
     @Produces("application/zip")
     public Response samples(@PathParam("name") String name) throws IOException {
         if (!sampleProjectNames.contains(name)) {
-            return Response.status(400).entity("Invalid sample app name. Valid names: " + sampleProjectNames).build();
+            return Response.status(404).entity("Invalid sample app name. Valid names: " + sampleProjectNames).build();
         }
 
         try (InputStream zipStream = getClass().getResourceAsStream("/sample-apps/" + name)) {
