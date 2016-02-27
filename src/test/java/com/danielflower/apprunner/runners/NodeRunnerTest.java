@@ -24,8 +24,6 @@ public class NodeRunnerTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        Assume.assumeTrue("Skipping tests as NPM not detected", config.nodeExecutable().isPresent());
-
         client = new HttpClient();
         client.start();
     }
@@ -47,7 +45,7 @@ public class NodeRunnerTest {
     public void run(int attempt) throws Exception {
 
         String appName = "nodejs";
-        NodeRunner runner = new NodeRunner(Photocopier.copySampleAppToTempDir(appName), config.nodeExecutable().get(), config.npmExecutable().get());
+        NodeRunner runner = new NodeRunner(Photocopier.copySampleAppToTempDir(appName), config.nodeExecutable(), config.npmExecutable());
         int port = 45688;
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
@@ -58,7 +56,7 @@ public class NodeRunnerTest {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));
                 assertThat(resp.getContentAsString(), containsString("Hello from nodejs!"));
-                assertThat(buildLog.toString(), containsString("Running npm install"));
+                assertThat(buildLog.toString(), containsString("No test specified"));
             } finally {
                 runner.shutdown();
             }

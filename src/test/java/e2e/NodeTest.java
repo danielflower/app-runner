@@ -2,7 +2,9 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 import scaffolding.AppRepo;
 import scaffolding.RestClient;
 
@@ -14,14 +16,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
-import static scaffolding.TestConfig.config;
 
 public class NodeTest {
-
-    @BeforeClass
-    public static void skipIfUnsupported() throws Exception {
-        Assume.assumeTrue("Skipping tests as Node not detected", config.nodeExecutable().isPresent());
-    }
 
     final String port = "48189";
     final String appRunnerUrl = "http://localhost:" + port;
@@ -32,7 +28,6 @@ public class NodeTest {
     final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_PORT, port);
         put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
-        put("NODE_HOME", dirPath(config.nodeExecutable().get().getParentFile()));
     }}));
 
     @Before public void start() throws Exception {

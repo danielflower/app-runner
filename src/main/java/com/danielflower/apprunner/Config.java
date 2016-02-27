@@ -7,7 +7,6 @@ import com.danielflower.apprunner.runners.JavaCommandLineProvider;
 import com.danielflower.apprunner.runners.JavaHomeProvider;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
@@ -28,7 +27,6 @@ public class Config {
     public static final String INITIAL_APP_URL = "appserver.initial.app.url";
 
     public static final String JAVA_HOME = "JAVA_HOME";
-    public static final String NODE_HOME = "NODE_HOME";
     public static final String LEIN_JAR = "LEIN_JAR";
     public static final String LEIN_JAVA_CMD = "LEIN_JAVA_CMD";
 
@@ -71,16 +69,12 @@ public class Config {
             : Optional.empty();
     }
 
-    public Optional<File> nodeExecutable() {
-        return hasItem(NODE_HOME)
-            ? Optional.of(new File(getDir(NODE_HOME), windowsinize("node")))
-            : Optional.empty();
+    public String nodeExecutable() {
+        return get("NODE_EXEC", SystemUtils.IS_OS_WINDOWS ? "node.exe" : "node");
     }
 
-    public Optional<File> npmExecutable() {
-        return hasItem(NODE_HOME)
-            ? Optional.of(new File(getDir(NODE_HOME), FilenameUtils.separatorsToSystem("node_modules\\npm\\bin\\npm-cli.js")))
-            : Optional.empty();
+    public String npmExecutable() {
+        return get("NPM_EXEC", SystemUtils.IS_OS_WINDOWS ? "npm.cmd" : "npm");
     }
 
     public JavaHomeProvider javaHomeProvider() {

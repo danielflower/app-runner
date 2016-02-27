@@ -97,7 +97,8 @@ public class App {
 
         runnerFactories.add(new MavenRunner.Factory(config.javaHomeProvider()));
 
-        config.nodeExecutable().ifPresent(node -> runnerFactories.add(new NodeRunner.Factory(node, config.npmExecutable().get())));
+
+        runnerFactories.add(new NodeRunner.Factory(config.nodeExecutable(), config.npmExecutable()));
 
         runnerFactories.stream().forEach( f -> log.info("Registered " + f));
 
