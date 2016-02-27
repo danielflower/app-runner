@@ -27,7 +27,6 @@ public class SystemResource {
 
 
     @GET
-    @Path("/")
     @Produces("application/json")
     public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();

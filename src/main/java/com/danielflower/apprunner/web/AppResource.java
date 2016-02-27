@@ -85,10 +85,15 @@ public class AppResource {
 
         return new JSONObject()
             .put("name", app.name())
-            .put("buildLogUrl", restURI.resolve("apps/" + app.name() + "/build.log"))
-            .put("consoleLogUrl", restURI.resolve("apps/" + app.name() + "/console.log"))
+            .put("buildLogUrl", appUrl(app, restURI, "build.log"))
+            .put("consoleLogUrl", appUrl(app, restURI, "console.log"))
             .put("url", uri.resolve("/" + app.name() + "/"))
+            .put("deployUrl", appUrl(app, restURI, "deploy"))
             .put("gitUrl", app.gitUrl());
+    }
+
+    public static URI appUrl(AppDescription app, URI restURI, String path) {
+        return restURI.resolve("apps/" + app.name() + "/" + path);
     }
 
     @POST

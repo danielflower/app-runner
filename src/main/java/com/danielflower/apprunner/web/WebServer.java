@@ -13,6 +13,7 @@ import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +21,14 @@ import org.slf4j.LoggerFactory;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.container.ContainerResponseFilter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.URL;
+import java.util.HashMap;
 
 public class WebServer implements AutoCloseable {
     public static final Logger log = LoggerFactory.getLogger(WebServer.class);
@@ -71,13 +76,32 @@ public class WebServer implements AutoCloseable {
         rc.register(new SystemResource());
         rc.register(new AppResource(estate));
         rc.register(JacksonFeature.class);
+        rc.register(CORSFilter.class);
+        rc.addProperties(new HashMap<String,Object>() {{
+            // Turn off buffering so results can be streamed
+            put(ServerProperties.OUTBOUND_CONTENT_LENGTH_BUFFER, 0);
+        }});
 
         ServletHolder holder = new ServletHolder(new ServletContainer(rc));
 
         ServletContextHandler sch = new ServletContextHandler();
         sch.setContextPath("/api");
         sch.addServlet(holder, "/*");
+
         return sch;
+    }
+
+    public static class CORSFilter implements ContainerResponseFilter {
+        @Override
+        public void filter(ContainerRequestContext request,
+                           ContainerResponseContext response) throws IOException {
+            response.getHeaders().add("Access-Control-Allow-Origin", "*");
+            response.getHeaders().add("Access-Control-Allow-Headers",
+                "origin, content-type, accept, authorization");
+            response.getHeaders().add("Access-Control-Allow-Credentials", "true");
+            response.getHeaders().add("Access-Control-Allow-Methods",
+                "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+        }
     }
 
     private Handler createHomeRedirect() {
@@ -100,6 +124,7 @@ public class WebServer implements AutoCloseable {
         ServletHolder proxyServletHolder = new ServletHolder(servlet);
         proxyServletHolder.setAsyncSupported(true);
         proxyServletHolder.setInitParameter("maxThreads", "100");
+
 
         ServletHandler proxyHandler = new ServletHandler();
         proxyHandler.addServletWithMapping(proxyServletHolder, "/*");

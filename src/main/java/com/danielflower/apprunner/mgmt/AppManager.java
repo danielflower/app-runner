@@ -23,7 +23,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+
+import static com.danielflower.apprunner.FileSandbox.dirPath;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -106,16 +109,25 @@ public class AppManager implements AppDescription {
             outputHandler.consumeLine(line);
             latestBuildLog += line + "\n";
         };
+
+        // Well this is complicated.
+        // Basically, we want the build log to contain a bit of the startup, and then detach itself.
+        AtomicReference<InvocationOutputHandler> buildLogHandle = new AtomicReference<>(buildLogHandler);
         InvocationOutputHandler consoleLogHandler = line -> {
+            InvocationOutputHandler another = buildLogHandle.get();
+            if (another != null) {
+                another.consumeLine(StringUtils.stripEnd(line, "\r\n"));
+            }
             synchronized (consoleLog) {
                 consoleLog.add(line);
             }
         };
 
 
-
+        buildLogHandler.consumeLine("Fetching latest changes from git...");
         git.pull().setRemote("origin").call();
         File id = copyToNewInstanceDir();
+        buildLogHandler.consumeLine("Created new instance in " + dirPath(id));
 
         AppRunner oldRunner = currentRunner;
         currentRunner = runnerProvider.runnerFor(name(), id);
@@ -126,12 +138,17 @@ public class AppManager implements AppDescription {
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
         }
+
+        buildLogHandle.set(null);
+
         for (AppChangeListener listener : listeners) {
             listener.onAppStarted(name, new URL("http://localhost:" + port + "/" + name));
         }
         if (oldRunner != null) {
+            buildLogHandler.consumeLine("Shutting down previous version");
             log.info("Shutting down previous version of " + name);
             oldRunner.shutdown();
+            buildLogHandler.consumeLine("Deployment complete.");
 
 
 
