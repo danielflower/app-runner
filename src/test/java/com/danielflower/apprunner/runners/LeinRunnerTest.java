@@ -13,7 +13,6 @@ import org.junit.Test;
 import scaffolding.Photocopier;
 
 import java.io.File;
-import java.net.URI;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -57,7 +56,7 @@ public class LeinRunnerTest {
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
                 runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                    AppManager.createAppEnvVars(port, appName, URI.create("http://localhost")), startupWaiter);
+                    AppManager.createAppEnvVars(port, appName), startupWaiter);
             }
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");

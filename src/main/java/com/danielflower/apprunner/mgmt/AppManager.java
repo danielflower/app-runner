@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,7 +28,7 @@ import java.util.stream.Collectors;
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
 
-    public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name, URI appRunnerInternalUrl) {
+    public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) {
         File root = fileSandbox.appDir(name);
         File gitDir = fileSandbox.appDir(name, "repo");
         File instanceDir = fileSandbox.appDir(name, "instances");
@@ -56,25 +55,23 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remove on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, gitUrl, git, instanceDir, appRunnerInternalUrl);
+        return new AppManager(name, gitUrl, git, instanceDir);
     }
 
     private final String gitUrl;
     private final String name;
     private final Git git;
     private final File instanceDir;
-    private final URI appRunnerInternalUrl;
     private final List<AppChangeListener> listeners = new ArrayList<>();
     private AppRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir, URI appRunnerInternalUrl) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
-        this.appRunnerInternalUrl = appRunnerInternalUrl;
     }
 
     public String name() {
@@ -124,7 +121,7 @@ public class AppManager implements AppDescription {
         currentRunner = runnerProvider.runnerFor(name(), id);
         int port = WebServer.getAFreePort();
 
-        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name, appRunnerInternalUrl);
+        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name);
 
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
@@ -149,12 +146,11 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public static HashMap<String, String> createAppEnvVars(int port, String name, URI appRunnerInternalUrl) {
+    public static HashMap<String, String> createAppEnvVars(int port, String name) {
         HashMap<String, String> envVarsForApp = new HashMap<>(System.getenv());
         envVarsForApp.put("APP_PORT", String.valueOf(port));
         envVarsForApp.put("APP_NAME", name);
         envVarsForApp.put("APP_ENV", "prod");
-        envVarsForApp.put("APP_REST_URL_BASE_V1", appRunnerInternalUrl.resolve("/api/v1").toString());
         return envVarsForApp;
     }
 

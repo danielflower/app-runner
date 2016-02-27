@@ -4,11 +4,7 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.AppRunner;
-import com.danielflower.apprunner.runners.LeinRunner;
-import com.danielflower.apprunner.runners.MavenRunner;
-import com.danielflower.apprunner.runners.NodeRunner;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -17,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +40,6 @@ public class App {
         FileSandbox fileSandbox = new FileSandbox(dataDir);
 
         estate = new AppEstate(
-            URI.create("http://localhost:" + appRunnerPort),
             proxyMap,
             fileSandbox,
             createRunnerProvider(fileSandbox));

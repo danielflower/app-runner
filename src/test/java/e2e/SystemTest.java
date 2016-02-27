@@ -165,15 +165,15 @@ public class SystemTest {
         // ensure the zips exist
         new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
 
-        JSONObject samples = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system/samples").getContentAsString());
-        JSONArray apps = samples.getJSONArray("apps");
-        assertThat(apps.length(), is(3));
+        JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
+        JSONArray samples = sysInfo.getJSONArray("samples");
+        assertThat(samples.length(), is(3));
 
-        for (Object app : apps) {
+        for (Object app : samples) {
             String url = ((JSONObject) app).getString("url");
             ContentResponse zip = client.GET(url);
-            assertThat(zip.getStatus(), is(200));
-            assertThat(zip.getHeaders().get("Content-Type"), is("application/zip"));
+            assertThat(url, zip.getStatus(), is(200));
+            assertThat(url, zip.getHeaders().get("Content-Type"), is("application/zip"));
         }
 
         assertThat(client.GET(appRunnerUrl + "/api/v1/system/samples/badname.zip").getStatus(), is((404)));

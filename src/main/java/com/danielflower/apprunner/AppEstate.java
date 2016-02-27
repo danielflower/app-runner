@@ -10,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,14 +20,12 @@ public class AppEstate {
     public static final Logger log = LoggerFactory.getLogger(AppEstate.class);
 
     private final List<AppDescription> managers = new ArrayList<>();
-    private final URI appRunnerInternalUrl;
     private final ProxyMap proxyMap;
     private final FileSandbox fileSandbox;
     private final List<AppAddedListener> appAddedListeners = new ArrayList<>();
     private final RunnerProvider runnerProvider;
 
-    public AppEstate(URI appRunnerInternalUrl, ProxyMap proxyMap, FileSandbox fileSandbox, RunnerProvider runnerProvider) {
-        this.appRunnerInternalUrl = appRunnerInternalUrl;
+    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, RunnerProvider runnerProvider) {
         this.proxyMap = proxyMap;
         this.fileSandbox = fileSandbox;
         this.runnerProvider = runnerProvider;
@@ -57,7 +54,7 @@ public class AppEstate {
     }
 
     public AppDescription addApp(String gitUrl, String appName) throws Exception {
-        AppManager appMan = AppManager.create(gitUrl, fileSandbox, appName, appRunnerInternalUrl);
+        AppManager appMan = AppManager.create(gitUrl, fileSandbox, appName);
         appMan.addListener(proxyMap::add);
         this.add(appMan);
         return appMan;

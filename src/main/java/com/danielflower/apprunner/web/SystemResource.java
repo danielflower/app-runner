@@ -27,16 +27,16 @@ public class SystemResource {
 
 
     @GET
-    @Path("/samples")
+    @Path("/")
     @Produces("application/json")
-    public Response samples(@Context UriInfo uri) throws IOException {
+    public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();
         JSONArray apps = new JSONArray();
-        result.put("apps", apps);
+        result.put("samples", apps);
         for (String name : sampleProjectNames) {
             JSONObject sample = new JSONObject();
             sample.put("name", name.replace(".zip", ""));
-            sample.put("url", uri.getRequestUri().resolve("samples/" + name));
+            sample.put("url", uri.getRequestUri().resolve("system/samples/" + name));
             apps.put(sample);
         }
         return Response.ok(result.toString()).build();

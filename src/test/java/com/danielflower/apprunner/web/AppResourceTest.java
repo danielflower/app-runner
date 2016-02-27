@@ -28,7 +28,7 @@ public class AppResourceTest {
 
     MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
     MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    AppEstate estate = new AppEstate(URI.create("http://localhost"), new ProxyMap(), fileSandbox(), RunnerProvider.empty());
+    AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), RunnerProvider.empty());
     AppResource appResource = new AppResource(estate);
 
     @Test
