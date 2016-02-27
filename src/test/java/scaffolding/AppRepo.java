@@ -5,13 +5,13 @@ import org.eclipse.jgit.api.InitCommand;
 
 import java.io.File;
 
-import static scaffolding.Photocopier.copyTestProjectToTemporaryLocation;
+import static scaffolding.Photocopier.copySampleAppToTempDir;
 
 public class AppRepo {
 
     public static AppRepo create(String name) {
         try {
-            File originDir = copyTestProjectToTemporaryLocation(name);
+            File originDir = copySampleAppToTempDir(name);
 
             InitCommand initCommand = Git.init();
             initCommand.setDirectory(originDir);

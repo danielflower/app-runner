@@ -1,9 +1,7 @@
 package com.danielflower.apprunner.runners;
 
-import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
-import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
@@ -11,8 +9,8 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import scaffolding.Photocopier;
 
-import java.io.File;
 import java.net.URI;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -39,7 +37,7 @@ public class MavenRunnerTest {
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws Exception {
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(sampleAppDir(appName), JavaHomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
+        MavenRunner runner = new MavenRunner(Photocopier.copySampleAppToTempDir(appName), JavaHomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
                 runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName, URI.create("http://localhost")), startupWaiter);
@@ -59,11 +57,4 @@ public class MavenRunnerTest {
         }
     }
 
-    public static File sampleAppDir(String subDir) {
-        File samples = new File("src/main/resources/samples/" + subDir);
-        if (!samples.isDirectory()) {
-            throw new AppRunnerException("Could not find sample dir at " + FileSandbox.dirPath(samples));
-        }
-        return samples;
-    }
 }

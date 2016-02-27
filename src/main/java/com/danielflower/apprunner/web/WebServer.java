@@ -68,6 +68,7 @@ public class WebServer implements AutoCloseable {
 
     private Handler createRestService(AppEstate estate) {
         ResourceConfig rc = new ResourceConfig();
+        rc.register(new SystemResource());
         rc.register(new AppResource(estate));
         rc.register(JacksonFeature.class);
 

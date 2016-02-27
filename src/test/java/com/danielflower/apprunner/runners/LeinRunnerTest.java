@@ -10,11 +10,11 @@ import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import scaffolding.Photocopier;
 
 import java.io.File;
 import java.net.URI;
 
-import static com.danielflower.apprunner.runners.MavenRunnerTest.sampleAppDir;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -52,7 +52,7 @@ public class LeinRunnerTest {
 
     public void canStartALeinProject(int attempt) throws Exception {
         String appName = "lein";
-        LeinRunner runner = new LeinRunner(sampleAppDir(appName), config.leinJar().get(), tempDir, JavaHomeProvider.default_java_home);
+        LeinRunner runner = new LeinRunner(Photocopier.copySampleAppToTempDir(appName), config.leinJar().get(), tempDir, JavaHomeProvider.default_java_home);
         int port = 45678;
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {

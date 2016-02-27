@@ -1,6 +1,7 @@
 package scaffolding;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,8 +11,13 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static org.apache.commons.io.FilenameUtils.separatorsToSystem;
 
 public class Photocopier {
-    public static File copyTestProjectToTemporaryLocation(String sampleAppName) throws IOException {
-        String pathname = separatorsToSystem("src/main/resources/samples/" + sampleAppName);
+
+    public static File sampleDir() {
+        return new File(separatorsToSystem("sample-apps"));
+    }
+
+    public static File copySampleAppToTempDir(String sampleAppName) throws IOException {
+        String pathname = FilenameUtils.concat(dirPath(sampleDir()), sampleAppName);
         File source = new File(pathname);
         if (!source.isDirectory()) {
             source = new File(separatorsToSystem("../") + pathname);

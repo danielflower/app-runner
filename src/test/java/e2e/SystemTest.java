@@ -17,15 +17,19 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
+import scaffolding.Photocopier;
 import scaffolding.RestClient;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
@@ -66,7 +70,7 @@ public class SystemTest {
             put(Config.DATA_DIR, dirPath(dataDir));
         }};
 
-        InvocationOutputHandler logHandler = line -> System.out.println("Test build output > " + line);
+        InvocationOutputHandler logHandler = line -> System.out.print("Test build output > " + line);
         URI appRunnerURL = URI.create(appRunnerUrl + "/");
         try (Waiter startupWaiter = Waiter.waitFor("AppRunner uber jar", appRunnerURL, 2, TimeUnit.MINUTES)) {
             mavenRunner.start(logHandler, logHandler, env, startupWaiter);
@@ -153,5 +157,16 @@ public class SystemTest {
         assertThat(resp.getStatus(), is(200));
         JSONObject single = new JSONObject(resp.getContentAsString());
         JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(1), single, JSONCompareMode.STRICT_ORDER);
+    }
+
+    @Test
+    public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+        // ensure the zips exist
+        new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
+
+        ContentResponse zip = client.GET(appRunnerUrl + "/api/v1/system/samples/maven.zip");
+        assertThat(zip.getStatus(), is((200)));
+
+        assertThat(client.GET(appRunnerUrl + "/api/v1/system/samples/badname.zip").getStatus(), is((400)));
     }
 }
