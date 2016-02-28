@@ -26,9 +26,6 @@ public class FileSandbox {
     public File tempDir(String name) {
         return ensureExists("temp/" + name);
     }
-    public File logDir(String name) {
-        return ensureExists("logs/" + name);
-    }
     public File appDir(String name) {
         return ensureExists("apps/" + name);
     }

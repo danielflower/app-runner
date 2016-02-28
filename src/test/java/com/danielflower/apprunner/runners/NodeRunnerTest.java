@@ -6,10 +6,10 @@ import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.junit.AfterClass;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
+import scaffolding.TestConfig;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -50,7 +50,7 @@ public class NodeRunnerTest {
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
                 runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                    AppManager.createAppEnvVars(port, appName), startupWaiter);
+                    TestConfig.testEnvVars(port, appName), startupWaiter);
             }
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");

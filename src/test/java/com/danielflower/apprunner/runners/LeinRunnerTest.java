@@ -11,8 +11,10 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
+import scaffolding.TestConfig;
 
 import java.io.File;
+import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -24,7 +26,6 @@ public class LeinRunnerTest {
     private static HttpClient client;
     private StringBuilderWriter buildLog = new StringBuilderWriter();
     private StringBuilderWriter consoleLog = new StringBuilderWriter();
-    private static File tempDir = new File("target/temp");
 
     @BeforeClass
     public static void setup() throws Exception {
@@ -32,7 +33,6 @@ public class LeinRunnerTest {
 
         client = new HttpClient();
         client.start();
-        FileUtils.forceMkdir(tempDir);
     }
 
     @AfterClass
@@ -51,12 +51,12 @@ public class LeinRunnerTest {
 
     public void canStartALeinProject(int attempt) throws Exception {
         String appName = "lein";
-        LeinRunner runner = new LeinRunner(Photocopier.copySampleAppToTempDir(appName), config.leinJar().get(), tempDir, JavaHomeProvider.default_java_home);
+        LeinRunner runner = new LeinRunner(Photocopier.copySampleAppToTempDir(appName), config.leinJar().get(), JavaHomeProvider.default_java_home);
         int port = 45678;
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
                 runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                    AppManager.createAppEnvVars(port, appName), startupWaiter);
+                    TestConfig.testEnvVars(port, appName), startupWaiter);
             }
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");

@@ -10,6 +10,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
+import scaffolding.TestConfig;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -38,7 +39,8 @@ public class MavenRunnerTest {
         MavenRunner runner = new MavenRunner(Photocopier.copySampleAppToTempDir(appName), JavaHomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
-                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog), AppManager.createAppEnvVars(45678, appName), startupWaiter);
+                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
+                    TestConfig.testEnvVars(45678, appName), startupWaiter);
             }
             try {
                 ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");

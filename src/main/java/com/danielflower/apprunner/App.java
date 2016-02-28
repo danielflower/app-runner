@@ -7,17 +7,20 @@ import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
+import static com.danielflower.apprunner.FileSandbox.dirPath;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
@@ -31,18 +34,20 @@ public class App {
 
     public void start() throws Exception {
         File dataDir = config.getOrCreateDir(Config.DATA_DIR);
+        FileSandbox fileSandbox = new FileSandbox(dataDir);
+
+        deleteOldTempFiles(fileSandbox.tempDir(""));
+
         GitRepoLoader gitRepoLoader = FileBasedGitRepoLoader.getGitRepoLoader(dataDir);
         addSampleAppIfNoAppsAlreadyThere(gitRepoLoader);
 
         ProxyMap proxyMap = new ProxyMap();
-
         int appRunnerPort = config.getInt(SERVER_PORT);
-        FileSandbox fileSandbox = new FileSandbox(dataDir);
 
         estate = new AppEstate(
             proxyMap,
             fileSandbox,
-            createRunnerProvider(fileSandbox));
+            createRunnerProvider());
 
         for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
             estate.addApp(repo.getValue(), repo.getKey());
@@ -62,6 +67,15 @@ public class App {
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
         webServer = new WebServer(appRunnerPort, proxyMap, estate, defaultAppName);
         webServer.start();
+    }
+
+    private void deleteOldTempFiles(File tempDir) {
+        log.info("Deleting contents of temporary folder at " + dirPath(tempDir));
+        try {
+            FileUtils.deleteDirectory(tempDir);
+        } catch (IOException e) {
+            log.warn("Failed to delete " + dirPath(tempDir), e);
+        }
     }
 
     void addSampleAppIfNoAppsAlreadyThere(GitRepoLoader gitRepoLoader) throws Exception {
@@ -90,10 +104,10 @@ public class App {
         }
     }
 
-    private RunnerProvider createRunnerProvider(FileSandbox fileSandbox) {
+    private RunnerProvider createRunnerProvider() {
         List<AppRunner.Factory> runnerFactories = new ArrayList<>();
 
-        config.leinJar().ifPresent(lj -> runnerFactories.add(new LeinRunner.Factory(lj, config.leinJavaCommandProvider(), fileSandbox)));
+        config.leinJar().ifPresent(lj -> runnerFactories.add(new LeinRunner.Factory(lj, config.leinJavaCommandProvider())));
 
         runnerFactories.add(new MavenRunner.Factory(config.javaHomeProvider()));
 

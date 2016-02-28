@@ -22,14 +22,12 @@ public class LeinRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(LeinRunner.class);
     private final File projectRoot;
     private final File leinJar;
-    private final File tempDir;
     private final JavaCommandLineProvider cmds;
     private ExecuteWatchdog watchDog;
 
-    public LeinRunner(File projectRoot, File leinJar, File tempDir, JavaCommandLineProvider cmds) {
+    public LeinRunner(File projectRoot, File leinJar, JavaCommandLineProvider cmds) {
         this.projectRoot = projectRoot;
         this.leinJar = leinJar;
-        this.tempDir = tempDir;
         this.cmds = cmds;
     }
 
@@ -49,7 +47,7 @@ public class LeinRunner implements AppRunner {
         CommandLine command = cmds.javaCommandLine()
             .addArgument("-cp")
             .addArgument(dirPath(leinJar))
-            .addArgument("-Djava.io.tmpdir=" + dirPath(tempDir))
+            .addArgument("-Djava.io.tmpdir=" + envVarsForApp.get("TEMP"))
             .addArgument("clojure.main").addArgument("-m").addArgument("leiningen.core.main");
 
         for (String argument : arguments) {
@@ -70,12 +68,10 @@ public class LeinRunner implements AppRunner {
     public static class Factory implements AppRunner.Factory {
 
         private final File leinJar;
-        private final FileSandbox fileSandbox;
         private final JavaCommandLineProvider cmds;
 
-        public Factory(File leinJar, JavaCommandLineProvider cmds, FileSandbox fileSandbox) {
+        public Factory(File leinJar, JavaCommandLineProvider cmds) {
             this.leinJar = leinJar;
-            this.fileSandbox = fileSandbox;
             this.cmds = cmds;
         }
 
@@ -83,7 +79,7 @@ public class LeinRunner implements AppRunner {
         public Optional<AppRunner> forProject(String appName, File projectRoot) {
             File projectClj = new File(projectRoot, "project.clj");
             if (projectClj.isFile()) {
-                LeinRunner runner = new LeinRunner(projectRoot, leinJar, fileSandbox.tempDir(appName), cmds);
+                LeinRunner runner = new LeinRunner(projectRoot, leinJar, cmds);
                 return Optional.of(runner);
             } else {
                 return Optional.empty();

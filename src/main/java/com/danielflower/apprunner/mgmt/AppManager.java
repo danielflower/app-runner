@@ -34,7 +34,9 @@ public class AppManager implements AppDescription {
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) {
         File root = fileSandbox.appDir(name);
         File gitDir = fileSandbox.appDir(name, "repo");
-        File instanceDir = fileSandbox.appDir(name, "instances");
+        File instanceDir = fileSandbox.tempDir(name + File.separator + "instances");
+        File dataDir = fileSandbox.appDir(name, "data");
+        File tempDir = fileSandbox.tempDir(name);
 
         Git git;
         try {
@@ -55,26 +57,30 @@ public class AppManager implements AppDescription {
         try {
             config.save();
         } catch (IOException e) {
-            throw new AppRunnerException("Error while setting remove on Git repo at " + gitDir, e);
+            throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, gitUrl, git, instanceDir);
+        return new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
     }
 
     private final String gitUrl;
     private final String name;
     private final Git git;
     private final File instanceDir;
+    private final File dataDir;
+    private final File tempDir;
     private final List<AppChangeListener> listeners = new ArrayList<>();
     private AppRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
+        this.dataDir = dataDir;
+        this.tempDir = tempDir;
     }
 
     public String name() {
@@ -133,7 +139,7 @@ public class AppManager implements AppDescription {
         currentRunner = runnerProvider.runnerFor(name(), id);
         int port = WebServer.getAFreePort();
 
-        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name);
+        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name, dataDir, tempDir);
 
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
@@ -163,11 +169,13 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public static HashMap<String, String> createAppEnvVars(int port, String name) {
+    public static HashMap<String, String> createAppEnvVars(int port, String name, File dataDir, File tempDir) {
         HashMap<String, String> envVarsForApp = new HashMap<>(System.getenv());
         envVarsForApp.put("APP_PORT", String.valueOf(port));
         envVarsForApp.put("APP_NAME", name);
         envVarsForApp.put("APP_ENV", "prod");
+        envVarsForApp.put("TEMP", dirPath(tempDir));
+        envVarsForApp.put("APP_DATA", dirPath(dataDir));
         return envVarsForApp;
     }
 

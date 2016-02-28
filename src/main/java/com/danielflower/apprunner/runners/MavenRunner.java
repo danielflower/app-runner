@@ -74,6 +74,7 @@ public class MavenRunner implements AppRunner {
         }
 
         CommandLine command = javaHomeProvider.javaCommandLine()
+            .addArgument("-Djava.io.tmpdir=" + envVarsForApp.get("TEMP"))
             .addArgument("-jar")
             .addArgument("target" + File.separator + jarName);
 
