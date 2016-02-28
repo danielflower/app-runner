@@ -1,7 +1,7 @@
 package e2e;
 
 import com.danielflower.apprunner.Config;
-import com.danielflower.apprunner.runners.JavaHomeProvider;
+import com.danielflower.apprunner.runners.HomeProvider;
 import com.danielflower.apprunner.runners.MavenRunner;
 import com.danielflower.apprunner.runners.Waiter;
 import com.danielflower.apprunner.web.WebServer;
@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
-import scaffolding.Photocopier;
 import scaffolding.RestClient;
 
 import java.io.File;
@@ -65,7 +64,7 @@ public class SystemTest {
     }
 
     public static void buildAndStartUberJar(List<String> goals) throws Exception {
-        mavenRunner = new MavenRunner(new File("."), JavaHomeProvider.default_java_home, goals);
+        mavenRunner = new MavenRunner(new File("."), HomeProvider.default_java_home, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
             put(Config.SERVER_PORT, String.valueOf(port));
             put(Config.DATA_DIR, dirPath(dataDir));

@@ -6,10 +6,11 @@ import org.apache.commons.io.FileUtils;
 import org.apache.maven.shared.invoker.InvocationRequest;
 
 import java.io.File;
+import java.util.Map;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 
-public class ExplicitJavaHome implements JavaHomeProvider {
+public class ExplicitJavaHome implements HomeProvider {
     private final File javaHome;
 
     public ExplicitJavaHome(File javaHome) {
@@ -20,7 +21,7 @@ public class ExplicitJavaHome implements JavaHomeProvider {
         return request.setJavaHome(javaHome);
     }
 
-    public CommandLine javaCommandLine() {
+    public CommandLine commandLine(Map<String, String> envVarsForApp) {
         return new CommandLine(FileUtils.getFile(javaHome, "bin", Config.javaExecutableName()));
     }
 

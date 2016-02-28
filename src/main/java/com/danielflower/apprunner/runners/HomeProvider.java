@@ -4,11 +4,13 @@ import com.danielflower.apprunner.Config;
 import org.apache.commons.exec.CommandLine;
 import org.apache.maven.shared.invoker.InvocationRequest;
 
-public interface JavaHomeProvider extends JavaCommandLineProvider {
-    JavaHomeProvider default_java_home = new JavaHomeProvider() {
+import java.util.Map;
+
+public interface HomeProvider extends CommandLineProvider {
+    HomeProvider default_java_home = new HomeProvider() {
         public InvocationRequest mungeMavenInvocationRequest(InvocationRequest request) { return request; }
 
-        public CommandLine javaCommandLine() { return new CommandLine(Config.javaExecutableName()); }
+        public CommandLine commandLine(Map<String, String> envVarsForApp) { return new CommandLine(Config.javaExecutableName()); }
     };
 
     InvocationRequest mungeMavenInvocationRequest(InvocationRequest request);

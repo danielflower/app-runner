@@ -4,7 +4,11 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.*;
+import com.danielflower.apprunner.runners.AppRunner;
+import com.danielflower.apprunner.runners.LeinRunner;
+import com.danielflower.apprunner.runners.MavenRunner;
+import com.danielflower.apprunner.runners.NodeRunner;
+import com.danielflower.apprunner.runners.RunnerProvider;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.io.FileUtils;
@@ -15,12 +19,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static java.util.Arrays.asList;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
@@ -105,16 +109,13 @@ public class App {
     }
 
     private RunnerProvider createRunnerProvider() {
-        List<AppRunner.Factory> runnerFactories = new ArrayList<>();
+        List<AppRunner.Factory> runnerFactories = asList(
+            new LeinRunner.Factory(config.leinJavaCommandProvider(), config.leinCommandProvider()),
+            new MavenRunner.Factory(config.javaHomeProvider()),
+            new NodeRunner.Factory(config.nodeExecutable(), config.npmExecutable())
+        );
 
-        config.leinJar().ifPresent(lj -> runnerFactories.add(new LeinRunner.Factory(lj, config.leinJavaCommandProvider())));
-
-        runnerFactories.add(new MavenRunner.Factory(config.javaHomeProvider()));
-
-
-        runnerFactories.add(new NodeRunner.Factory(config.nodeExecutable(), config.npmExecutable()));
-
-        runnerFactories.stream().forEach( f -> log.info("Registered " + f));
+        runnerFactories.stream().forEach(f -> log.info("Registered " + f));
 
         return new RunnerProvider(runnerFactories);
     }

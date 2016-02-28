@@ -27,11 +27,11 @@ public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     public static final List<String> CLEAN_AND_PACKAGE = asList("clean", "package");
     private final File projectRoot;
-    private final JavaHomeProvider javaHomeProvider;
+    private final HomeProvider javaHomeProvider;
     private ExecuteWatchdog watchDog;
     private final List<String> goals;
 
-    public MavenRunner(File projectRoot, JavaHomeProvider javaHomeProvider, List<String> goals) {
+    public MavenRunner(File projectRoot, HomeProvider javaHomeProvider, List<String> goals) {
         this.projectRoot = projectRoot;
         this.javaHomeProvider = javaHomeProvider;
         this.goals = goals;
@@ -73,7 +73,7 @@ public class MavenRunner implements AppRunner {
             throw new ProjectCannotStartException("Could not find the jar file at " + dirPath(jar));
         }
 
-        CommandLine command = javaHomeProvider.javaCommandLine()
+        CommandLine command = javaHomeProvider.commandLine(envVarsForApp)
             .addArgument("-Djava.io.tmpdir=" + envVarsForApp.get("TEMP"))
             .addArgument("-jar")
             .addArgument("target" + File.separator + jarName);
@@ -102,9 +102,9 @@ public class MavenRunner implements AppRunner {
 
     public static class Factory implements AppRunner.Factory {
 
-        private final JavaHomeProvider javaHomeProvider;
+        private final HomeProvider javaHomeProvider;
 
-        public Factory(JavaHomeProvider javaHomeProvider) {
+        public Factory(HomeProvider javaHomeProvider) {
             this.javaHomeProvider = javaHomeProvider;
         }
 

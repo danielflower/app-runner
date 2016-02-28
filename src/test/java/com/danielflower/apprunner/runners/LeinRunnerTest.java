@@ -1,25 +1,18 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.io.OutputToWriterBridge;
-import com.danielflower.apprunner.mgmt.AppManager;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.junit.AfterClass;
-import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
 import scaffolding.TestConfig;
 
-import java.io.File;
-import java.util.UUID;
-
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static scaffolding.TestConfig.config;
 
 public class LeinRunnerTest {
 
@@ -29,7 +22,7 @@ public class LeinRunnerTest {
 
     @BeforeClass
     public static void setup() throws Exception {
-        Assume.assumeTrue("Skipping tests as LEIN not detected", config.leinJar().isPresent());
+//        Assume.assumeTrue("Skipping tests as LEIN not detected", config.leinJar().isPresent());
 
         client = new HttpClient();
         client.start();
@@ -51,7 +44,8 @@ public class LeinRunnerTest {
 
     public void canStartALeinProject(int attempt) throws Exception {
         String appName = "lein";
-        LeinRunner runner = new LeinRunner(Photocopier.copySampleAppToTempDir(appName), config.leinJar().get(), JavaHomeProvider.default_java_home);
+        LeinRunner runner = new LeinRunner(Photocopier.copySampleAppToTempDir(appName), HomeProvider.default_java_home, CommandLineProvider.lein_on_path);
+//        LeinRunner runner = new LeinRunner(sampleAppDir(appName), null, tempDir, JavaHomeProvider.default_java_home);
         int port = 45678;
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {

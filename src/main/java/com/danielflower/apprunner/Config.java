@@ -2,12 +2,11 @@ package com.danielflower.apprunner;
 
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.problems.InvalidConfigException;
+import com.danielflower.apprunner.runners.CommandLineProvider;
 import com.danielflower.apprunner.runners.ExplicitJavaHome;
-import com.danielflower.apprunner.runners.JavaCommandLineProvider;
-import com.danielflower.apprunner.runners.JavaHomeProvider;
+import com.danielflower.apprunner.runners.HomeProvider;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 
 import java.io.File;
@@ -15,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Properties;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
@@ -57,16 +55,24 @@ public class Config {
         this.raw = raw;
     }
 
-    public JavaCommandLineProvider leinJavaCommandProvider() {
+    public CommandLineProvider leinJavaCommandProvider() {
         return raw.containsKey(LEIN_JAVA_CMD)
-            ? (JavaCommandLineProvider) () -> new CommandLine(getFile(LEIN_JAVA_CMD))
+            ? (CommandLineProvider) (Map<String, String> env) -> new CommandLine(getFile(LEIN_JAVA_CMD))
             : javaHomeProvider();
     }
 
-    public Optional<File> leinJar() {
-        return hasItem(LEIN_JAR)
-            ? Optional.of(getFile(LEIN_JAR))
-            : Optional.empty();
+    public CommandLineProvider leinCommandProvider() {
+        return raw.containsKey(LEIN_JAR)
+            ? (Map<String, String> env) -> leinJavaCommandProvider()
+                        .commandLine(env)
+                        .addArgument("-cp")
+                        .addArgument(dirPath(getFile(LEIN_JAR)))
+                        .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
+                        .addArgument("clojure.main")
+                        .addArgument("-m")
+                        .addArgument("leiningen.core.main")
+
+            : CommandLineProvider.lein_on_path;
     }
 
     public String nodeExecutable() {
@@ -77,10 +83,10 @@ public class Config {
         return get("NPM_EXEC", SystemUtils.IS_OS_WINDOWS ? "npm.cmd" : "npm");
     }
 
-    public JavaHomeProvider javaHomeProvider() {
+    public HomeProvider javaHomeProvider() {
         return raw.containsKey(JAVA_HOME)
             ? new ExplicitJavaHome(getDir(JAVA_HOME))
-            : JavaHomeProvider.default_java_home;
+            : HomeProvider.default_java_home;
     }
 
     public static String javaExecutableName() {
@@ -91,16 +97,8 @@ public class Config {
         return SystemUtils.IS_OS_WINDOWS ? command + ".exe" : command;
     }
 
-    public File javaHome() {
-        return getDir(JAVA_HOME);
-    }
-
     public String get(String name, String defaultVal) {
         return raw.getOrDefault(name, defaultVal);
-    }
-
-    public boolean hasItem(String name) {
-        return StringUtils.isNotBlank(get(name, null));
     }
 
     public String get(String name) {

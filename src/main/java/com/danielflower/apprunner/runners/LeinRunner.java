@@ -1,6 +1,5 @@
 package com.danielflower.apprunner.runners;
 
-import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
@@ -15,44 +14,38 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static com.danielflower.apprunner.runners.MavenRunner.loadPomModel;
 
 public class LeinRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(LeinRunner.class);
     private final File projectRoot;
-    private final File leinJar;
-    private final JavaCommandLineProvider cmds;
+    private final CommandLineProvider javaCmd;
+    private final CommandLineProvider leinCmd;
     private ExecuteWatchdog watchDog;
 
-    public LeinRunner(File projectRoot, File leinJar, JavaCommandLineProvider cmds) {
+    public LeinRunner(File projectRoot, CommandLineProvider javaCmd, CommandLineProvider leinCmd) {
         this.projectRoot = projectRoot;
-        this.leinJar = leinJar;
-        this.cmds = cmds;
+        this.javaCmd = javaCmd;
+        this.leinCmd = leinCmd;
     }
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
+
         runLein(buildLogHandler, envVarsForApp, "do", "test,", "uberjar,", "pom");
 
         Model model = loadPomModel(new File(projectRoot, "pom.xml"));
         String jarName = model.getArtifactId() + "-" + model.getVersion() + "-standalone.jar";
 
-        CommandLine command = cmds.javaCommandLine();
+        CommandLine command = javaCmd.commandLine(envVarsForApp);
         command.addArgument("-jar").addArgument("target" + File.separator + jarName);
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
-    public void runLein(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String... arguments) {
-        CommandLine command = cmds.javaCommandLine()
-            .addArgument("-cp")
-            .addArgument(dirPath(leinJar))
-            .addArgument("-Djava.io.tmpdir=" + envVarsForApp.get("TEMP"))
-            .addArgument("clojure.main").addArgument("-m").addArgument("leiningen.core.main");
-
-        for (String argument : arguments) {
+    private void runLein(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String... arguments) {
+        CommandLine command = leinCmd.commandLine(envVarsForApp);
+        for (String argument : arguments)
             command.addArgument(argument);
-        }
 
         buildLogHandler.consumeLine("Running lein " + StringUtils.join(arguments, " ") + " with " + command);
         ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, TimeUnit.MINUTES.toMillis(20));
@@ -66,20 +59,18 @@ public class LeinRunner implements AppRunner {
     }
 
     public static class Factory implements AppRunner.Factory {
+        private final CommandLineProvider javaCmd;
+        private final CommandLineProvider leinCmd;
 
-        private final File leinJar;
-        private final JavaCommandLineProvider cmds;
-
-        public Factory(File leinJar, JavaCommandLineProvider cmds) {
-            this.leinJar = leinJar;
-            this.cmds = cmds;
+        public Factory(CommandLineProvider javaCmd, CommandLineProvider leinCmd) {
+            this.javaCmd = javaCmd;
+            this.leinCmd = leinCmd;
         }
 
-        @Override
         public Optional<AppRunner> forProject(String appName, File projectRoot) {
             File projectClj = new File(projectRoot, "project.clj");
             if (projectClj.isFile()) {
-                LeinRunner runner = new LeinRunner(projectRoot, leinJar, cmds);
+                LeinRunner runner = new LeinRunner(projectRoot, javaCmd, leinCmd);
                 return Optional.of(runner);
             } else {
                 return Optional.empty();
@@ -87,8 +78,7 @@ public class LeinRunner implements AppRunner {
         }
 
         public String toString() {
-            return "Leiningin runner for Clojure apps using " + leinJar.getName();
+            return "Leiningin runner for Clojure apps using " /*+ leinJar.getName()*/;
         }
     }
-
 }

@@ -32,5 +32,4 @@ public class RunnerProvider {
     public static RunnerProvider empty() {
         return new RunnerProvider(new ArrayList<>());
     }
-
 }

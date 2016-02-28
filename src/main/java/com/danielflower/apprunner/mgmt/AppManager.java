@@ -23,6 +23,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -139,7 +140,7 @@ public class AppManager implements AppDescription {
         currentRunner = runnerProvider.runnerFor(name(), id);
         int port = WebServer.getAFreePort();
 
-        HashMap<String, String> envVarsForApp = createAppEnvVars(port, name, dataDir, tempDir);
+        Map<String, String> envVarsForApp = createAppEnvVars(port, name, dataDir, tempDir);
 
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
@@ -169,7 +170,7 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public static HashMap<String, String> createAppEnvVars(int port, String name, File dataDir, File tempDir) {
+    public static Map<String, String> createAppEnvVars(int port, String name, File dataDir, File tempDir) {
         HashMap<String, String> envVarsForApp = new HashMap<>(System.getenv());
         envVarsForApp.put("APP_PORT", String.valueOf(port));
         envVarsForApp.put("APP_NAME", name);

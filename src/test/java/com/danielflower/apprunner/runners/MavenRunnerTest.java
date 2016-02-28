@@ -1,7 +1,6 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.io.OutputToWriterBridge;
-import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
@@ -36,7 +35,7 @@ public class MavenRunnerTest {
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws Exception {
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(Photocopier.copySampleAppToTempDir(appName), JavaHomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
+        MavenRunner runner = new MavenRunner(Photocopier.copySampleAppToTempDir(appName), HomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
                 runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
