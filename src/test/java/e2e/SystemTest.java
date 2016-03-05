@@ -199,6 +199,23 @@ public class SystemTest {
     }
 
     @Test
+    public void appsCanBeDeleted() throws Exception {
+
+        AppRepo newMavenApp = AppRepo.create("maven");
+        updateHeaderAndCommit(newMavenApp, "Different repo");
+        assertThat(restClient.createApp(newMavenApp.gitUrl(), "another-app").getStatus(), is(201));
+        restClient.deploy(newMavenApp.name);
+
+        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size() + 1));
+
+        assertThat(
+            restClient.deleteApp("another-app"),
+            is(equalTo(200, containsString("another-app"))));
+
+        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size()));
+    }
+
+    @Test
     public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         // ensure the zips exist
         new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();

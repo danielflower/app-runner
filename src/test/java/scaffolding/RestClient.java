@@ -5,6 +5,9 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
 public class RestClient {
 
     public static RestClient create(String appRunnerUrl) {
@@ -25,12 +28,18 @@ public class RestClient {
         this.client = client;
         this.appRunnerUrl = appRunnerUrl;
     }
-
     public ContentResponse createApp(String gitUrl) throws Exception {
+        return createApp(gitUrl, null);
+    }
+
+    public ContentResponse createApp(String gitUrl, String appName) throws Exception {
+        Fields fields = new Fields();
+        fields.add("gitUrl", gitUrl);
+        if (appName != null) {
+            fields.add("appName", appName);
+        }
         return client.POST(appRunnerUrl + "/api/v1/apps")
-            .content(new FormContentProvider(new Fields() {{
-                add("gitUrl", gitUrl);
-            }})).send();
+            .content(new FormContentProvider(fields)).send();
     }
 
     public ContentResponse deploy(String app) throws Exception {
@@ -41,6 +50,10 @@ public class RestClient {
 
     public ContentResponse stop(String app) throws Exception {
         return client.newRequest(appRunnerUrl + "/api/v1/apps/" + app + "/stop").method("PUT").send();
+    }
+
+    public ContentResponse deleteApp(String appName) throws InterruptedException, ExecutionException, TimeoutException {
+        return client.newRequest(appRunnerUrl + "/api/v1/apps/" + appName).method("DELETE").send();
     }
 
     public ContentResponse homepage(String appName) throws Exception {
@@ -58,5 +71,4 @@ public class RestClient {
             // ignore
         }
     }
-
 }

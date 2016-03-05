@@ -128,6 +128,21 @@ public class AppResource {
         }
     }
 
+    @DELETE
+    @Produces(MediaType.APPLICATION_JSON)
+    @Path("/{name}")
+    public Response delete(@Context UriInfo uriInfo, @HeaderParam("Accept") String accept, @PathParam("name") String name) throws IOException {
+        Optional<AppDescription> existing = estate.app(name);
+        if (existing.isPresent()) {
+            AppDescription appDescription = existing.get();
+            String entity = appJson(uriInfo.getRequestUri(), appDescription).toString(4);
+            estate.remove(appDescription);
+            return Response.ok(entity).build();
+        } else {
+            return Response.status(400).entity("Could not find app with name " + name).build();
+        }
+    }
+
     @POST /* Maybe should be PUT, but too many hooks only use POST */
     @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Path("/{name}/deploy")
