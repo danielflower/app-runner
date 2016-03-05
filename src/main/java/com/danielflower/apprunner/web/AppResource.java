@@ -107,14 +107,19 @@ public class AppResource {
         try {
             appName = isBlank(appName) ? AppManager.nameFromUrl(gitUrl) : appName;
 
+            AppDescription appDescription;
+            int status;
             Optional<AppDescription> existing = estate.app(appName);
             if (existing.isPresent()) {
-                estate.remove(existing.get());
+                appDescription = existing.get();
+                estate.remove(appDescription);
+                status = 200;
+            } else {
+                status = 201;
             }
-
-            AppDescription added = estate.addApp(gitUrl, appName);
-            return Response.status(201)
-                .header("Location", uriInfo.getRequestUri() + "/" + added.name())
+            appDescription = estate.addApp(gitUrl, appName);
+            return Response.status(status)
+                .header("Location", uriInfo.getRequestUri() + "/" + appDescription.name())
                 .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
                 .build();
         } catch (Exception e) {

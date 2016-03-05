@@ -176,7 +176,7 @@ public class SystemTest {
 
         AppRepo newMavenApp = AppRepo.create("maven");
         updateHeaderAndCommit(newMavenApp, "Different repo");
-        assertThat(restClient.createApp(newMavenApp.gitUrl()).getStatus(), is(201));
+        assertThat(restClient.createApp(newMavenApp.gitUrl()).getStatus(), is(200));
         restClient.deploy(newMavenApp.name);
 
         assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size()));
@@ -188,7 +188,7 @@ public class SystemTest {
         // put the old app back. The git repo can no longer to a fastforward merge
 
         updateHeaderAndCommit(mavenApp, "My maven app");
-        assertThat(restClient.createApp(mavenApp.gitUrl()).getStatus(), is(201));
+        assertThat(restClient.createApp(mavenApp.gitUrl()).getStatus(), is(200));
         restClient.deploy(mavenApp.name);
 
         assertThat(

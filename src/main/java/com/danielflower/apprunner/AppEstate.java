@@ -80,6 +80,11 @@ public class AppEstate {
     }
 
     public boolean remove(AppDescription appDescription) {
+        try {
+            appDescription.stopApp();
+        } catch (Exception e) {
+            log.warn("Error while shutting " + appDescription.name(), e);
+        }
         return managers.remove(appDescription);
     }
 
