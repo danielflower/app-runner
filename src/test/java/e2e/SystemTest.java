@@ -10,6 +10,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -114,11 +115,7 @@ public class SystemTest {
         leinAppsWork();
         nodeAppsWork();
 
-        File indexHtml = new File(mavenApp.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
-        String newVersion = FileUtils.readFileToString(indexHtml).replace("My Maven App", "My new and improved maven app!");
-        FileUtils.write(indexHtml, newVersion, false);
-        mavenApp.origin.add().addFilepattern(".").call();
-        mavenApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
+        updateHeaderAndCommit(mavenApp, "My new and improved maven app!");
 
         assertThat(restClient.deploy(mavenApp.name),
             is(equalTo(200, containsString("buildLogUrl"))));
@@ -137,12 +134,18 @@ public class SystemTest {
             is(equalTo(200, containsString("Starting maven in prod"))));
     }
 
+    private static void updateHeaderAndCommit(AppRepo mavenApp, String replacement) throws IOException, GitAPIException {
+        File indexHtml = new File(mavenApp.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
+        String newVersion = FileUtils.readFileToString(indexHtml).replaceAll("<h1>.*</h1>", "<h1>" + replacement + "</h1>");
+        FileUtils.write(indexHtml, newVersion, false);
+        mavenApp.origin.add().addFilepattern(".").call();
+        mavenApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
+    }
+
     @Test
     public void theRestAPILives() throws Exception {
-        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
-        assertThat(resp.getStatus(), is(200));
-
-        JSONObject all = new JSONObject(resp.getContentAsString());
+        JSONObject all = getAllApps();
+        ContentResponse resp;
 
         JSONAssert.assertEquals("{apps:[" +
             "{ name: \"lein\" }," +
@@ -157,6 +160,42 @@ public class SystemTest {
         assertThat(resp.getStatus(), is(200));
         JSONObject single = new JSONObject(resp.getContentAsString());
         JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(1), single, JSONCompareMode.STRICT_ORDER);
+    }
+
+    public static JSONObject getAllApps() throws InterruptedException, ExecutionException, TimeoutException {
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
+        assertThat(resp.getStatus(), is(200));
+
+        return new JSONObject(resp.getContentAsString());
+    }
+
+    @Test
+    public void postingToAnExistingNameChangesTheURL() throws Exception {
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
+        String webUrl = new JSONObject(resp.getContentAsString()).getString("url");
+
+        AppRepo newMavenApp = AppRepo.create("maven");
+        updateHeaderAndCommit(newMavenApp, "Different repo");
+        assertThat(restClient.createApp(newMavenApp.gitUrl()).getStatus(), is(201));
+        restClient.deploy(newMavenApp.name);
+
+        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size()));
+
+        assertThat(
+            client.GET(webUrl),
+            is(equalTo(200, containsString("Different repo"))));
+
+        // put the old app back. The git repo can no longer to a fastforward merge
+
+        updateHeaderAndCommit(mavenApp, "My maven app");
+        assertThat(restClient.createApp(mavenApp.gitUrl()).getStatus(), is(201));
+        restClient.deploy(mavenApp.name);
+
+        assertThat(
+            client.GET(webUrl),
+            is(equalTo(200, containsString("My maven app"))));
+
+        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size()));
     }
 
     @Test

@@ -79,6 +79,10 @@ public class AppEstate {
         return all().filter(a -> a.name().equals(name)).findFirst();
     }
 
+    public boolean remove(AppDescription appDescription) {
+        return managers.remove(appDescription);
+    }
+
     public interface AppAddedListener {
         void onAppAdded(AppDescription app) throws IOException;
     }

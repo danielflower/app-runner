@@ -11,6 +11,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.StoredConfig;
@@ -132,7 +133,8 @@ public class AppManager implements AppDescription {
 
 
         buildLogHandler.consumeLine("Fetching latest changes from git...");
-        git.pull().setRemote("origin").call();
+        git.fetch().setRemote("origin").call();
+        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
         File id = copyToNewInstanceDir();
         buildLogHandler.consumeLine("Created new instance in " + dirPath(id));
 

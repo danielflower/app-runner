@@ -106,6 +106,12 @@ public class AppResource {
 
         try {
             appName = isBlank(appName) ? AppManager.nameFromUrl(gitUrl) : appName;
+
+            Optional<AppDescription> existing = estate.app(appName);
+            if (existing.isPresent()) {
+                estate.remove(existing.get());
+            }
+
             AppDescription added = estate.addApp(gitUrl, appName);
             return Response.status(201)
                 .header("Location", uriInfo.getRequestUri() + "/" + added.name())
