@@ -216,6 +216,15 @@ public class SystemTest {
     }
 
     @Test
+    public void appsCanGetAuthors() throws Exception {
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
+        JSONObject respJson = new JSONObject(resp.getContentAsString());
+        assertThat(
+            respJson.getString("contributors"),
+            is("Author Test"));
+    }
+
+    @Test
     public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         // ensure the zips exist
         new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
