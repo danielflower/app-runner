@@ -54,10 +54,11 @@ public class AppManager implements AppDescription {
         } catch (IOException | GitAPIException e) {
             throw new AppRunnerException("Could not open or create git repo at " + gitDir, e);
         }
-        StoredConfig config = git.getRepository().getConfig();
-        config.setString("remote", "origin", "url", gitUrl);
+
+        StoredConfig gitCfg = git.getRepository().getConfig();
+        gitCfg.setString("remote", "origin", "url", gitUrl);
         try {
-            config.save();
+            gitCfg.save();
         } catch (IOException e) {
             throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }

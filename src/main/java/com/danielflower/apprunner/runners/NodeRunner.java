@@ -15,6 +15,15 @@ import java.util.concurrent.TimeUnit;
 
 public class NodeRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(NodeRunner.class);
+
+    public static final AppRunner.Factory factory = (config, appName, rootFolder) -> {
+        File packageJson = new File(rootFolder, "package.json");
+        if (packageJson.isFile())
+            return Optional.of(new NodeRunner(rootFolder, config.nodeExecutable(), config.npmExecutable()));
+
+        return Optional.empty();
+    };
+
     private final File projectRoot;
     private final String nodeExec;
     private final String npmExec;
@@ -30,19 +39,10 @@ public class NodeRunner implements AppRunner {
         runNPM(buildLogHandler, envVarsForApp, "install");
         runNPM(buildLogHandler, envVarsForApp, "test");
 
-        CommandLine command = new CommandLine(nodeExec)
-            .addArgument("server.js");
+        CommandLine command = new CommandLine(nodeExec).addArgument("server.js");
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
-
-    public void runNPM(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String argument) {
-        CommandLine command = new CommandLine(npmExec)
-            .addArgument(argument);
-        buildLogHandler.consumeLine("Running " + StringUtils.join(command.toStrings(), " "));
-        ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, TimeUnit.MINUTES.toMillis(30));
-    }
-
 
     public void shutdown() {
         if (watchDog != null) {
@@ -51,27 +51,10 @@ public class NodeRunner implements AppRunner {
         }
     }
 
-    public static class Factory implements AppRunner.Factory {
+    private void runNPM(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String argument) {
+        CommandLine command = new CommandLine(npmExec).addArgument(argument);
 
-        private final String nodeExec;
-        private final String npmExec;
-
-        public Factory(String nodeExec, String npmExec) {
-            this.nodeExec = nodeExec;
-            this.npmExec = npmExec;
-        }
-
-        @Override
-        public Optional<AppRunner> forProject(String appName, File projectRoot) {
-            File projectClj = new File(projectRoot, "package.json");
-            return projectClj.isFile()
-                ? Optional.of(new NodeRunner(projectRoot, nodeExec, npmExec))
-                : Optional.empty();
-        }
-
-        public String toString() {
-            return "NPM runner for NodeJS apps using " + npmExec;
-        }
+        buildLogHandler.consumeLine("Running " + StringUtils.join(command.toStrings(), " "));
+        ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, TimeUnit.MINUTES.toMillis(30));
     }
-
 }

@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
@@ -13,9 +14,6 @@ public interface AppRunner {
     void shutdown();
 
     interface Factory {
-
-        Optional<AppRunner> forProject(String appName, File projectRoot);
-
+        Optional<AppRunner> forProject(Config config, String appName, File projectRoot);
     }
-
 }
