@@ -16,23 +16,16 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class LeinRunnerTest {
 
-    private static HttpClient client;
+    private static HttpClient client = new HttpClient();
     private StringBuilderWriter buildLog = new StringBuilderWriter();
     private StringBuilderWriter consoleLog = new StringBuilderWriter();
 
-    @BeforeClass
-    public static void setup() throws Exception {
-//        Assume.assumeTrue("Skipping tests as LEIN not detected", config.leinJar().isPresent());
-
-        client = new HttpClient();
+    @BeforeClass public static void setup() throws Exception {
         client.start();
     }
 
-    @AfterClass
-    public static void stop() throws Exception {
-        if (client != null) {
-            client.stop();
-        }
+    @AfterClass public static void stop() throws Exception {
+        client.stop();
     }
 
     @Test
@@ -44,13 +37,19 @@ public class LeinRunnerTest {
 
     public void canStartALeinProject(int attempt) throws Exception {
         String appName = "lein";
-        LeinRunner runner = new LeinRunner(Photocopier.copySampleAppToTempDir(appName), HomeProvider.default_java_home, CommandLineProvider.lein_on_path);
-//        LeinRunner runner = new LeinRunner(sampleAppDir(appName), null, tempDir, JavaHomeProvider.default_java_home);
+        LeinRunner runner = new LeinRunner(
+            Photocopier.copySampleAppToTempDir(appName),
+            HomeProvider.default_java_home,
+            CommandLineProvider.lein_on_path);
+
         int port = 45678;
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
-                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                    TestConfig.testEnvVars(port, appName), startupWaiter);
+                runner.start(
+                    new OutputToWriterBridge(buildLog),
+                    new OutputToWriterBridge(consoleLog),
+                    TestConfig.testEnvVars(port, appName),
+                    startupWaiter);
             }
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");

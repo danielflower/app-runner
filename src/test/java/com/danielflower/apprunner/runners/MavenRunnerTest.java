@@ -17,29 +17,33 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MavenRunnerTest {
 
-    private static HttpClient client;
+    private static HttpClient client = new HttpClient();
     StringBuilderWriter buildLog = new StringBuilderWriter();
     StringBuilderWriter consoleLog = new StringBuilderWriter();
 
-    @BeforeClass
-    public static void setup() throws Exception {
-        client = new HttpClient();
+    @BeforeClass public static void setup() throws Exception {
         client.start();
     }
 
-    @AfterClass
-    public static void stop() throws Exception {
+    @AfterClass public static void stop() throws Exception {
         client.stop();
     }
 
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws Exception {
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(Photocopier.copySampleAppToTempDir(appName), HomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
+        MavenRunner runner = new MavenRunner(
+            Photocopier.copySampleAppToTempDir(appName),
+            HomeProvider.default_java_home,
+            MavenRunner.CLEAN_AND_PACKAGE);
+
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
-                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                    TestConfig.testEnvVars(45678, appName), startupWaiter);
+                runner.start(
+                    new OutputToWriterBridge(buildLog),
+                    new OutputToWriterBridge(consoleLog),
+                    TestConfig.testEnvVars(45678, appName),
+                    startupWaiter);
             }
             try {
                 ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
@@ -55,5 +59,4 @@ public class MavenRunnerTest {
             throw e;
         }
     }
-
 }

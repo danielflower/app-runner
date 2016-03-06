@@ -82,16 +82,14 @@ public class MavenRunner implements AppRunner {
     }
 
     public static Model loadPomModel(File pomFile) {
-        Model model;
         try {
             MavenXpp3Reader reader = new MavenXpp3Reader();
             try (FileReader pomReader = new FileReader(pomFile)) {
-                model = reader.read(pomReader);
+                return reader.read(pomReader);
             }
         } catch (Exception e) {
             throw new ProjectCannotStartException("Error while reading maven meta data", e);
         }
-        return model;
     }
 
     public void shutdown() {
