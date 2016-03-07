@@ -18,6 +18,15 @@ import static com.danielflower.apprunner.runners.MavenRunner.loadPomModel;
 
 public class LeinRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(LeinRunner.class);
+
+    public static final AppRunner.Factory factory = (config, appName, rootFolder) -> {
+        File projectClj = new File(rootFolder, "project.clj");
+        if (projectClj.isFile())
+            return Optional.of(new LeinRunner(rootFolder, config.leinJavaCommandProvider(), config.leinCommandProvider()));
+
+        return Optional.empty();
+    };
+
     private final File projectRoot;
     private final CommandLineProvider javaCmd;
     private final CommandLineProvider leinCmd;
@@ -55,30 +64,6 @@ public class LeinRunner implements AppRunner {
         if (watchDog != null) {
             watchDog.destroyProcess();
             watchDog.stop();
-        }
-    }
-
-    public static class Factory implements AppRunner.Factory {
-        private final CommandLineProvider javaCmd;
-        private final CommandLineProvider leinCmd;
-
-        public Factory(CommandLineProvider javaCmd, CommandLineProvider leinCmd) {
-            this.javaCmd = javaCmd;
-            this.leinCmd = leinCmd;
-        }
-
-        public Optional<AppRunner> forProject(String appName, File projectRoot) {
-            File projectClj = new File(projectRoot, "project.clj");
-            if (projectClj.isFile()) {
-                LeinRunner runner = new LeinRunner(projectRoot, javaCmd, leinCmd);
-                return Optional.of(runner);
-            } else {
-                return Optional.empty();
-            }
-        }
-
-        public String toString() {
-            return "Leiningin runner for Clojure apps using " /*+ leinJar.getName()*/;
         }
     }
 }

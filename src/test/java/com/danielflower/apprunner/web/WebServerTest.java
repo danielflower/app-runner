@@ -20,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.UUID;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -38,7 +39,7 @@ public class WebServerTest {
         client = new HttpClient();
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap, new AppEstate(proxyMap, fileSandbox(), RunnerProvider.empty()), "test-app");
+        webServer = new WebServer(0, proxyMap, new AppEstate(proxyMap, fileSandbox(), new RunnerProvider(null, new ArrayList<>())), "test-app");
         webServer.start();
         appServer = new TestServer();
     }

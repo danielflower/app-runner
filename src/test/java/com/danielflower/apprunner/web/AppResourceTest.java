@@ -18,6 +18,7 @@ import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.UriBuilder;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
@@ -28,7 +29,7 @@ public class AppResourceTest {
 
     MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
     MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), RunnerProvider.empty());
+    AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new RunnerProvider(null, new ArrayList<>()));
     AppResource appResource = new AppResource(estate);
 
     @Test

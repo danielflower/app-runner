@@ -28,6 +28,13 @@ import static java.util.Arrays.asList;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
+
+    public static final List<AppRunner.Factory> runner_factories = asList(
+        LeinRunner.factory,
+        MavenRunner.factory,
+        NodeRunner.factory
+    );
+
     private final Config config;
     private WebServer webServer;
     private AppEstate estate;
@@ -51,11 +58,10 @@ public class App {
         estate = new AppEstate(
             proxyMap,
             fileSandbox,
-            createRunnerProvider());
+            registerdRunnerFactories());
 
-        for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
+        for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet())
             estate.addApp(repo.getValue(), repo.getKey());
-        }
 
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
 
@@ -108,16 +114,9 @@ public class App {
         }
     }
 
-    private RunnerProvider createRunnerProvider() {
-        List<AppRunner.Factory> runnerFactories = asList(
-            new LeinRunner.Factory(config.leinJavaCommandProvider(), config.leinCommandProvider()),
-            new MavenRunner.Factory(config.javaHomeProvider()),
-            new NodeRunner.Factory(config.nodeExecutable(), config.npmExecutable())
-        );
-
-        runnerFactories.stream().forEach(f -> log.info("Registered " + f));
-
-        return new RunnerProvider(runnerFactories);
+    private RunnerProvider registerdRunnerFactories() {
+        runner_factories.stream().forEach(f -> log.info("Registered " + f));
+        return new RunnerProvider(config, runner_factories);
     }
 
     public static void main(String[] args) {

@@ -1,7 +1,6 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.io.OutputToWriterBridge;
-import com.danielflower.apprunner.mgmt.AppManager;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -18,21 +17,16 @@ import static scaffolding.TestConfig.config;
 
 public class NodeRunnerTest {
 
-    private static HttpClient client;
+    private static HttpClient client = new HttpClient();
     private StringBuilderWriter buildLog = new StringBuilderWriter();
     private StringBuilderWriter consoleLog = new StringBuilderWriter();
 
-    @BeforeClass
-    public static void setup() throws Exception {
-        client = new HttpClient();
+    @BeforeClass public static void setup() throws Exception {
         client.start();
     }
 
-    @AfterClass
-    public static void stop() throws Exception {
-        if (client != null) {
-            client.stop();
-        }
+    @AfterClass public static void stop() throws Exception {
+        client.stop();
     }
 
     @Test
@@ -43,14 +37,20 @@ public class NodeRunnerTest {
     }
 
     public void run(int attempt) throws Exception {
-
         String appName = "nodejs";
-        NodeRunner runner = new NodeRunner(Photocopier.copySampleAppToTempDir(appName), config.nodeExecutable(), config.npmExecutable());
+        NodeRunner runner = new NodeRunner(
+            Photocopier.copySampleAppToTempDir(appName),
+            config.nodeExecutable(),
+            config.npmExecutable());
+
         int port = 45688;
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
-                runner.start(new OutputToWriterBridge(buildLog), new OutputToWriterBridge(consoleLog),
-                    TestConfig.testEnvVars(port, appName), startupWaiter);
+                runner.start(
+                    new OutputToWriterBridge(buildLog),
+                    new OutputToWriterBridge(consoleLog),
+                    TestConfig.testEnvVars(port, appName),
+                    startupWaiter);
             }
             try {
                 ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");
@@ -69,8 +69,5 @@ public class NodeRunnerTest {
             System.out.println(consoleLog);
             throw e;
         }
-
     }
-
-
 }

@@ -76,7 +76,7 @@ public class Config {
     }
 
     public String nodeExecutable() {
-        return get("NODE_EXEC", SystemUtils.IS_OS_WINDOWS ? "node.exe" : "node");
+        return get("NODE_EXEC", windowsinize("node"));
     }
 
     public String npmExecutable() {

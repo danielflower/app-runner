@@ -26,10 +26,30 @@ import static java.util.Arrays.asList;
 public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     public static final List<String> CLEAN_AND_PACKAGE = asList("clean", "package");
+
+    public static final AppRunner.Factory factory = (config, appName, rootFolder) -> {
+        File pom = new File(rootFolder, "pom.xml");
+        if (pom.isFile())
+            return Optional.of(new MavenRunner(rootFolder, config.javaHomeProvider(), CLEAN_AND_PACKAGE));
+
+        return Optional.empty();
+    };
+
+    public static Model loadPomModel(File pomFile) {
+        try {
+            MavenXpp3Reader reader = new MavenXpp3Reader();
+            try (FileReader pomReader = new FileReader(pomFile)) {
+                return reader.read(pomReader);
+            }
+        } catch (Exception e) {
+            throw new ProjectCannotStartException("Error while reading maven meta data", e);
+        }
+    }
+
     private final File projectRoot;
     private final HomeProvider javaHomeProvider;
-    private ExecuteWatchdog watchDog;
     private final List<String> goals;
+    private ExecuteWatchdog watchDog;
 
     public MavenRunner(File projectRoot, HomeProvider javaHomeProvider, List<String> goals) {
         this.projectRoot = projectRoot;
@@ -40,8 +60,9 @@ public class MavenRunner implements AppRunner {
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
 
-        if (goals.size() == 0) {
+        if (goals.isEmpty()) {
             log.info("No goals. Skipping maven build");
+
         } else {
             InvocationRequest request = new DefaultInvocationRequest()
                 .setPomFile(pomFile)
@@ -81,46 +102,8 @@ public class MavenRunner implements AppRunner {
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
-    public static Model loadPomModel(File pomFile) {
-        Model model;
-        try {
-            MavenXpp3Reader reader = new MavenXpp3Reader();
-            try (FileReader pomReader = new FileReader(pomFile)) {
-                model = reader.read(pomReader);
-            }
-        } catch (Exception e) {
-            throw new ProjectCannotStartException("Error while reading maven meta data", e);
-        }
-        return model;
-    }
-
     public void shutdown() {
-        if (watchDog != null) {
+        if (watchDog != null)
             watchDog.destroyProcess();
-        }
-    }
-
-    public static class Factory implements AppRunner.Factory {
-
-        private final HomeProvider javaHomeProvider;
-
-        public Factory(HomeProvider javaHomeProvider) {
-            this.javaHomeProvider = javaHomeProvider;
-        }
-
-        @Override
-        public Optional<AppRunner> forProject(String appName, File projectRoot) {
-            File pom = new File(projectRoot, "pom.xml");
-            if (pom.isFile()) {
-                AppRunner runner = new MavenRunner(projectRoot, javaHomeProvider, CLEAN_AND_PACKAGE);
-                return Optional.of(runner);
-            } else {
-                return Optional.empty();
-            }
-        }
-
-        public String toString() {
-            return "Maven builder for Java using " + javaHomeProvider.toString();
-        }
     }
 }
