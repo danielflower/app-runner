@@ -3,6 +3,8 @@ package com.danielflower.apprunner.mgmt;
 import com.danielflower.apprunner.runners.RunnerProvider;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
+import java.util.ArrayList;
+
 public interface AppDescription {
     String name();
 
@@ -11,6 +13,8 @@ public interface AppDescription {
     String latestBuildLog();
 
     String latestConsoleLog();
+
+    ArrayList<String> contributors();
 
     void stopApp() throws Exception;
 

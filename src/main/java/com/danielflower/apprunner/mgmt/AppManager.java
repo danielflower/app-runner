@@ -15,6 +15,7 @@ import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.StoredConfig;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,7 +34,7 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
 
-    public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) {
+    public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
         File root = fileSandbox.appDir(name);
         File gitDir = fileSandbox.appDir(name, "repo");
         File instanceDir = fileSandbox.tempDir(name + File.separator + "instances");
@@ -54,6 +55,16 @@ public class AppManager implements AppDescription {
         } catch (IOException | GitAPIException e) {
             throw new AppRunnerException("Could not open or create git repo at " + gitDir, e);
         }
+        // get authors
+        ArrayList<String> contributors = new ArrayList<>();
+        Iterable<RevCommit> commits = git.log().all().call();
+        for (RevCommit commit : commits) {
+            String author = commit.getAuthorIdent().getName();
+            if (!contributors.contains(author)) {
+                contributors.add(author);
+            }
+        }
+        log.info("getting the contributors " + contributors);
 
         StoredConfig gitCfg = git.getRepository().getConfig();
         gitCfg.setString("remote", "origin", "url", gitUrl);
@@ -63,7 +74,7 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
+        return new AppManager(name, contributors, gitUrl, git, instanceDir, dataDir, tempDir);
     }
 
     private final String gitUrl;
@@ -72,18 +83,20 @@ public class AppManager implements AppDescription {
     private final File instanceDir;
     private final File dataDir;
     private final File tempDir;
+    private ArrayList<String> contributors;
     private final List<AppChangeListener> listeners = new ArrayList<>();
     private AppRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir) {
+    private AppManager(String name, ArrayList<String> contributors, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
         this.dataDir = dataDir;
         this.tempDir = tempDir;
+        this.contributors = contributors;
     }
 
     public String name() {
@@ -102,6 +115,11 @@ public class AppManager implements AppDescription {
         synchronized (consoleLog) {
             return consoleLog.stream().collect(Collectors.joining());
         }
+    }
+
+    @Override
+    public ArrayList<String> contributors() {
+        return contributors;
     }
 
     public synchronized void stopApp() throws Exception {

@@ -1,24 +1,38 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
+import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
-import com.danielflower.apprunner.io.OutputToWriterBridge;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.*;
-import javax.ws.rs.core.*;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.FormParam;
+import javax.ws.rs.GET;
+import javax.ws.rs.HeaderParam;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -85,11 +99,25 @@ public class AppResource {
 
         return new JSONObject()
             .put("name", app.name())
+            .put("contributors", getContributorsList(app))
             .put("buildLogUrl", appUrl(app, restURI, "build.log"))
             .put("consoleLogUrl", appUrl(app, restURI, "console.log"))
             .put("url", uri.resolve("/" + app.name() + "/"))
             .put("deployUrl", appUrl(app, restURI, "deploy"))
             .put("gitUrl", app.gitUrl());
+    }
+
+    private static String getContributorsList(AppDescription app) {
+        String contributors = "";
+        String [] contributorsArray = app.contributors().toArray(new String[0]);
+        Arrays.sort(contributorsArray);
+        for (String name : contributorsArray) {
+            contributors += name + ", ";
+        }
+        if (contributors.length() > 2) {
+            contributors = contributors.substring(0, contributors.length()-2 );
+        }
+        return contributors;
     }
 
     public static URI appUrl(AppDescription app, URI restURI, String path) {

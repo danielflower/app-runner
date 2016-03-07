@@ -2,6 +2,7 @@ package scaffolding;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
+import org.eclipse.jgit.lib.PersonIdent;
 
 import java.io.File;
 
@@ -18,7 +19,9 @@ public class AppRepo {
             Git origin = initCommand.call();
 
             origin.add().addFilepattern(".").call();
-            origin.commit().setMessage("Initial commit").call();
+            origin.commit().setMessage("Initial commit")
+                .setAuthor(new PersonIdent("Author Test", "author@email.com"))
+                .call();
 
             return new AppRepo(name, originDir, origin);
         } catch (Exception e) {
