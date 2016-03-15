@@ -55,16 +55,6 @@ public class AppManager implements AppDescription {
         } catch (IOException | GitAPIException e) {
             throw new AppRunnerException("Could not open or create git repo at " + gitDir, e);
         }
-        // get authors
-        ArrayList<String> contributors = new ArrayList<>();
-        Iterable<RevCommit> commits = git.log().all().call();
-        for (RevCommit commit : commits) {
-            String author = commit.getAuthorIdent().getName();
-            if (!contributors.contains(author)) {
-                contributors.add(author);
-            }
-        }
-        log.info("getting the contributors " + contributors);
 
         StoredConfig gitCfg = git.getRepository().getConfig();
         gitCfg.setString("remote", "origin", "url", gitUrl);
@@ -74,7 +64,7 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, contributors, gitUrl, git, instanceDir, dataDir, tempDir);
+        return new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
     }
 
     private final String gitUrl;
@@ -89,14 +79,14 @@ public class AppManager implements AppDescription {
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
 
-    private AppManager(String name, ArrayList<String> contributors, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
         this.dataDir = dataDir;
         this.tempDir = tempDir;
-        this.contributors = contributors;
+        this.contributors = new ArrayList<>();
     }
 
     public String name() {
@@ -130,6 +120,7 @@ public class AppManager implements AppDescription {
 
     public synchronized void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         clearLogs();
+        this.contributors = getContributorsFromRepo();
 
         InvocationOutputHandler buildLogHandler = line -> {
             outputHandler.consumeLine(line);
@@ -181,6 +172,25 @@ public class AppManager implements AppDescription {
 
             // TODO: delete old instance dir
         }
+    }
+
+    private ArrayList<String> getContributorsFromRepo() {
+        ArrayList<String> contributors = new ArrayList<>();
+        try {
+            // get authors
+            Iterable<RevCommit> commits = git.log().all().call();
+            for (RevCommit commit : commits) {
+                String author = commit.getAuthorIdent().getName();
+                if (!contributors.contains(author)) {
+                    contributors.add(author);
+                }
+            }
+            log.info("getting the contributors " + contributors);
+
+        } catch (Exception e) {
+            log.warn("Failed to get authors from repo: " + e.getMessage());
+        }
+        return contributors;
     }
 
     public void clearLogs() {
