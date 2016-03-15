@@ -117,7 +117,6 @@ public class AppManager implements AppDescription {
         }
     }
 
-    @Override
     public ArrayList<String> contributors() {
         return contributors;
     }

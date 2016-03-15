@@ -12,17 +12,14 @@ public class WriterToOutputBridge extends Writer {
         this.consoleLogHandler = consoleLogHandler;
     }
 
-    @Override
     public void write(char[] cbuf, int off, int len) throws IOException {
         String s = new String(cbuf, off, len);
         consoleLogHandler.consumeLine(s);
     }
 
-    @Override
     public void flush() throws IOException {
     }
 
-    @Override
     public void close() throws IOException {
     }
 }

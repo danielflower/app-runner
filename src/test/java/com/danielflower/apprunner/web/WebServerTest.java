@@ -98,7 +98,6 @@ public class WebServerTest {
         public TestServer() throws Exception {
             jettyServer = new Server(0);
             jettyServer.setHandler(new AbstractHandler() {
-                @Override
                 public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
                     if (target.equals("/test-app")) {
                         response.sendRedirect("/test-app/");
@@ -116,11 +115,9 @@ public class WebServerTest {
             url = new URL("http://localhost:" + port + "/test-app");
         }
 
-        @Override
         public void close() throws Exception {
             jettyServer.stop();
             jettyServer.join();
         }
     }
-
 }

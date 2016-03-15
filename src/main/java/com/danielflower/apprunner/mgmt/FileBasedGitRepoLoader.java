@@ -36,8 +36,7 @@ public class FileBasedGitRepoLoader implements GitRepoLoader {
         this.properties = properties;
     }
 
-    @Override
-    public Map<String, String> loadAll() throws Exception {
+    public Map<String, String> loadAll() {
         Lock l = lock.readLock();
         l.lock();
         try {
@@ -51,7 +50,6 @@ public class FileBasedGitRepoLoader implements GitRepoLoader {
         }
     }
 
-    @Override
     public void save(String name, String gitUrl) throws IOException {
         Lock l = lock.writeLock();
         l.lock();

@@ -24,12 +24,10 @@ public class ReverseProxy extends AsyncProxyServlet {
         this.proxyMap = proxyMap;
     }
 
-    @Override
     protected void addViaHeader(Request proxyRequest) {
         super.addViaHeader(proxyRequest);
     }
 
-    @Override
     protected String filterServerResponseHeader(HttpServletRequest clientRequest, Response serverResponse, String headerName, String headerValue) {
         if (headerName.equalsIgnoreCase("location")) {
             URI targetUri = serverResponse.getRequest().getURI();
@@ -44,7 +42,6 @@ public class ReverseProxy extends AsyncProxyServlet {
         return super.filterServerResponseHeader(clientRequest, serverResponse, headerName, headerValue);
     }
 
-    @Override
     protected String rewriteTarget(HttpServletRequest clientRequest) {
         String uri = clientRequest.getRequestURI();
         Pattern pattern = Pattern.compile("/([^/?]+)(.*)");
@@ -64,13 +61,11 @@ public class ReverseProxy extends AsyncProxyServlet {
         return null;
     }
 
-    @Override
     protected void onProxyRewriteFailed(HttpServletRequest clientRequest, HttpServletResponse proxyResponse) {
         // this is called if rewriteTarget returns null2
         sendProxyResponseError(clientRequest, proxyResponse, 404);
     }
 
-    @Override
     protected void addProxyHeaders(HttpServletRequest clientRequest, Request proxyRequest) {
         super.addProxyHeaders(clientRequest, proxyRequest);
         proxyRequest.getHeaders().remove("Host");

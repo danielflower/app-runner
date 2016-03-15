@@ -30,12 +30,10 @@ public class MockAppDescription implements AppDescription {
         return "";
     }
 
-    @Override
     public String latestConsoleLog() {
         return "";
     }
 
-    @Override
     public ArrayList<String> contributors() {
         return contributors;
     }
@@ -43,7 +41,6 @@ public class MockAppDescription implements AppDescription {
     public void stopApp() {
     }
 
-    @Override
     public void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         ++updateCount;
     }

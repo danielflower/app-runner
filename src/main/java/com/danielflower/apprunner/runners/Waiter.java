@@ -44,7 +44,6 @@ public class Waiter implements AutoCloseable {
         throw new TimeoutException();
     }
 
-    @Override
     public void close() throws Exception {
         client.stop();
     }

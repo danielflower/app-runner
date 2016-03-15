@@ -194,7 +194,6 @@ public class AppResource {
             this.name = name;
         }
 
-        @Override
         public void write(OutputStream output) throws IOException, WebApplicationException {
             try (Writer writer = new OutputStreamWriter(output)) {
                 writer.write("Going to build and deploy " + name + "\n");

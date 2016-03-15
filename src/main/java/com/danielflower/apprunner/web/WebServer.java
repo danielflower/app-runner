@@ -92,7 +92,6 @@ public class WebServer implements AutoCloseable {
     }
 
     public static class CORSFilter implements ContainerResponseFilter {
-        @Override
         public void filter(ContainerRequestContext request,
                            ContainerResponseContext response) throws IOException {
             response.getHeaders().add("Access-Control-Allow-Origin", "*");
