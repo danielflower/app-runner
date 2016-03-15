@@ -4,10 +4,6 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.AppRunner;
-import com.danielflower.apprunner.runners.LeinRunner;
-import com.danielflower.apprunner.runners.MavenRunner;
-import com.danielflower.apprunner.runners.NodeRunner;
 import com.danielflower.apprunner.runners.RunnerProvider;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
@@ -19,21 +15,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 import static com.danielflower.apprunner.FileSandbox.dirPath;
-import static java.util.Arrays.asList;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
-
-    public static final List<AppRunner.Factory> runner_factories = asList(
-        LeinRunner.factory,
-        MavenRunner.factory,
-        NodeRunner.factory
-    );
 
     private final Config config;
     private WebServer webServer;
@@ -115,8 +103,9 @@ public class App {
     }
 
     private RunnerProvider registerdRunnerFactories() {
-        runner_factories.stream().forEach(f -> log.info("Registered " + f));
-        return new RunnerProvider(config, runner_factories);
+        RunnerProvider runnerProvider = new RunnerProvider(config, RunnerProvider.default_providers);
+        log.info("Registered providers...\n" + runnerProvider.describeRunners());
+        return runnerProvider;
     }
 
     public static void main(String[] args) {

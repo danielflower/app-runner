@@ -6,7 +6,6 @@ import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
 import java.io.File;
 import java.util.Map;
-import java.util.Optional;
 
 public interface AppRunner {
     void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException;
@@ -14,6 +13,6 @@ public interface AppRunner {
     void shutdown();
 
     interface Factory {
-        Optional<AppRunner> forProject(Config config, String appName, File projectRoot);
+        AppRunner appRunner(Config cfg, String name, File folder);
     }
 }

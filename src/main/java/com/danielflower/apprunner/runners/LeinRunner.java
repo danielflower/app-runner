@@ -11,21 +11,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.danielflower.apprunner.runners.MavenRunner.loadPomModel;
 
 public class LeinRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(LeinRunner.class);
-
-    public static final AppRunner.Factory factory = (config, appName, rootFolder) -> {
-        File projectClj = new File(rootFolder, "project.clj");
-        if (projectClj.isFile())
-            return Optional.of(new LeinRunner(rootFolder, config.leinJavaCommandProvider(), config.leinCommandProvider()));
-
-        return Optional.empty();
-    };
 
     private final File projectRoot;
     private final CommandLineProvider javaCmd;

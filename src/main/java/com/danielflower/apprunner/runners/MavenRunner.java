@@ -18,7 +18,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 import static java.util.Arrays.asList;
@@ -26,14 +25,6 @@ import static java.util.Arrays.asList;
 public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     public static final List<String> CLEAN_AND_PACKAGE = asList("clean", "package");
-
-    public static final AppRunner.Factory factory = (config, appName, rootFolder) -> {
-        File pom = new File(rootFolder, "pom.xml");
-        if (pom.isFile())
-            return Optional.of(new MavenRunner(rootFolder, config.javaHomeProvider(), CLEAN_AND_PACKAGE));
-
-        return Optional.empty();
-    };
 
     public static Model loadPomModel(File pomFile) {
         try {

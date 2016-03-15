@@ -10,19 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class NodeRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(NodeRunner.class);
-
-    public static final AppRunner.Factory factory = (config, appName, rootFolder) -> {
-        File packageJson = new File(rootFolder, "package.json");
-        if (packageJson.isFile())
-            return Optional.of(new NodeRunner(rootFolder, config.nodeExecutable(), config.npmExecutable()));
-
-        return Optional.empty();
-    };
 
     private final File projectRoot;
     private final String nodeExec;
