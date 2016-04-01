@@ -41,15 +41,15 @@ import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
 
-    static final int port = WebServer.getAFreePort();
-    static final String appRunnerUrl = "http://localhost:" + port;
-    static final RestClient restClient = RestClient.create(appRunnerUrl);
-    static final HttpClient client = new HttpClient();
-    static final AppRepo leinApp = AppRepo.create("lein");
-    static final AppRepo mavenApp = AppRepo.create("maven");
-    static final AppRepo nodeApp = AppRepo.create("nodejs");
-    static final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
-    static MavenRunner mavenRunner;
+    private static final int port = WebServer.getAFreePort();
+    private static final String appRunnerUrl = "http://localhost:" + port;
+    private static final RestClient restClient = RestClient.create(appRunnerUrl);
+    private static final HttpClient client = new HttpClient();
+    private static final AppRepo leinApp = AppRepo.create("lein");
+    private static final AppRepo mavenApp = AppRepo.create("maven");
+    private static final AppRepo nodeApp = AppRepo.create("nodejs");
+    private static final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
+    private static MavenRunner mavenRunner;
     private static List<AppRepo> apps = asList(mavenApp, nodeApp, leinApp);
 
 
@@ -162,7 +162,7 @@ public class SystemTest {
         JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(1), single, JSONCompareMode.STRICT_ORDER);
     }
 
-    public static JSONObject getAllApps() throws InterruptedException, ExecutionException, TimeoutException {
+    private static JSONObject getAllApps() throws InterruptedException, ExecutionException, TimeoutException {
         ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
         assertThat(resp.getStatus(), is(200));
 
@@ -241,5 +241,17 @@ public class SystemTest {
         }
 
         assertThat(client.GET(appRunnerUrl + "/api/v1/system/samples/badname.zip").getStatus(), is((404)));
+    }
+
+    @Test
+    public void theSwaggerJSONDescribesTheAPI() throws Exception {
+        ContentResponse swagger = restClient.get("/api/v1/swagger.json");
+        assertThat(swagger.getStatus(), is(200));
+        JSONAssert.assertEquals("{ basePath: '/api/v1'," +
+            "paths: {" +
+            "'/apps': {}," +
+            "'/system': {}" +
+            "}" +
+            "}", swagger.getContentAsString(), JSONCompareMode.LENIENT);
     }
 }

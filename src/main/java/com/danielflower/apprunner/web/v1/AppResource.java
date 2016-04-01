@@ -1,31 +1,19 @@
-package com.danielflower.apprunner.web;
+package com.danielflower.apprunner.web.v1;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
+import io.swagger.annotations.*;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.FormParam;
-import javax.ws.rs.GET;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.*;
+import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -38,7 +26,8 @@ import java.util.Optional;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-@Path("/v1/apps")
+@Api(value = "Application")
+@Path("/apps")
 public class AppResource {
     public static final Logger log = LoggerFactory.getLogger(AppResource.class);
 
@@ -50,6 +39,7 @@ public class AppResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @ApiOperation(value = "Gets all registered apps")
     public String apps(@Context UriInfo uriInfo) {
 
         JSONObject result = new JSONObject();
@@ -65,7 +55,8 @@ public class AppResource {
     @GET
     @Path("/{name}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response app(@Context UriInfo uriInfo, @PathParam("name") String name) {
+    @ApiOperation(value = "Gets a single app")
+    public Response app(@Context UriInfo uriInfo, @ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> app = estate.app(name);
         if (app.isPresent()) {
             return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString(4)).build();
@@ -77,7 +68,8 @@ public class AppResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{name}/build.log")
-    public String buildLogs(@PathParam("name") String name) {
+    @ApiOperation(value = "Gets the latest build log as plain text for the given app")
+    public String buildLogs(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
             return namedApp.get().latestBuildLog();
@@ -87,14 +79,15 @@ public class AppResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{name}/console.log")
-    public String consoleLogs(@PathParam("name") String name) {
+    @ApiOperation(value = "Gets the latest console log as plain text for the given app")
+    public String consoleLogs(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
             return namedApp.get().latestConsoleLog();
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
     }
 
-    public static JSONObject appJson(URI uri, AppDescription app) {
+    private static JSONObject appJson(URI uri, AppDescription app) {
         URI restURI = uri.resolve("/api/v1/");
 
         return new JSONObject()
@@ -109,24 +102,34 @@ public class AppResource {
 
     private static String getContributorsList(AppDescription app) {
         String contributors = "";
-        String [] contributorsArray = app.contributors().toArray(new String[0]);
+        String[] contributorsArray = app.contributors().toArray(new String[0]);
         Arrays.sort(contributorsArray);
         for (String name : contributorsArray) {
             contributors += name + ", ";
         }
         if (contributors.length() > 2) {
-            contributors = contributors.substring(0, contributors.length()-2 );
+            contributors = contributors.substring(0, contributors.length() - 2);
         }
         return contributors;
     }
 
-    public static URI appUrl(AppDescription app, URI restURI, String path) {
+    private static URI appUrl(AppDescription app, URI restURI, String path) {
         return restURI.resolve("apps/" + app.name() + "/" + path);
     }
 
     @POST
     @Produces(MediaType.TEXT_PLAIN)
-    public Response create(@Context UriInfo uriInfo, @FormParam("gitUrl") String gitUrl, @FormParam("appName") String appName) {
+    @ApiOperation(value = "Registers an app or updates an existing app")
+    @ApiResponses(value = {
+        @ApiResponse(code = 201, message = "The new app was successfully registered"),
+        @ApiResponse(code = 200, message = "The existing app was updated"),
+        @ApiResponse(code = 400, message = "The git URL was not specified")
+    })
+    public Response create(@Context UriInfo uriInfo,
+                           @ApiParam(required = true, example = "https://github.com/danielflower/app-runner-home.git", value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @FormParam("gitUrl") String gitUrl,
+                           @ApiParam(example = "app-runner-home", value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
+                           @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {
             return Response.status(400).entity("No gitUrl was specified").build();
@@ -159,7 +162,8 @@ public class AppResource {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{name}")
-    public Response delete(@Context UriInfo uriInfo, @HeaderParam("Accept") String accept, @PathParam("name") String name) throws IOException {
+    @ApiOperation(value = "De-registers an application")
+    public Response delete(@Context UriInfo uriInfo, @ApiParam(required=true) @PathParam("name") String name) throws IOException {
         Optional<AppDescription> existing = estate.app(name);
         if (existing.isPresent()) {
             AppDescription appDescription = existing.get();
@@ -174,7 +178,15 @@ public class AppResource {
     @POST /* Maybe should be PUT, but too many hooks only use POST */
     @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Path("/{name}/deploy")
-    public Response deploy(@Context UriInfo uriInfo, @HeaderParam("Accept") String accept, @PathParam("name") String name) throws IOException {
+    @ApiOperation(value = "Deploys an app", notes = "Deploys the app by fetching the latest changes from git, building it, " +
+        "starting it, polling for successful startup by making GET requests to /{name}/, and if it returns any HTTP response " +
+        "it shuts down the old version of the app. If any steps before that fail, the old version of the app will continue serving " +
+        "requests.")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "Returns 200 if the command was received successfully. Whether the build " +
+        "actually succeeds or fails is ignored. Returns streamed plain text of the build log and console startup, unless the Accept" +
+        " header includes 'application/json'.")})
+    public Response deploy(@Context UriInfo uriInfo, @ApiParam(example = "application/json") @HeaderParam("Accept") String accept,
+                           @ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) throws IOException {
         StreamingOutput stream = new UpdateStreamer(name);
         if (MediaType.APPLICATION_JSON.equals(accept)) {
             StringBuilderWriter output = new StringBuilderWriter();
@@ -218,7 +230,8 @@ public class AppResource {
 
     @PUT
     @Path("/{name}/stop")
-    public Response stop(@PathParam("name") String name) {
+    @ApiOperation(value = "Stop an app from running, but does not de-register it. Call the deploy action to restart it.")
+    public Response stop(@ApiParam(required = true) @PathParam("name") String name) {
         Optional<AppDescription> app = estate.app(name);
         if (app.isPresent()) {
             try {

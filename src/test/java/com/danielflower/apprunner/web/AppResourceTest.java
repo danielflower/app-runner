@@ -2,6 +2,7 @@ package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.web.v1.AppResource;
 import org.apache.commons.io.output.NullOutputStream;
 import org.junit.Assert;
 import org.junit.Test;

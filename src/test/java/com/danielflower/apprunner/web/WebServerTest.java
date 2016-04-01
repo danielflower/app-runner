@@ -93,7 +93,7 @@ public class WebServerTest {
 
     private static class TestServer implements AutoCloseable {
         private final Server jettyServer;
-        public final URL url;
+        final URL url;
 
         public TestServer() throws Exception {
             jettyServer = new Server(0);

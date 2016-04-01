@@ -61,7 +61,7 @@ public class RestClient {
     }
 
     public ContentResponse get(String url) throws Exception {
-        return client.GET(url);
+        return client.GET(appRunnerUrl + url);
     }
 
     public void stop() {

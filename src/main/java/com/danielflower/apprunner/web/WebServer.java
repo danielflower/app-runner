@@ -3,6 +3,8 @@ package com.danielflower.apprunner.web;
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.problems.AppRunnerException;
+import com.danielflower.apprunner.web.v1.AppResource;
+import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
 import org.eclipse.jetty.server.*;
@@ -60,6 +62,7 @@ public class WebServer implements AutoCloseable {
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
         handlers.addHandler(createRestService(estate));
+        handlers.addHandler(SwaggerDocs.buildSwaggerUI());
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
 
@@ -77,6 +80,7 @@ public class WebServer implements AutoCloseable {
         rc.register(new AppResource(estate));
         rc.register(JacksonFeature.class);
         rc.register(CORSFilter.class);
+        SwaggerDocs.registerSwaggerJsonResource(rc);
         rc.addProperties(new HashMap<String,Object>() {{
             // Turn off buffering so results can be streamed
             put(ServerProperties.OUTBOUND_CONTENT_LENGTH_BUFFER, 0);
@@ -85,7 +89,7 @@ public class WebServer implements AutoCloseable {
         ServletHolder holder = new ServletHolder(new ServletContainer(rc));
 
         ServletContextHandler sch = new ServletContextHandler();
-        sch.setContextPath("/api");
+        sch.setContextPath("/api/v1");
         sch.addServlet(holder, "/*");
 
         return sch;

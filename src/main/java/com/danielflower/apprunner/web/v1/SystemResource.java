@@ -1,5 +1,8 @@
-package com.danielflower.apprunner.web;
+package com.danielflower.apprunner.web.v1;
 
+import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,7 +22,8 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
-@Path("/v1/system")
+@Api(value = "System")
+@Path("/system")
 public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
 
@@ -28,6 +32,7 @@ public class SystemResource {
 
     @GET
     @Produces("application/json")
+    @ApiOperation(value = "Returns information about AppRunner, including information about sample apps")
     public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();
         JSONArray apps = new JSONArray();
@@ -44,7 +49,8 @@ public class SystemResource {
     @GET
     @Path("/samples/{name}")
     @Produces("application/zip")
-    public Response samples(@PathParam("name") String name) throws IOException {
+    @ApiOperation("Returns a ZIP file containing a sample app")
+    public Response samples(@ApiParam(required = true, allowableValues = "maven.zip, lein.zip, nodejs.zip") @PathParam("name") String name) throws IOException {
         if (!sampleProjectNames.contains(name)) {
             return Response.status(404).entity("Invalid sample app name. Valid names: " + sampleProjectNames).build();
         }
