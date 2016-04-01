@@ -1,29 +1,17 @@
 package com.danielflower.apprunner.web;
 
-import com.danielflower.apprunner.App;
 import io.swagger.config.Scanner;
 import io.swagger.config.SwaggerConfig;
 import io.swagger.jaxrs.config.SwaggerContextService;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.models.Info;
 import io.swagger.models.Swagger;
-import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.glassfish.jersey.server.ResourceConfig;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
 class SwaggerDocs {
-
-    static ContextHandler buildSwaggerUI() throws Exception {
-        ResourceHandler rh = new ResourceHandler();
-        rh.setResourceBase(App.class.getClassLoader().getResource("META-INF/resources/webjars/swagger-ui/2.1.4").toURI().toString());
-        ContextHandler context = new ContextHandler();
-        context.setContextPath("/docs/");
-        context.setHandler(rh);
-        return context;
-    }
 
     static void registerSwaggerJsonResource(ResourceConfig rc) {
         new SwaggerContextService()

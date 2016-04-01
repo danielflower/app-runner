@@ -62,7 +62,6 @@ public class WebServer implements AutoCloseable {
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
         handlers.addHandler(createRestService(estate));
-        handlers.addHandler(SwaggerDocs.buildSwaggerUI());
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
 
@@ -95,7 +94,7 @@ public class WebServer implements AutoCloseable {
         return sch;
     }
 
-    public static class CORSFilter implements ContainerResponseFilter {
+    private static class CORSFilter implements ContainerResponseFilter {
         public void filter(ContainerRequestContext request,
                            ContainerResponseContext response) throws IOException {
             response.getHeaders().add("Access-Control-Allow-Origin", "*");
