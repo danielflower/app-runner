@@ -127,8 +127,6 @@ public class WebServer implements AutoCloseable {
         ServletHolder proxyServletHolder = new ServletHolder(servlet);
         proxyServletHolder.setAsyncSupported(true);
         proxyServletHolder.setInitParameter("maxThreads", "100");
-
-
         ServletHandler proxyHandler = new ServletHandler();
         proxyHandler.addServletWithMapping(proxyServletHolder, "/*");
         return proxyHandler;

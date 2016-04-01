@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.util.regex.Matcher;
@@ -63,6 +64,11 @@ public class ReverseProxy extends AsyncProxyServlet {
 
     protected void onProxyRewriteFailed(HttpServletRequest clientRequest, HttpServletResponse proxyResponse) {
         // this is called if rewriteTarget returns null2
+        try {
+            proxyResponse.getWriter().write("404 Not Found");
+        } catch (IOException e) {
+            log.info("Could not write error", e);
+        }
         sendProxyResponseError(clientRequest, proxyResponse, 404);
     }
 

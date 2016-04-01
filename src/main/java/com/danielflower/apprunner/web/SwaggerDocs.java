@@ -1,37 +1,64 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.App;
-import com.danielflower.apprunner.web.v1.AppResource;
-import io.swagger.jaxrs.config.BeanConfig;
+import io.swagger.config.Scanner;
+import io.swagger.config.SwaggerConfig;
+import io.swagger.jaxrs.config.SwaggerContextService;
 import io.swagger.jaxrs.listing.ApiListingResource;
+import io.swagger.models.Info;
+import io.swagger.models.Swagger;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.glassfish.jersey.server.ResourceConfig;
 
+import java.util.Set;
+import java.util.stream.Collectors;
+
 class SwaggerDocs {
 
     static ContextHandler buildSwaggerUI() throws Exception {
-        final ResourceHandler swaggerUIResourceHandler = new ResourceHandler();
-        swaggerUIResourceHandler.setResourceBase(App.class.getClassLoader().getResource("META-INF/resources/webjars/swagger-ui/2.1.4").toURI().toString());
-        final ContextHandler swaggerUIContext = new ContextHandler();
-        swaggerUIContext.setContextPath("/docs/");
-        swaggerUIContext.setHandler(swaggerUIResourceHandler);
-        return swaggerUIContext;
+        ResourceHandler rh = new ResourceHandler();
+        rh.setResourceBase(App.class.getClassLoader().getResource("META-INF/resources/webjars/swagger-ui/2.1.4").toURI().toString());
+        ContextHandler context = new ContextHandler();
+        context.setContextPath("/docs/");
+        context.setHandler(rh);
+        return context;
     }
 
     static void registerSwaggerJsonResource(ResourceConfig rc) {
-        // Isn't this amazingly bad?!?! An instance of an object is created. Some setters are called, and
-        // then the garbage collector will destroy the object that seemingly did nothing, and yet this is
-        // presumably setting some global static values which are used by swagger. Furthermore, the order
-        // of the setters matters. Things like description must be set before setScan is called.
-        // What do people have against passing dependencies and config into constructors?
-        BeanConfig beanConfig = new BeanConfig();
-        beanConfig.setVersion("1.0");
-        beanConfig.setTitle("App Runner");
-        beanConfig.setDescription("The REST API for App Runner which is used for registering apps, deploying apps, viewing logs etc.");
-        beanConfig.setBasePath("/api/v1");
-        beanConfig.setResourcePackage(AppResource.class.getPackage().getName());
-        beanConfig.setScan(true);
+        new SwaggerContextService()
+            .withSwaggerConfig(new SwaggerConfig() {
+                public Swagger configure(Swagger swagger) {
+                    Info info = new Info();
+                    info.setTitle("App Runner");
+                    info.setDescription("The REST API for App Runner which is used for registering apps, deploying apps, viewing logs etc.");
+                    info.setVersion("1.0");
+                    swagger.setInfo(info);
+                    swagger.setBasePath("/api/v1");
+                    return swagger;
+                }
+
+                public String getFilterClass() {
+                    return null;
+                }
+            })
+            .withScanner(new Scanner() {
+                private boolean prettyPrint;
+
+                public Set<Class<?>> classes() {
+                    return rc.getInstances().stream().map(Object::getClass).collect(Collectors.toSet());
+                }
+
+                public boolean getPrettyPrint() {
+                    return prettyPrint;
+                }
+
+                public void setPrettyPrint(boolean b) {
+                    prettyPrint = b;
+                }
+            })
+            .initConfig()
+            .initScanner();
 
         rc.packages(ApiListingResource.class.getPackage().getName());
     }

@@ -247,6 +247,7 @@ public class SystemTest {
     public void theSwaggerJSONDescribesTheAPI() throws Exception {
         ContentResponse swagger = restClient.get("/api/v1/swagger.json");
         assertThat(swagger.getStatus(), is(200));
+        System.out.println("swagger.getContentAsString() = " + swagger.getContentAsString());
         JSONAssert.assertEquals("{ basePath: '/api/v1'," +
             "paths: {" +
             "'/apps': {}," +
