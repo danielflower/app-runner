@@ -17,9 +17,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class MavenRunnerTest {
 
-    private static HttpClient client = new HttpClient();
-    StringBuilderWriter buildLog = new StringBuilderWriter();
-    StringBuilderWriter consoleLog = new StringBuilderWriter();
+    private static final HttpClient client = new HttpClient();
+    private final StringBuilderWriter buildLog = new StringBuilderWriter();
+    private final StringBuilderWriter consoleLog = new StringBuilderWriter();
 
     @BeforeClass public static void setup() throws Exception {
         client.start();
@@ -38,25 +38,30 @@ public class MavenRunnerTest {
             MavenRunner.CLEAN_AND_PACKAGE);
 
         try {
-            try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
-                runner.start(
-                    new OutputToWriterBridge(buildLog),
-                    new OutputToWriterBridge(consoleLog),
-                    TestConfig.testEnvVars(45678, appName),
-                    startupWaiter);
-            }
-            try {
-                ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
-                assertThat(resp.getStatus(), is(200));
-                assertThat(resp.getContentAsString(), containsString("My Maven App"));
-                assertThat(buildLog.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
-            } finally {
-                runner.shutdown();
-            }
+            startAndStop(appName, runner);
+            startAndStop(appName, runner);
         } catch (ProjectCannotStartException e) {
             System.out.println(buildLog);
             System.out.println(consoleLog);
             throw e;
+        }
+    }
+
+    private void startAndStop(String appName, MavenRunner runner) throws Exception {
+        try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
+            runner.start(
+                new OutputToWriterBridge(buildLog),
+                new OutputToWriterBridge(consoleLog),
+                TestConfig.testEnvVars(45678, appName),
+                startupWaiter);
+        }
+        try {
+            ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
+            assertThat(resp.getStatus(), is(200));
+            assertThat(resp.getContentAsString(), containsString("My Maven App"));
+            assertThat(buildLog.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
+        } finally {
+            runner.shutdown();
         }
     }
 }

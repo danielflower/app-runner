@@ -1,10 +1,7 @@
 package samples;
 
-import org.apache.commons.lang3.ObjectUtils;
-import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
@@ -13,18 +10,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetSocketAddress;
-
-import static org.apache.commons.lang3.ObjectUtils.firstNonNull;
+import java.util.Map;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
     public static void main(String[] args) throws Exception {
+        Map<String, String> settings = System.getenv();
 
         // When run from app-runner, you must use the port set in the environment variable APP_PORT
-        int port = Integer.parseInt(firstNonNull(System.getenv("APP_PORT"), "8081"));
+        int port = Integer.parseInt(settings.getOrDefault("APP_PORT", "8081"));
         // All URLs must be prefixed with the app name, which is got via the APP_NAME env var.
-        String appName = firstNonNull(System.getenv("APP_NAME"), "my-app");
-        String env = firstNonNull(System.getenv("APP_ENV"), "local"); // "prod" or "local"
+        String appName = settings.getOrDefault("APP_NAME", "my-app");
+        String env = settings.getOrDefault("APP_ENV", "local"); // "prod" or "local"
         boolean isLocal = "local".equals(env);
         log.info("Starting " + appName + " in " + env + " on port " + port);
 
@@ -49,7 +46,6 @@ public class App {
         }
 
         log.info("Started app at http://localhost:" + port + ch.getContextPath());
-
         jettyServer.join();
     }
 

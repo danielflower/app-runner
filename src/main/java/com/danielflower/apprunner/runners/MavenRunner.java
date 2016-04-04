@@ -95,7 +95,9 @@ public class MavenRunner implements AppRunner {
     }
 
     public void shutdown() {
-        if (watchDog != null)
+        if (watchDog != null) {
             watchDog.destroyProcess();
+            watchDog.stop();
+        }
     }
 }
