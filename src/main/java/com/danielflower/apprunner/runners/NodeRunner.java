@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 public class NodeRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(NodeRunner.class);
+    public static final String[] startCommands = new String[]{"npm install", "npm test", "node server.js"};
 
     private final File projectRoot;
     private final String nodeExec;

@@ -52,7 +52,6 @@ public class SystemTest {
     private static MavenRunner mavenRunner;
     private static List<AppRepo> apps = asList(mavenApp, nodeApp, leinApp);
 
-
     @BeforeClass
     public static void setup() throws Exception {
         client.start();
@@ -64,7 +63,7 @@ public class SystemTest {
         }
     }
 
-    public static void buildAndStartUberJar(List<String> goals) throws Exception {
+    private static void buildAndStartUberJar(List<String> goals) throws Exception {
         mavenRunner = new MavenRunner(new File("."), HomeProvider.default_java_home, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
             put(Config.SERVER_PORT, String.valueOf(port));
@@ -78,7 +77,7 @@ public class SystemTest {
         }
     }
 
-    public static void shutDownAppRunner() throws Exception {
+    private static void shutDownAppRunner() throws Exception {
         for (AppRepo app : apps) {
             restClient.stop(app.name);
         }
@@ -233,8 +232,14 @@ public class SystemTest {
         JSONArray samples = sysInfo.getJSONArray("samples");
         assertThat(samples.length(), is(3));
 
+        JSONAssert.assertEquals("[ " +
+            "{ name: 'maven', runCommands: [ 'mvn clean package', 'java -jar target/{artifactid}-{version}.jar' ] }, " +
+            "{ name: 'lein' }, " +
+            "{ name: 'nodejs' } ]", samples, JSONCompareMode.LENIENT);
+
         for (Object app : samples) {
-            String url = ((JSONObject) app).getString("url");
+            JSONObject json = (JSONObject) app;
+            String url = json.getString("url");
             ContentResponse zip = client.GET(url);
             assertThat(url, zip.getStatus(), is(200));
             assertThat(url, zip.getHeaders().get("Content-Type"), is("application/zip"));

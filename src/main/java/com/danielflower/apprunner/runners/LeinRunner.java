@@ -17,6 +17,7 @@ import static com.danielflower.apprunner.runners.MavenRunner.loadPomModel;
 
 public class LeinRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(LeinRunner.class);
+    public static final String[] startCommands = new String[]{"lein do test, uberjar, pom", "java -jar target/{artifactid}-{version}.jar"};
 
     private final File projectRoot;
     private final CommandLineProvider javaCmd;

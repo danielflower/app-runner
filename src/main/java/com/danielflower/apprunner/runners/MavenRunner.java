@@ -24,9 +24,10 @@ import static java.util.Arrays.asList;
 
 public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
-    public static final List<String> CLEAN_AND_PACKAGE = asList("clean", "package");
+    static final List<String> CLEAN_AND_PACKAGE = asList("clean", "package");
+    public static final String[] startCommands = new String[] { "mvn clean package", "java -jar target/{artifactid}-{version}.jar" };
 
-    public static Model loadPomModel(File pomFile) {
+    static Model loadPomModel(File pomFile) {
         try {
             MavenXpp3Reader reader = new MavenXpp3Reader();
             try (FileReader pomReader = new FileReader(pomFile)) {
