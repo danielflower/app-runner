@@ -36,7 +36,7 @@ public class NodeRunnerTest {
         run(2);
     }
 
-    public void run(int attempt) throws Exception {
+    private void run(int attempt) throws Exception {
         String appName = "nodejs";
         NodeRunner runner = new NodeRunner(
             Photocopier.copySampleAppToTempDir(appName),

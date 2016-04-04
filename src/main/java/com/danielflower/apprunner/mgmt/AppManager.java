@@ -193,7 +193,7 @@ public class AppManager implements AppDescription {
         return contributors;
     }
 
-    public void clearLogs() {
+    private void clearLogs() {
         latestBuildLog = "";
         synchronized (consoleLog) {
             consoleLog.clear();
