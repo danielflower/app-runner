@@ -125,12 +125,33 @@ public class SystemTest {
             client.GET(appInfo.getString("url")),
             is(equalTo(200, containsString("My new and improved maven app!"))));
 
+
         assertThat(
             client.GET(appInfo.getString("buildLogUrl")),
             is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
         assertThat(
             client.GET(appInfo.getString("consoleLogUrl")),
             is(equalTo(200, containsString("Starting maven in prod"))));
+    }
+
+    @Test
+    public void stoppedAppsSayTheyAreStopped() throws Exception {
+        try {
+            restClient.createApp(mavenApp.gitUrl(), "maven-status-test");
+            assertMavenAppAvailable("maven-status-test", false, "Not started");
+            restClient.deploy("maven-status-test");
+            assertMavenAppAvailable("maven-status-test", true, "Running");
+            restClient.stop("maven-status-test");
+            assertMavenAppAvailable("maven-status-test", false, "Stopped");
+        } finally {
+            restClient.deleteApp("maven-status-test");
+        }
+    }
+
+    private static void assertMavenAppAvailable(String appName, boolean available, String message) throws InterruptedException, ExecutionException, TimeoutException {
+        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + appName).getContentAsString());
+        assertThat(appInfo.getBoolean("available"), is(available));
+        assertThat(appInfo.getString("availableStatus"), is(message));
     }
 
     private static void updateHeaderAndCommit(AppRepo mavenApp, String replacement) throws IOException, GitAPIException {

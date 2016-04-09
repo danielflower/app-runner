@@ -10,6 +10,8 @@ public interface AppDescription {
 
     String gitUrl();
 
+    Availability currentAvailability();
+
     String latestBuildLog();
 
     String latestConsoleLog();

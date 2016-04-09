@@ -1,6 +1,7 @@
 package scaffolding;
 
 import com.danielflower.apprunner.mgmt.AppDescription;
+import com.danielflower.apprunner.mgmt.Availability;
 import com.danielflower.apprunner.runners.RunnerProvider;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
@@ -24,6 +25,10 @@ public class MockAppDescription implements AppDescription {
 
     public String gitUrl() {
         return gitUrl;
+    }
+
+    public Availability currentAvailability() {
+        return Availability.available();
     }
 
     public String latestBuildLog() {

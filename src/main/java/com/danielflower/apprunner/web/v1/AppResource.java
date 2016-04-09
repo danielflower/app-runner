@@ -4,6 +4,7 @@ import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
+import com.danielflower.apprunner.mgmt.Availability;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import io.swagger.annotations.*;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -19,10 +20,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
@@ -90,6 +88,7 @@ public class AppResource {
     private static JSONObject appJson(URI uri, AppDescription app) {
         URI restURI = uri.resolve("/api/v1/");
 
+        Availability availability = app.currentAvailability();
         return new JSONObject()
             .put("name", app.name())
             .put("contributors", getContributorsList(app))
@@ -97,6 +96,8 @@ public class AppResource {
             .put("consoleLogUrl", appUrl(app, restURI, "console.log"))
             .put("url", uri.resolve("/" + app.name() + "/"))
             .put("deployUrl", appUrl(app, restURI, "deploy"))
+            .put("available", availability.isAvailable)
+            .put("availableStatus", availability.availabilityStatus)
             .put("gitUrl", app.gitUrl());
     }
 
@@ -208,7 +209,8 @@ public class AppResource {
 
         public void write(OutputStream output) throws IOException, WebApplicationException {
             try (Writer writer = new OutputStreamWriter(output)) {
-                writer.write("Going to build and deploy " + name + "\n");
+                writer.write("Going to build and deploy " + name + " at " + new Date() + "\n");
+                writer.flush();
                 log.info("Going to update " + name);
                 try {
                     estate.update(name, new OutputToWriterBridge(writer));

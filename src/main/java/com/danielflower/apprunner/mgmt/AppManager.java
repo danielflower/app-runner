@@ -33,6 +33,7 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
+    private volatile Availability availability = Availability.unavailable("Not started");
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
         File root = fileSandbox.appDir(name);
@@ -97,6 +98,11 @@ public class AppManager implements AppDescription {
         return gitUrl;
     }
 
+    @Override
+    public Availability currentAvailability() {
+        return availability;
+    }
+
     public String latestBuildLog() {
         return latestBuildLog;
     }
@@ -113,13 +119,19 @@ public class AppManager implements AppDescription {
 
     public synchronized void stopApp() throws Exception {
         if (currentRunner != null) {
+            availability = Availability.unavailable("Stopping");
             currentRunner.shutdown();
             currentRunner = null;
+            availability = Availability.unavailable("Stopped");
         }
     }
 
     public synchronized void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         clearLogs();
+        if (!availability.isAvailable) {
+            availability = Availability.unavailable("Starting");
+        }
+
         this.contributors = getContributorsFromRepo();
 
         InvocationOutputHandler buildLogHandler = line -> {
@@ -156,6 +168,7 @@ public class AppManager implements AppDescription {
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
         }
+        availability = Availability.available();
 
         buildLogHandle.set(null);
 
@@ -167,10 +180,6 @@ public class AppManager implements AppDescription {
             log.info("Shutting down previous version of " + name);
             oldRunner.shutdown();
             buildLogHandler.consumeLine("Deployment complete.");
-
-
-
-            // TODO: delete old instance dir
         }
     }
 
