@@ -154,9 +154,7 @@ public class AppManager implements AppDescription {
 
 
         buildLogHandler.consumeLine("Fetching latest changes from git...");
-        git.fetch().setRemote("origin").call();
-        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
-        File id = copyToNewInstanceDir();
+        File id = fetchChangesAndCreateInstanceDir();
         buildLogHandler.consumeLine("Created new instance in " + dirPath(id));
 
         AppRunner oldRunner = currentRunner;
@@ -185,6 +183,19 @@ public class AppManager implements AppDescription {
             log.info("Shutting down previous version of " + name);
             oldRunner.shutdown();
             buildLogHandler.consumeLine("Deployment complete.");
+        }
+    }
+
+    private File fetchChangesAndCreateInstanceDir() throws GitAPIException, IOException {
+        try {
+            git.fetch().setRemote("origin").call();
+            git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
+            return copyToNewInstanceDir();
+        } catch (Exception e) {
+            if (!availability.isAvailable) {
+                availability = Availability.unavailable("Could not fetch from git: " + e.getMessage());
+            }
+            throw e;
         }
     }
 

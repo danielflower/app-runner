@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Api(value = "System")
@@ -38,12 +39,19 @@ public class SystemResource {
         new Runner("lein", "Clojure uber jars built with leiningen", LeinRunner.startCommands),
         new Runner("nodejs", "NodeJS apps with NPM dependencies", NodeRunner.startCommands),
     };
+    private final AtomicBoolean startupComplete;
+
+    public SystemResource(AtomicBoolean startupComplete) {
+        this.startupComplete = startupComplete;
+    }
 
     @GET
     @Produces("application/json")
     @ApiOperation(value = "Returns information about AppRunner, including information about sample apps")
     public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();
+        result.put("appRunnerStarted", startupComplete.get());
+
         JSONArray apps = new JSONArray();
         result.put("samples", apps);
         for (Runner proj : sampleProjects) {

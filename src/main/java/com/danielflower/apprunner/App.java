@@ -7,6 +7,8 @@ import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.RunnerProvider;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
+import com.danielflower.apprunner.web.v1.AppResource;
+import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
@@ -16,6 +18,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 import static com.danielflower.apprunner.FileSandbox.dirPath;
@@ -26,6 +32,7 @@ public class App {
     private final Config config;
     private WebServer webServer;
     private AppEstate estate;
+    private final AtomicBoolean startupComplete = new AtomicBoolean(false);
 
     public App(Config config) {
         this.config = config;
@@ -53,18 +60,35 @@ public class App {
 
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
 
-        estate.all().forEach(a -> {
+        String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
+        webServer = new WebServer(appRunnerPort, proxyMap, defaultAppName,
+            new SystemResource(startupComplete), new AppResource(estate));
+        webServer.start();
+
+
+        deployAllAppsAsyncronously(estate);
+    }
+
+    private void deployAllAppsAsyncronously(AppEstate estate) {
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        estate.all().forEach(a -> executor.submit(() -> {
             StringBuilderWriter writer = new StringBuilderWriter();
             try {
                 estate.update(a.name(), new OutputToWriterBridge(writer));
             } catch (Exception e) {
                 log.warn("Error while starting up " + a.name() + "\nLogs:\n" + writer, e);
             }
-        });
+        }));
+        executor.shutdown();
 
-        String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
-        webServer = new WebServer(appRunnerPort, proxyMap, estate, defaultAppName);
-        webServer.start();
+        new Thread(() -> {
+            try {
+                executor.awaitTermination(1, TimeUnit.HOURS);
+                startupComplete.set(true);
+            } catch (InterruptedException e) {
+                log.info("Interupted exception while awaiting startup", e);
+            }
+        }).start();
     }
 
     private void deleteOldTempFiles(File tempDir) {

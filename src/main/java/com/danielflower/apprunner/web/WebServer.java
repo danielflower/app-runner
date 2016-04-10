@@ -1,6 +1,5 @@
 package com.danielflower.apprunner.web;
 
-import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.web.v1.AppResource;
@@ -37,14 +36,16 @@ public class WebServer implements AutoCloseable {
     private int port;
     private final ProxyMap proxyMap;
     private Server jettyServer;
-    private final AppEstate estate;
     private final String defaultAppName;
+    private final SystemResource systemResource;
+    private final AppResource appResource;
 
-    public WebServer(int port, ProxyMap proxyMap, AppEstate estate, String defaultAppName) {
+    public WebServer(int port, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource) {
         this.port = port;
         this.proxyMap = proxyMap;
-        this.estate = estate;
         this.defaultAppName = defaultAppName;
+        this.systemResource = systemResource;
+        this.appResource = appResource;
         jettyServer = new Server(port);
     }
 
@@ -61,7 +62,7 @@ public class WebServer implements AutoCloseable {
     public void start() throws Exception {
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
-        handlers.addHandler(createRestService(estate));
+        handlers.addHandler(createRestService());
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
 
@@ -73,10 +74,10 @@ public class WebServer implements AutoCloseable {
         log.info("Started web server at " + baseUrl());
     }
 
-    private Handler createRestService(AppEstate estate) {
+    private Handler createRestService() {
         ResourceConfig rc = new ResourceConfig();
-        rc.register(new SystemResource());
-        rc.register(new AppResource(estate));
+        rc.register(systemResource);
+        rc.register(appResource);
         rc.register(JacksonFeature.class);
         rc.register(CORSFilter.class);
         SwaggerDocs.registerSwaggerJsonResource(rc);

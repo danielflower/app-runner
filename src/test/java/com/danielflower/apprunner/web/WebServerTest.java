@@ -3,6 +3,8 @@ package com.danielflower.apprunner.web;
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.web.v1.AppResource;
+import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -21,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -38,7 +41,10 @@ public class WebServerTest {
         client = new HttpClient();
         client.setFollowRedirects(false);
         client.start();
-        webServer = new WebServer(0, proxyMap, new AppEstate(proxyMap, fileSandbox(), new RunnerProvider(null, RunnerProvider.default_providers)), "test-app");
+        AppEstate estate = new AppEstate(proxyMap, fileSandbox(),
+            new RunnerProvider(null, RunnerProvider.default_providers));
+        webServer = new WebServer(0, proxyMap, "test-app",
+            new SystemResource(new AtomicBoolean(true)), new AppResource(estate));
         webServer.start();
         appServer = new TestServer();
     }

@@ -23,7 +23,6 @@ import scaffolding.RestClient;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -71,10 +70,17 @@ public class SystemTest {
         }};
 
         InvocationOutputHandler logHandler = line -> System.out.print("Test build output > " + line);
-        URI appRunnerURL = URI.create(appRunnerUrl + "/");
-        try (Waiter startupWaiter = Waiter.waitFor("AppRunner uber jar", appRunnerURL, 2, TimeUnit.MINUTES)) {
+        try (Waiter startupWaiter = new Waiter("AppRunner uber jar", httpClient -> {
+            try {
+                JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
+                return sysInfo.getBoolean("appRunnerStarted");
+            } catch (Exception e) {
+                return false;
+            }
+        }, 2, TimeUnit.MINUTES)) {
             mavenRunner.start(logHandler, logHandler, env, startupWaiter);
         }
+
     }
 
     private static void shutDownAppRunner() throws Exception {
