@@ -57,6 +57,7 @@ public class App {
         } else {
             resourceHandler.setBaseResource(Resource.newClassPathResource("/web", true, false));
         }
+        resourceHandler.setEtags(true);
         resourceHandler.setWelcomeFiles(new String[] {"index.html"});
         return resourceHandler;
     }

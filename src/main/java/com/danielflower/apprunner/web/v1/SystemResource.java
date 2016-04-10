@@ -79,7 +79,7 @@ public class SystemResource {
             os.put("swapMemoryFreeInBytes", swap.getFreeBytes());
         }
 
-        return Response.ok(result.toString()).build();
+        return Response.ok(result.toString(4)).build();
     }
 
     @GET

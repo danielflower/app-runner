@@ -1,14 +1,25 @@
 (ns leinapp.core
-  (:gen-class))
-(use 'ring.adapter.jetty)
+    (:gen-class)
+    (:require [compojure.route :as route]
+      [ring.util.response :as response]
+      [ring.middleware.defaults :as defaults])
+    (:use compojure.core
+      ring.adapter.jetty))
 
 (def app-port (Integer/parseInt (get (System/getenv) "APP_PORT" "8082")))
 (def app-name (get (System/getenv) "APP_NAME" "leinapp"))
+(def context-path (str "/" app-name))
+(defroutes
+  main-routes
+  (GET "/" [] (response/redirect context-path))
+  (context context-path []
+           (GET "/" [] "Hello from lein")
+           (route/resources "/")
+           (route/not-found "Page not found")))
 
-(defn app-handler [request]
-  {:status  200
-   :headers {"Content-Type" "text/html"}
-   :body    (str "Hello from " app-name)})
+(def app
+  (defaults/wrap-defaults main-routes defaults/site-defaults))
 
 (defn -main []
-  (run-jetty app-handler {:port app-port}))
+      (println "Server started at " (str "http://localhost:" app-port context-path))
+      (run-jetty app {:port app-port}))

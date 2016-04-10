@@ -7,4 +7,5 @@ pom.xml.asc
 /.lein-*
 /.nrepl-port
 .idea/
-.iml
+*.iml
+*.ipr
