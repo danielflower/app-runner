@@ -5,9 +5,6 @@ import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
 
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
 public class RestClient {
 
     public static RestClient create(String appRunnerUrl) {
@@ -52,7 +49,7 @@ public class RestClient {
         return client.newRequest(appRunnerUrl + "/api/v1/apps/" + app + "/stop").method("PUT").send();
     }
 
-    public ContentResponse deleteApp(String appName) throws InterruptedException, ExecutionException, TimeoutException {
+    public ContentResponse deleteApp(String appName) throws Exception {
         return client.newRequest(appRunnerUrl + "/api/v1/apps/" + appName).method("DELETE").send();
     }
 

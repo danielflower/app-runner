@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.dirPath;
 
@@ -35,10 +35,14 @@ public class ProcessStarter {
                 buildLogHandler.consumeLine(message);
                 throw new ProjectCannotStartException(message);
             }
+        } catch (TimeoutException te) {
+            String message = "Built successfully, but timed out waiting for startup at " + dirPath(projectRoot);
+            watchDog.destroyProcess();
+            buildLogHandler.consumeLine(message);
+            throw new ProjectCannotStartException(message);
+        } catch (ProjectCannotStartException pcse) {
+            throw pcse;
         } catch (Exception e) {
-            if (e instanceof ProjectCannotStartException) {
-                throw (ProjectCannotStartException) e;
-            }
             String message = "Built successfully, but error on start for " + dirPath(projectRoot);
             buildLogHandler.consumeLine(message);
             buildLogHandler.consumeLine(e.toString());

@@ -167,6 +167,11 @@ public class AppManager implements AppDescription {
 
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
+        } catch (Exception e) {
+            if (!availability.isAvailable) {
+                availability = Availability.unavailable("Crashed during startup");
+            }
+            throw e;
         }
         availability = Availability.available();
 

@@ -143,6 +143,14 @@ public class SystemTest {
             assertMavenAppAvailable("maven-status-test", true, "Running");
             restClient.stop("maven-status-test");
             assertMavenAppAvailable("maven-status-test", false, "Stopped");
+
+            restClient.deploy("maven-status-test");
+            assertMavenAppAvailable("maven-status-test", true, "Running");
+
+            // Detecting crashed apps not supported yet
+//            new JavaSysMon().processTree().accept((process, level) ->
+//                process.processInfo().getCommand().contains("maven-status-test"), 2);
+//            assertMavenAppAvailable("maven-status-test", false, "Crashed");
         } finally {
             restClient.deleteApp("maven-status-test");
         }
@@ -250,6 +258,7 @@ public class SystemTest {
         new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
 
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
+        System.out.println("sysInfo.toString(4) = " + sysInfo.toString(4));
         JSONArray samples = sysInfo.getJSONArray("samples");
         assertThat(samples.length(), is(3));
 

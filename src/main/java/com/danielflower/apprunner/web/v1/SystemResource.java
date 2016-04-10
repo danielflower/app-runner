@@ -3,6 +3,8 @@ package com.danielflower.apprunner.web.v1;
 import com.danielflower.apprunner.runners.LeinRunner;
 import com.danielflower.apprunner.runners.MavenRunner;
 import com.danielflower.apprunner.runners.NodeRunner;
+import com.jezhumble.javasysmon.JavaSysMon;
+import com.jezhumble.javasysmon.MemoryStats;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 @Path("/system")
 public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
+    private final JavaSysMon javaSysMon = new JavaSysMon();
 
     private static final Runner[] sampleProjects = new Runner[] {
         new Runner("maven", "Java uber jars built with maven", MavenRunner.startCommands),
@@ -51,6 +54,23 @@ public class SystemResource {
             sample.put("runCommands", new JSONArray(proj.commands));
             apps.put(sample);
         }
+
+        if (javaSysMon.supportedPlatform()) {
+            JSONObject os = new JSONObject();
+            result.put("os", os);
+            os.put("osName", javaSysMon.osName());
+            os.put("numCpus", javaSysMon.numCpus());
+            os.put("cpuFrequencyInHz", javaSysMon.cpuFrequencyInHz());
+            os.put("uptimeInSeconds", javaSysMon.uptimeInSeconds());
+            os.put("appRunnerPid", javaSysMon.currentPid());
+            MemoryStats physical = javaSysMon.physical();
+            os.put("physicalMemoryInBytes", physical.getTotalBytes());
+            os.put("physicalMemoryFreeInBytes", physical.getFreeBytes());
+            MemoryStats swap = javaSysMon.physical();
+            os.put("swapMemoryInBytes", swap.getTotalBytes());
+            os.put("swapMemoryFreeInBytes", swap.getFreeBytes());
+        }
+
         return Response.ok(result.toString()).build();
     }
 
