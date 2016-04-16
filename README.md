@@ -11,9 +11,22 @@ Run `com.danielflower.apprunner.RunLocal.main` from your IDE. This will use the 
 application specified in the config. Launch the URL that is logged on startup see the hosted
 sample app.
 
-Configuration
--------------
+Deploying
+---------
 
-See `sample-config.properties` for configuration information. Each setting can be specified
-as an environment variable, a java system property, or in a properties file who's path is
-specified as a command line argument.
+You need to have a Windows or Linux server available with Java and one or more build tools
+installed:
+
+* Java 8 or later
+* Maven (if you wish to support Maven builds)
+* Lein (if you wish to support Clojure builds)
+* NodeJS and NPM (if you wish to support Nodejs builds)
+
+It's easiest if each tool is available to run from the path, but you can point to specific
+paths by setting paths in your config file.
+
+Download the latest version of _App Runner_ from [Maven central](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22app-runner%22)
+
+Run with `java -jar app-runner-{version}.jar /path/to/config.properties`
+
+See `sample-config.properties` for sample configuration.
