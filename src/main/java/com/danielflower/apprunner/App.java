@@ -59,6 +59,7 @@ public class App {
             estate.addApp(repo.getValue(), repo.getKey());
 
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
+        estate.addAppDeletedListener(app -> gitRepoLoader.delete(app.name()));
 
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
         webServer = new WebServer(appRunnerPort, proxyMap, defaultAppName,

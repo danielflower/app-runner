@@ -22,7 +22,8 @@ public class AppEstate {
     private final List<AppDescription> managers = new ArrayList<>();
     private final ProxyMap proxyMap;
     private final FileSandbox fileSandbox;
-    private final List<AppAddedListener> appAddedListeners = new ArrayList<>();
+    private final List<AppChangedListener> appAddedListeners = new ArrayList<>();
+    private final List<AppChangedListener> appDeletedListeners = new ArrayList<>();
     private final RunnerProvider runnerProvider;
 
     public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, RunnerProvider runnerProvider) {
@@ -33,8 +34,8 @@ public class AppEstate {
 
     public void add(AppDescription appMan) throws IOException {
         this.managers.add(appMan);
-        for (AppAddedListener appAddedListener : appAddedListeners) {
-            appAddedListener.onAppAdded(appMan);
+        for (AppChangedListener appAddedListener : appAddedListeners) {
+            appAddedListener.onAppChanged(appMan);
         }
     }
 
@@ -71,25 +72,32 @@ public class AppEstate {
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + allAppNames());
     }
 
-    public void addAppAddedListener(AppAddedListener listener) {
+    public void addAppAddedListener(AppChangedListener listener) {
         this.appAddedListeners.add(listener);
+    }
+
+    public void addAppDeletedListener(AppChangedListener listener) {
+        this.appDeletedListeners.add(listener);
     }
 
     public Optional<AppDescription> app(String name) {
         return all().filter(a -> a.name().equals(name)).findFirst();
     }
 
-    public boolean remove(AppDescription appDescription) {
+    public boolean remove(AppDescription appDescription) throws IOException {
         try {
             appDescription.stopApp();
         } catch (Exception e) {
             log.warn("Error while shutting " + appDescription.name(), e);
         }
+        for (AppChangedListener appDeletedListener : appDeletedListeners) {
+            appDeletedListener.onAppChanged(appDescription);
+        }
         return managers.remove(appDescription);
     }
 
-    public interface AppAddedListener {
-        void onAppAdded(AppDescription app) throws IOException;
+    public interface AppChangedListener {
+        void onAppChanged(AppDescription app) throws IOException;
     }
 
     public String allAppNames() {

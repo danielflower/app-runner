@@ -55,9 +55,24 @@ public class FileBasedGitRepoLoader implements GitRepoLoader {
         l.lock();
         try {
             properties.setProperty(name, gitUrl);
-            try (FileWriter writer = new FileWriter(file)) {
-                properties.store(writer, "Saved by " + getClass().getSimpleName());
-            }
+            saveToDisk();
+        } finally {
+            l.unlock();
+        }
+    }
+
+    private void saveToDisk() throws IOException {
+        try (FileWriter writer = new FileWriter(file)) {
+            properties.store(writer, "Saved by " + getClass().getSimpleName());
+        }
+    }
+
+    public void delete(String name) throws IOException {
+        Lock l = lock.writeLock();
+        l.lock();
+        try {
+            properties.remove(name);
+            saveToDisk();
         } finally {
             l.unlock();
         }
