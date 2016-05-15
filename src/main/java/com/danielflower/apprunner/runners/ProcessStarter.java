@@ -18,9 +18,9 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 public class ProcessStarter {
     public static final Logger log = LoggerFactory.getLogger(ProcessStarter.class);
 
-    public static ExecuteWatchdog startDaemon(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, Waiter startupWaiter) {
+    public static Killer startDaemon(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, Waiter startupWaiter) {
         long startTime = logStartInfo(command, projectRoot);
-        ExecuteWatchdog watchDog = new ExecuteWatchdog(ExecuteWatchdog.INFINITE_TIMEOUT);
+        Killer watchDog = new Killer(ExecuteWatchdog.INFINITE_TIMEOUT);
         Executor executor = createExecutor(consoleLogHandler, command, projectRoot, watchDog);
 
         try {
