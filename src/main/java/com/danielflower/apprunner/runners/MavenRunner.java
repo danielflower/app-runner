@@ -100,4 +100,9 @@ public class MavenRunner implements AppRunner {
             watchDog.stop();
         }
     }
+
+    @Override
+    public File getInstanceDir() {
+        return projectRoot;
+    }
 }

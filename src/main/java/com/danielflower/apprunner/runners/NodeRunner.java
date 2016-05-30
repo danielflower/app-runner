@@ -27,6 +27,11 @@ public class NodeRunner implements AppRunner {
         this.npmExec = npmExec;
     }
 
+    @Override
+    public File getInstanceDir() {
+        return projectRoot;
+    }
+
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         runNPM(buildLogHandler, envVarsForApp, "install");
         runNPM(buildLogHandler, envVarsForApp, "test");

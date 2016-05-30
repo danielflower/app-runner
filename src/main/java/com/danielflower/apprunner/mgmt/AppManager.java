@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -34,6 +36,7 @@ import static com.danielflower.apprunner.FileSandbox.dirPath;
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
     private volatile Availability availability = Availability.unavailable("Not started");
+    private static final Executor deletionQueue = Executors.newSingleThreadExecutor();
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
         File root = fileSandbox.appDir(name);
@@ -183,7 +186,24 @@ public class AppManager implements AppDescription {
             log.info("Shutting down previous version of " + name);
             oldRunner.shutdown();
             buildLogHandler.consumeLine("Deployment complete.");
+            File instanceDir = oldRunner.getInstanceDir();
+            quietlyDeleteTheOldInstanceDirInTheBackground(instanceDir);
         }
+    }
+
+    private static void quietlyDeleteTheOldInstanceDirInTheBackground(final File instanceDir) {
+        deletionQueue.execute(() -> {
+            try {
+                log.info("Going to delete " + dirPath(instanceDir));
+                if (instanceDir.isDirectory()) {
+                    FileUtils.deleteDirectory(instanceDir);
+                }
+                log.info("Deletion completion");
+            } catch (Exception e) {
+                log.info("Couldn't delete " + dirPath(instanceDir) +
+                    " but it doesn't really matter as it will get deleted on next AppRunner startup.");
+            }
+        });
     }
 
     private File fetchChangesAndCreateInstanceDir() throws GitAPIException, IOException {

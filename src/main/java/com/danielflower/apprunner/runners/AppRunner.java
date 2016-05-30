@@ -12,6 +12,8 @@ public interface AppRunner {
 
     void shutdown();
 
+    File getInstanceDir();
+
     interface Factory {
         AppRunner appRunner(Config cfg, String name, File folder);
     }

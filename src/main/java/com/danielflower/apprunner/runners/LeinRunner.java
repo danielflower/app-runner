@@ -30,6 +30,11 @@ public class LeinRunner implements AppRunner {
         this.leinCmd = leinCmd;
     }
 
+    @Override
+    public File getInstanceDir() {
+        return projectRoot;
+    }
+
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
 
         runLein(buildLogHandler, envVarsForApp, "do", "test,", "uberjar,", "pom");
