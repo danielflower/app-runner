@@ -67,19 +67,20 @@ public class App {
         webServer.start();
 
 
-        deployAllAppsAsyncronously(estate);
+        deployAllAppsAsyncronously(estate, defaultAppName);
     }
 
-    private void deployAllAppsAsyncronously(AppEstate estate) {
+    private void deployAllAppsAsyncronously(AppEstate estate, String firstAppToStart) {
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        estate.all().forEach(a -> executor.submit(() -> {
-            StringBuilderWriter writer = new StringBuilderWriter();
-            try {
-                estate.update(a.name(), new OutputToWriterBridge(writer));
-            } catch (Exception e) {
-                log.warn("Error while starting up " + a.name() + "\nLogs:\n" + writer, e);
-            }
-        }));
+        estate.all().sorted((o1, o2) -> o1.name().equals(firstAppToStart) ? 2 : o1.name().compareTo(o2.name()))
+            .forEach(a -> executor.submit(() -> {
+                StringBuilderWriter writer = new StringBuilderWriter();
+                try {
+                    estate.update(a.name(), new OutputToWriterBridge(writer));
+                } catch (Exception e) {
+                    log.warn("Error while starting up " + a.name() + "\nLogs:\n" + writer, e);
+                }
+            }));
         executor.shutdown();
 
         new Thread(() -> {
