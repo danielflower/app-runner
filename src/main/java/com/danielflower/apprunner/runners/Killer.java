@@ -1,13 +1,11 @@
 package com.danielflower.apprunner.runners;
 
-import com.jezhumble.javasysmon.JavaSysMon;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Killer extends ExecuteWatchdog {
     private static final Logger log = LoggerFactory.getLogger(Killer.class);
-    private final JavaSysMon sys = new JavaSysMon();
     private Process process;
 
     public Killer(long timeout) {

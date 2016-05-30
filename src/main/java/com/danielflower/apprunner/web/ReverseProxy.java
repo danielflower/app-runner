@@ -20,6 +20,7 @@ public class ReverseProxy extends AsyncProxyServlet {
     public static final Logger log = LoggerFactory.getLogger(ReverseProxy.class);
 
     private final ProxyMap proxyMap;
+    public static final Pattern APP_REQUEST = Pattern.compile("/([^/?]+)(.*)");
 
     public ReverseProxy(ProxyMap proxyMap) {
         this.proxyMap = proxyMap;
@@ -45,8 +46,7 @@ public class ReverseProxy extends AsyncProxyServlet {
 
     protected String rewriteTarget(HttpServletRequest clientRequest) {
         String uri = clientRequest.getRequestURI();
-        Pattern pattern = Pattern.compile("/([^/?]+)(.*)");
-        Matcher matcher = pattern.matcher(uri);
+        Matcher matcher = APP_REQUEST.matcher(uri);
         if (matcher.matches()) {
             String prefix = matcher.group(1);
             URL url = proxyMap.get(prefix);

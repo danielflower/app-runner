@@ -18,7 +18,7 @@
            (route/not-found "Page not found")))
 
 (def app
-  (defaults/wrap-defaults main-routes defaults/site-defaults))
+  (defaults/wrap-defaults main-routes defaults/api-defaults))
 
 (defn -main []
       (println "Server started at " (str "http://localhost:" app-port context-path))
