@@ -65,9 +65,6 @@ public class WebServer implements AutoCloseable {
         handlers.addHandler(createRestService());
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
-
-        jettyServer.setRequestLog(new NCSARequestLog("access.log"));
-
         jettyServer.start();
 
         port = ((ServerConnector) jettyServer.getConnectors()[0]).getLocalPort();

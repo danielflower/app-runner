@@ -29,4 +29,5 @@ Download the latest version of _App Runner_ from [Maven central](http://search.m
 
 Run with `java -jar app-runner-{version}.jar /path/to/config.properties`
 
-See `sample-config.properties` for sample configuration.
+See `sample-config.properties` for sample configuration. The `local` directory in this repo also
+has sample start scripts and logging configuration.

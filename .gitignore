@@ -2,4 +2,6 @@
 *.iml
 target/
 dependency-reduced-pom.xml
-access.log
+local/logs
+local/data
+local/apprunner.pid

@@ -24,12 +24,16 @@ public class Config {
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
     public static final String INITIAL_APP_URL = "appserver.initial.app.url";
 
-    public static final String JAVA_HOME = "JAVA_HOME";
-    public static final String LEIN_JAR = "LEIN_JAR";
-    public static final String LEIN_JAVA_CMD = "LEIN_JAVA_CMD";
+    public static final String JAVA_HOME = "java.home";
+    public static final String LEIN_JAR = "lein.jar";
+    public static final String LEIN_JAVA_CMD = "lein.java.cmd";
 
     public static Config load(String[] commandLineArgs) throws IOException {
-        Map<String, String> env = new HashMap<>(System.getenv());
+        Map<String, String> systemEnv = System.getenv();
+        Map<String, String> env = new HashMap<>(systemEnv);
+        for (Map.Entry<String, String> s : systemEnv.entrySet()) {
+            env.put(s.getKey().toLowerCase().replace('_', '.'), s.getValue());
+        }
         for (String key : System.getProperties().stringPropertyNames()) {
             String value = System.getProperty(key);
             env.put(key, value);
@@ -67,7 +71,7 @@ public class Config {
                         .commandLine(env)
                         .addArgument("-cp")
                         .addArgument(dirPath(getFile(LEIN_JAR)))
-                        .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
+                        .addArgument("-Djava.io.tmpdir=" + env.get("temp"))
                         .addArgument("clojure.main")
                         .addArgument("-m")
                         .addArgument("leiningen.core.main")
@@ -76,11 +80,11 @@ public class Config {
     }
 
     public String nodeExecutable() {
-        return get("NODE_EXEC", windowsinize("node"));
+        return get("node.exec", windowsinize("node"));
     }
 
     public String npmExecutable() {
-        return get("NPM_EXEC", SystemUtils.IS_OS_WINDOWS ? "npm.cmd" : "npm");
+        return get("npm.exec", SystemUtils.IS_OS_WINDOWS ? "npm.cmd" : "npm");
     }
 
     public HomeProvider javaHomeProvider() {
