@@ -7,9 +7,9 @@
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <File>logs/apprunner.log</File>
+        <File>logs/app-runner.log</File>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <FileNamePattern>logs/file.%d{yyyy-MM-dd}.log.gz</FileNamePattern>
+            <FileNamePattern>logs/app-runner.%d{yyyy-MM-dd}.log.gz</FileNamePattern>
             <MaxHistory>30</MaxHistory>
         </rollingPolicy>
         <encoder>
