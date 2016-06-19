@@ -106,4 +106,15 @@ public class AppEstate {
             .map(AppDescription::name)
             .collect(Collectors.joining(", "));
     }
+
+    public Stream<AppDescription> appsByStartupOrder(String firstAppToStart) {
+        return all().sorted((o1, o2) -> {
+            if (o1.name().equalsIgnoreCase(firstAppToStart)) {
+                return -1;
+            } else if (o2.name().equalsIgnoreCase(firstAppToStart)) {
+                return 1;
+            }
+            return o1.name().compareToIgnoreCase(o2.name());
+        });
+    }
 }

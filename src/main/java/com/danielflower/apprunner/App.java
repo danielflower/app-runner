@@ -72,7 +72,7 @@ public class App {
 
     private void deployAllAppsAsyncronously(AppEstate estate, String firstAppToStart) {
         ExecutorService executor = Executors.newFixedThreadPool(2);
-        estate.all().sorted((o1, o2) -> o1.name().equals(firstAppToStart) ? 2 : o1.name().compareTo(o2.name()))
+        estate.appsByStartupOrder(firstAppToStart)
             .forEach(a -> executor.submit(() -> {
                 StringBuilderWriter writer = new StringBuilderWriter();
                 try {
