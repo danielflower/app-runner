@@ -9,6 +9,7 @@ if [ -f "$PIDFILE" ]; then
     exit 1
 fi
 
+mkdir -p logs
 nohup java -Dlogback.configurationFile=logback.xml -jar ../target/app-runner-1.0-SNAPSHOT.jar config.properties > logs/console.log 2>&1 < /dev/null &
 echo $! > $PIDFILE
 echo Started AppRunner

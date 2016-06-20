@@ -71,7 +71,7 @@ public class Config {
                         .commandLine(env)
                         .addArgument("-cp")
                         .addArgument(dirPath(getFile(LEIN_JAR)))
-                        .addArgument("-Djava.io.tmpdir=" + env.get("temp"))
+                        .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
                         .addArgument("clojure.main")
                         .addArgument("-m")
                         .addArgument("leiningen.core.main")
