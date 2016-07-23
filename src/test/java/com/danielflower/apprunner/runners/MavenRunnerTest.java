@@ -11,6 +11,7 @@ import org.junit.Test;
 import scaffolding.Photocopier;
 import scaffolding.TestConfig;
 
+import static com.danielflower.apprunner.web.WebServer.getAFreePort;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -38,8 +39,9 @@ public class MavenRunnerTest {
             MavenRunner.CLEAN_AND_PACKAGE);
 
         try {
-            startAndStop(appName, runner);
-            startAndStop(appName, runner);
+            int port = getAFreePort();
+            startAndStop(appName, runner, port);
+            startAndStop(appName, runner, port);
         } catch (ProjectCannotStartException e) {
             System.out.println(buildLog);
             System.out.println(consoleLog);
@@ -47,16 +49,16 @@ public class MavenRunnerTest {
         }
     }
 
-    private void startAndStop(String appName, MavenRunner runner) throws Exception {
-        try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
+    private void startAndStop(String appName, MavenRunner runner, int port) throws Exception {
+        try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
             runner.start(
                 new OutputToWriterBridge(buildLog),
                 new OutputToWriterBridge(consoleLog),
-                TestConfig.testEnvVars(45678, appName),
+                TestConfig.testEnvVars(port, appName),
                 startupWaiter);
         }
         try {
-            ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
+            ContentResponse resp = client.GET("http://localhost:" + port + "/" + appName + "/");
             assertThat(resp.getStatus(), is(200));
             assertThat(resp.getContentAsString(), containsString("My Maven App"));
             assertThat(buildLog.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
