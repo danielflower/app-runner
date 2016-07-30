@@ -2,6 +2,7 @@ package com.danielflower.apprunner;
 
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppManager;
+import com.danielflower.apprunner.mgmt.BackupService;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.RunnerProvider;
@@ -12,6 +13,7 @@ import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jgit.transport.URIish;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,7 @@ public class App {
     private WebServer webServer;
     private AppEstate estate;
     private final AtomicBoolean startupComplete = new AtomicBoolean(false);
+    private BackupService backupService;
 
     public App(Config config) {
         this.config = config;
@@ -64,6 +67,15 @@ public class App {
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
         webServer = new WebServer(appRunnerPort, proxyMap, defaultAppName,
             new SystemResource(startupComplete), new AppResource(estate));
+
+
+        String backupUrl = config.get(Config.BACKUP_URL, "");
+        if (StringUtils.isNotBlank(backupUrl)) {
+            backupService = BackupService.prepare(dataDir, new URIish(backupUrl));
+            backupService.start();
+        }
+
+
         webServer.start();
 
 
@@ -114,6 +126,15 @@ public class App {
 
     public void shutdown() {
         log.info("Shutdown invoked");
+
+        if (backupService != null) {
+            log.info("Shutting down backup service");
+            try {
+                backupService.stop();
+            } catch (InterruptedException e) {
+                Thread.interrupted();
+            }
+        }
         if (webServer != null) {
             log.info("Stopping apps");
             estate.shutdown();

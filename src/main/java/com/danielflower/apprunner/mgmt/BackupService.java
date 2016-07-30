@@ -27,12 +27,11 @@ public class BackupService {
     private static final Logger log = LoggerFactory.getLogger(BackupService.class);
 
     private final Git repo;
-    private final ScheduledExecutorService executor;
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private volatile Exception lastError = null;
 
     public BackupService(Git dataDirRepo) {
         this.repo = dataDirRepo;
-        executor = Executors.newSingleThreadScheduledExecutor();
     }
 
     public void start() {
@@ -52,7 +51,7 @@ public class BackupService {
         return Optional.ofNullable(lastError);
     }
 
-    public void backup() throws Exception {
+    public synchronized void backup() throws Exception {
         repo.add().addFilepattern(".").call();
         Status status = repo.status().setIgnoreSubmodules(SubmoduleWalk.IgnoreSubmoduleMode.ALL).call();
         if (status.hasUncommittedChanges()) {
