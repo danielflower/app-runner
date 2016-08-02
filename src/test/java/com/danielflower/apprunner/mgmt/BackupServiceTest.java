@@ -55,15 +55,23 @@ public class BackupServiceTest {
         File appRepoDir = sandbox.appDir("my-app", "repo");
         Git.init().setDirectory(appRepoDir).setBare(false).call();
         write(appRepoDir, "some.data", "Hi from repo");
+        FileUtils.forceDelete(new File(localDir, "repos.properties"));
 
         backupService.backup();
         backedCopyRepo.pull().call();
 
+        assertThat(new File(backupCopyDir, "repos.properties"), not(fileExists()));
         assertThat(new File(backupCopyDir, "temp"), not(directoryExists()));
         assertThat(new File(backupCopyDir, "apps/my-app/data/repo/temp/some.data"), fileExists());
         assertThat(new File(backupCopyDir, "apps/my-app/repo"), not(directoryExists()));
 
         backupService.backup();
+
+        FileUtils.forceDelete(new File(localDir, "apps/my-app/data/repo/temp/some.data"));
+        backupService.backup();
+        backedCopyRepo.pull().call();
+
+        assertThat(new File(backupCopyDir, "apps/my-app/data/repo/temp/some.data"), not(fileExists()));
     }
 
     @Test

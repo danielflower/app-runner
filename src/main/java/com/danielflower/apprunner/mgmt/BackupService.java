@@ -52,9 +52,14 @@ public class BackupService {
     }
 
     public synchronized void backup() throws Exception {
-        repo.add().addFilepattern(".").call();
+        repo.add().setUpdate(false).addFilepattern(".").call();
         Status status = repo.status().setIgnoreSubmodules(SubmoduleWalk.IgnoreSubmoduleMode.ALL).call();
-        if (status.hasUncommittedChanges()) {
+        System.out.println("status.getUncommittedChanges() = " + status.getUncommittedChanges());
+        if (!status.getUncommittedChanges().isEmpty()) {
+            for (String missingPath : status.getMissing()) {
+                repo.rm().addFilepattern(missingPath).call();
+            }
+
             log.info("Changes detected in the following files: " + status.getUncommittedChanges());
             repo.commit()
                 .setMessage("Backing up data dir")
