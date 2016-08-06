@@ -18,6 +18,7 @@ public class RunnerProvider {
         put("package.json", (cfg, name, folder) -> new NodeRunner(folder, cfg.nodeExecutable(), cfg.npmExecutable()));
         put("pom.xml", (cfg, name, folder) -> new MavenRunner(folder, cfg.javaHomeProvider(), CLEAN_AND_PACKAGE));
         put("project.clj", (cfg, name, folder) -> new LeinRunner(folder, cfg.leinJavaCommandProvider(), cfg.leinCommandProvider()));
+        put("build.sbt", (cfg, name, folder) -> new SbtRunner(folder, cfg.sbtJavaCommandProvider(), cfg.sbtCommandProvider()));
     }};
 
     private final Config config;

@@ -3,6 +3,7 @@ package com.danielflower.apprunner.web.v1;
 import com.danielflower.apprunner.runners.LeinRunner;
 import com.danielflower.apprunner.runners.MavenRunner;
 import com.danielflower.apprunner.runners.NodeRunner;
+import com.danielflower.apprunner.runners.SbtRunner;
 import com.jezhumble.javasysmon.JavaSysMon;
 import com.jezhumble.javasysmon.MemoryStats;
 import io.swagger.annotations.Api;
@@ -38,6 +39,7 @@ public class SystemResource {
         new Runner("maven", "Java uber jars built with maven", MavenRunner.startCommands),
         new Runner("lein", "Clojure uber jars built with leiningen", LeinRunner.startCommands),
         new Runner("nodejs", "NodeJS apps with NPM dependencies", NodeRunner.startCommands),
+        new Runner("sbt", "Scala uber jars built with sbt", SbtRunner.startCommands),
     };
     private final AtomicBoolean startupComplete;
 

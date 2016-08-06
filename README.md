@@ -21,6 +21,7 @@ installed:
 * Maven (if you wish to support Maven builds)
 * Lein (if you wish to support Clojure builds)
 * NodeJS and NPM (if you wish to support Nodejs builds)
+* Scala and SBT
 
 It's easiest if each tool is available to run from the path, but you can point to specific
 paths by setting paths in your config file.
