@@ -3,19 +3,16 @@ package com.danielflower.apprunner.runners;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.shared.invoker.DefaultInvocationRequest;
-import org.apache.maven.shared.invoker.DefaultInvoker;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
-import org.apache.maven.shared.invoker.InvocationRequest;
-import org.apache.maven.shared.invoker.InvocationResult;
-import org.apache.maven.shared.invoker.Invoker;
+import org.apache.maven.shared.invoker.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -63,18 +60,9 @@ public class MavenRunner implements AppRunner {
                 .setGoals(goals)
                 .setBaseDirectory(projectRoot);
 
-            request = javaHomeProvider.mungeMavenInvocationRequest(request);
 
             log.info("Building maven project at " + dirPath(projectRoot));
-            Invoker invoker = new DefaultInvoker();
-            try {
-                InvocationResult result = invoker.execute(request);
-                if (result.getExitCode() != 0) {
-                    throw new ProjectCannotStartException("Build returned error", result.getExecutionException());
-                }
-            } catch (Exception e) {
-                throw new ProjectCannotStartException("Error while building " + projectRoot.getAbsolutePath(), e);
-            }
+            runRequest(request);
             log.info("Build successful. Going to start app.");
         }
 
@@ -94,6 +82,19 @@ public class MavenRunner implements AppRunner {
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
+    private void runRequest(InvocationRequest request) {
+        request = javaHomeProvider.mungeMavenInvocationRequest(request);
+        Invoker invoker = new DefaultInvoker();
+        try {
+            InvocationResult result = invoker.execute(request);
+            if (result.getExitCode() != 0) {
+                throw new ProjectCannotStartException("Build returned error", result.getExecutionException());
+            }
+        } catch (Exception e) {
+            throw new ProjectCannotStartException("Error while building " + projectRoot.getAbsolutePath(), e);
+        }
+    }
+
     public void shutdown() {
         if (watchDog != null) {
             watchDog.destroyProcess();
@@ -104,5 +105,18 @@ public class MavenRunner implements AppRunner {
     @Override
     public File getInstanceDir() {
         return projectRoot;
+    }
+
+    @Override
+    public String getVersionInfo() {
+        StringBuffer out = new StringBuffer();
+        InvocationRequest request = new DefaultInvocationRequest()
+            .setOutputHandler((str) -> out.append(str).append(" - "))
+            .setErrorHandler((str) -> out.append(str).append(" - "))
+            .setShowVersion(true)
+            .setGoals(Collections.singletonList("--version"))
+            .setBaseDirectory(projectRoot);
+        runRequest(request);
+        return StringUtils.removeEndIgnoreCase(out.toString(), " - ");
     }
 }

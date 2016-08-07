@@ -7,15 +7,17 @@ import org.eclipse.jetty.util.Fields;
 
 public class RestClient {
 
-    public static RestClient create(String appRunnerUrl) {
-        HttpClient c = new HttpClient();
+    public static HttpClient httpClient = new HttpClient();
+    static {
         try {
-            c.start();
-            return new RestClient(c, appRunnerUrl);
-
+            httpClient.start();
         } catch (Exception e) {
-            throw new RuntimeException("Unable to make client", e);
+            throw new RuntimeException("Could not start httpClient", e);
         }
+    }
+
+    public static RestClient create(String appRunnerUrl) {
+        return new RestClient(httpClient, appRunnerUrl);
     }
 
     private final HttpClient client;
@@ -25,6 +27,7 @@ public class RestClient {
         this.client = client;
         this.appRunnerUrl = appRunnerUrl;
     }
+
     public ContentResponse createApp(String gitUrl) throws Exception {
         return createApp(gitUrl, null);
     }
@@ -61,11 +64,4 @@ public class RestClient {
         return client.GET(appRunnerUrl + url);
     }
 
-    public void stop() {
-        try {
-            client.stop();
-        } catch (Exception e) {
-            // ignore
-        }
-    }
 }

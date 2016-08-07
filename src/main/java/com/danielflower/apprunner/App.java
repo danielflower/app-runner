@@ -86,11 +86,12 @@ public class App {
         ExecutorService executor = Executors.newFixedThreadPool(2);
         estate.appsByStartupOrder(firstAppToStart)
             .forEach(a -> executor.submit(() -> {
-                StringBuilderWriter writer = new StringBuilderWriter();
-                try {
-                    estate.update(a.name(), new OutputToWriterBridge(writer));
-                } catch (Exception e) {
-                    log.warn("Error while starting up " + a.name() + "\nLogs:\n" + writer, e);
+                try (StringBuilderWriter writer = new StringBuilderWriter()) {
+                    try {
+                        estate.update(a.name(), new OutputToWriterBridge(writer));
+                    } catch (Exception e) {
+                        log.warn("Error while starting up " + a.name() + "\nLogs:\n" + writer, e);
+                    }
                 }
             }));
         executor.shutdown();

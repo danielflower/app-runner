@@ -29,6 +29,9 @@ public class Config {
     public static final String LEIN_JAR = "lein.jar";
     public static final String LEIN_JAVA_CMD = "lein.java.cmd";
 
+    public static final String SBT_JAR = "sbt-launcher.jar";
+    public static final String SBT_JAVA_CMD = "sbt.java.cmd";
+
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> systemEnv = System.getenv();
         Map<String, String> env = new HashMap<>(systemEnv);
@@ -78,6 +81,28 @@ public class Config {
                         .addArgument("leiningen.core.main")
 
             : CommandLineProvider.lein_on_path;
+    }
+
+    public CommandLineProvider sbtJavaCommandProvider() {
+        return raw.containsKey(SBT_JAVA_CMD)
+            ? (Map<String, String> env) ->
+
+            new CommandLine(getFile(SBT_JAVA_CMD))
+
+            : javaHomeProvider();
+    }
+
+    public CommandLineProvider sbtCommandProvider() {
+        return raw.containsKey(SBT_JAR)
+            ? (Map<String, String> env) ->
+
+            leinJavaCommandProvider()
+                .commandLine(env)
+                .addArgument("-cp")
+                .addArgument(dirPath(getFile(LEIN_JAR)))
+                .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
+
+            : CommandLineProvider.sbt_on_path;
     }
 
     public String nodeExecutable() {
