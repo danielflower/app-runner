@@ -46,7 +46,7 @@ public class SbtRunner implements AppRunner {
 
     @Override
     public String getVersionInfo() {
-        return ProcessStarter.run(CommandLineProvider.sbt_on_path.commandLine(null).addArgument("version")).getRight();
+        return ProcessStarter.run(CommandLineProvider.sbt_on_path.commandLine(null).addArgument("about")).getRight();
     }
 
     @Override

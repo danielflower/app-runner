@@ -3,6 +3,7 @@ package com.danielflower.apprunner.runners;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +29,7 @@ public class SbtRunnerTest {
 
 
     @Test
-    public void canStartAndStopLeinProjects() throws Exception {
+    public void canStartAndStopSbtProjects() throws Exception {
         // doing it twice proves the port was cleaned up
         canStartAnSBTProject(1);
         canStartAnSBTProject(2);
@@ -37,17 +38,21 @@ public class SbtRunnerTest {
     @Test
     public void theVersionIsReported() {
         SbtRunner runner = new SbtRunner(new File("target"), HomeProvider.default_java_home, CommandLineProvider.sbt_on_path);
-        assertThat(runner.getVersionInfo(), containsString("Lein"));
+        assertThat(runner.getVersionInfo(), containsString("Scala"));
     }
 
     private void canStartAnSBTProject(int attempt) throws Exception {
         String appName = "sbt";
-        SbtRunner runner = new SbtRunner(
+        AppRunner runner = new SbtRunner(
             Photocopier.copySampleAppToTempDir(appName),
             HomeProvider.default_java_home,
-            CommandLineProvider.lein_on_path);
+            CommandLineProvider.sbt_on_path);
 
         int port = 45678;
+        startAndStop(attempt, appName, runner, port, buildLog, consoleLog, containsString("Say hello to akka-http"), containsString("All tests passed"));
+    }
+
+    static void startAndStop(int attempt, String appName, AppRunner runner, int port, StringBuilderWriter buildLog, StringBuilderWriter consoleLog, Matcher<String> getResponseMatcher, Matcher<String> buildLogMatcher) throws Exception {
         try {
             try (Waiter startupWaiter = Waiter.waitForApp(appName, port)) {
                 runner.start(
@@ -59,8 +64,8 @@ public class SbtRunnerTest {
             try {
                 ContentResponse resp = httpClient.GET("http://localhost:" + port + "/" + appName + "/");
                 assertThat(resp.getStatus(), is(200));
-                assertThat(resp.getContentAsString(), containsString("Hello from lein"));
-                assertThat(buildLog.toString(), containsString("Ran 1 tests containing 1 assertions"));
+                assertThat(resp.getContentAsString(), getResponseMatcher);
+                assertThat(buildLog.toString(), buildLogMatcher);
             } finally {
                 runner.shutdown();
             }
