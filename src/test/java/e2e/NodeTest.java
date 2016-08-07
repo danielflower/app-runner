@@ -36,7 +36,6 @@ public class NodeTest {
     }
 
     @After public void shutdownApp() {
-        restClient.stop();
         app.shutdown();
     }
 

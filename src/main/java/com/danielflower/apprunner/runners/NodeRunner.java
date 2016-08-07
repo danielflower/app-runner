@@ -4,6 +4,7 @@ import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +31,13 @@ public class NodeRunner implements AppRunner {
     @Override
     public File getInstanceDir() {
         return projectRoot;
+    }
+
+    @Override
+    public String getVersionInfo() {
+        Pair<Boolean, String> npm = ProcessStarter.run(new CommandLine(npmExec).addArgument("--version"));
+        Pair<Boolean, String> node = ProcessStarter.run(new CommandLine(nodeExec).addArgument("--version"));
+        return "Node " + node.getRight() + " with NPM " + npm.getRight();
     }
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {

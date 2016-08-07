@@ -17,4 +17,6 @@ public interface AppRunner {
     interface Factory {
         AppRunner appRunner(Config cfg, String name, File folder);
     }
+
+    String getVersionInfo();
 }

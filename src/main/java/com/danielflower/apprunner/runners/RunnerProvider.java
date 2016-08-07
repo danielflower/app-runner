@@ -44,7 +44,7 @@ public class RunnerProvider {
 
     public String describeRunners() {
         return providers.entrySet().stream()
-                .map(e -> e.getKey() + " -> " + e.getValue())
+                .map(e -> e.getKey() + " -> " + e.getValue().appRunner(config, "test", new File(".")).getVersionInfo())
                 .collect(joining("\n"));
     }
 }

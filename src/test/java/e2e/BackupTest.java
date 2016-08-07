@@ -42,7 +42,6 @@ public class BackupTest {
     }
 
     @After public void shutdownApp() {
-        restClient.stop();
         app.shutdown();
     }
 

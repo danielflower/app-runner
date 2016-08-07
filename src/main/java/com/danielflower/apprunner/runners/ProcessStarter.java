@@ -4,6 +4,7 @@ import com.danielflower.apprunner.io.WriterToOutputBridge;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.slf4j.Logger;
@@ -72,6 +73,22 @@ public class ProcessStarter {
             throw new ProjectCannotStartException(message, e);
         }
         logEndTime(command, startTime);
+    }
+
+    public static Pair<Boolean, String> run(CommandLine command) {
+        ExecuteWatchdog watchDog = new ExecuteWatchdog(30000);
+        StringBuffer output = new StringBuffer();
+        Executor executor = createExecutor(output::append, command, new File("."), watchDog);
+        output.setLength(0);
+        try {
+            int exitValue = executor.execute(command);
+            if (executor.isFailure(exitValue)) {
+                return Pair.of(false, "Not available");
+            }
+        } catch (Exception e) {
+            return Pair.of(false, "Not available");
+        }
+        return Pair.of(true, output.toString().trim());
     }
 
     public static long logStartInfo(CommandLine command, File projectRoot) {

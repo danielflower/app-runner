@@ -5,9 +5,11 @@ import com.danielflower.apprunner.runners.HomeProvider;
 import com.danielflower.apprunner.runners.MavenRunner;
 import com.danielflower.apprunner.runners.Waiter;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -43,17 +45,16 @@ public class SystemTest {
     private static final int port = WebServer.getAFreePort();
     private static final String appRunnerUrl = "http://localhost:" + port;
     private static final RestClient restClient = RestClient.create(appRunnerUrl);
-    private static final HttpClient client = new HttpClient();
     private static final AppRepo leinApp = AppRepo.create("lein");
     private static final AppRepo mavenApp = AppRepo.create("maven");
     private static final AppRepo nodeApp = AppRepo.create("nodejs");
     private static final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
     private static MavenRunner mavenRunner;
     private static List<AppRepo> apps = asList(mavenApp, nodeApp, leinApp);
+    private static final HttpClient client = RestClient.httpClient;
 
     @BeforeClass
     public static void setup() throws Exception {
-        client.start();
         buildAndStartUberJar(asList("-DskipTests=true", "package"));
 
         for (AppRepo app : apps) {
@@ -63,7 +64,14 @@ public class SystemTest {
     }
 
     private static void buildAndStartUberJar(List<String> goals) throws Exception {
-        mavenRunner = new MavenRunner(new File("."), HomeProvider.default_java_home, goals);
+        mavenRunner = new MavenRunner(new File("."), new HomeProvider() {
+            public InvocationRequest mungeMavenInvocationRequest(InvocationRequest request) {
+                return HomeProvider.default_java_home.mungeMavenInvocationRequest(request);
+            }
+            public CommandLine commandLine(Map<String, String> envVarsForApp) {
+                return HomeProvider.default_java_home.commandLine(envVarsForApp).addArgument("-Dlogback.configurationFile=src/test/resources/logback-test.xml");
+            }
+        }, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
             put(Config.SERVER_PORT, String.valueOf(port));
             put(Config.DATA_DIR, dirPath(dataDir));
@@ -93,8 +101,6 @@ public class SystemTest {
     @AfterClass
     public static void cleanup() throws Exception {
         shutDownAppRunner();
-        restClient.stop();
-        client.stop();
     }
 
     @Test
@@ -266,11 +272,12 @@ public class SystemTest {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
         System.out.println("sysInfo.toString(4) = " + sysInfo.toString(4));
         JSONArray samples = sysInfo.getJSONArray("samples");
-        assertThat(samples.length(), is(3));
+        assertThat(samples.length(), is(4));
 
         JSONAssert.assertEquals("[ " +
             "{ name: 'maven', runCommands: [ 'mvn clean package', 'java -jar target/{artifactid}-{version}.jar' ] }, " +
             "{ name: 'lein' }, " +
+            "{ name: 'sbt' }, " +
             "{ name: 'nodejs' } ]", samples, JSONCompareMode.LENIENT);
 
         for (Object app : samples) {

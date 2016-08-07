@@ -19,13 +19,13 @@ import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class MavenTest {
 
-    final String port = "48180";
-    final String appRunnerUrl = "http://localhost:" + port;
-    final RestClient restClient = RestClient.create(appRunnerUrl);
-    final String appId = "maven";
-    final AppRepo appRepo = AppRepo.create(appId);
+    private final String port = "48180";
+    private final String appRunnerUrl = "http://localhost:" + port;
+    private final RestClient restClient = RestClient.create(appRunnerUrl);
+    private final String appId = "maven";
+    private final AppRepo appRepo = AppRepo.create(appId);
 
-    final App app = new App(new Config(new HashMap<String,String>() {{
+    private final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_PORT, port);
         put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
     }}));
@@ -35,7 +35,6 @@ public class MavenTest {
     }
 
     @After public void shutdownApp() {
-        restClient.stop();
         app.shutdown();
     }
 
