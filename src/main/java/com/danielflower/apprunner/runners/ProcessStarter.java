@@ -14,7 +14,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class ProcessStarter {
     public static final Logger log = LoggerFactory.getLogger(ProcessStarter.class);
@@ -32,19 +32,19 @@ public class ProcessStarter {
             startupWaiter.blockUntilReady();
 
             if (handler.hasResult()) {
-                String message = "The project at " + dirPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
+                String message = "The project at " + fullPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
                 buildLogHandler.consumeLine(message);
                 throw new ProjectCannotStartException(message);
             }
         } catch (TimeoutException te) {
-            String message = "Built successfully, but timed out waiting for startup at " + dirPath(projectRoot);
+            String message = "Built successfully, but timed out waiting for startup at " + fullPath(projectRoot);
             watchDog.destroyProcess();
             buildLogHandler.consumeLine(message);
             throw new ProjectCannotStartException(message);
         } catch (ProjectCannotStartException pcse) {
             throw pcse;
         } catch (Exception e) {
-            String message = "Built successfully, but error on start for " + dirPath(projectRoot);
+            String message = "Built successfully, but error on start for " + fullPath(projectRoot);
             buildLogHandler.consumeLine(message);
             buildLogHandler.consumeLine(e.toString());
             throw new ProjectCannotStartException(message, e);
@@ -67,7 +67,7 @@ public class ProcessStarter {
                 throw new ProjectCannotStartException(message);
             }
         } catch (Exception e) {
-            String message = "Error running: " + dirPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " ");
+            String message = "Error running: " + fullPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " ");
             outputHandler.consumeLine(message);
             outputHandler.consumeLine(e.toString());
             throw new ProjectCannotStartException(message, e);
@@ -92,7 +92,7 @@ public class ProcessStarter {
     }
 
     public static long logStartInfo(CommandLine command, File projectRoot) {
-        log.info("Starting " + dirPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " "));
+        log.info("Starting " + fullPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " "));
         return System.currentTimeMillis();
     }
 
@@ -105,7 +105,7 @@ public class ProcessStarter {
         executor.setWorkingDirectory(projectRoot);
         executor.setWatchdog(watchDog);
         executor.setStreamHandler(new PumpStreamHandler(new WriterOutputStream(new WriterToOutputBridge(consoleLogHandler))));
-        consoleLogHandler.consumeLine(dirPath(executor.getWorkingDirectory()) + "> " + String.join(" ", command.toStrings()) + "\n");
+        consoleLogHandler.consumeLine(fullPath(executor.getWorkingDirectory()) + "> " + String.join(" ", command.toStrings()) + "\n");
         return executor;
     }
 

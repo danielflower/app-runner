@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
@@ -107,11 +107,11 @@ public class App {
     }
 
     private void deleteOldTempFiles(File tempDir) {
-        log.info("Deleting contents of temporary folder at " + dirPath(tempDir));
+        log.info("Deleting contents of temporary folder at " + fullPath(tempDir));
         try {
             FileUtils.deleteDirectory(tempDir);
         } catch (IOException e) {
-            log.warn("Failed to delete " + dirPath(tempDir), e);
+            log.warn("Failed to delete " + fullPath(tempDir), e);
         }
     }
 

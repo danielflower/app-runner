@@ -7,7 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static org.apache.commons.io.FilenameUtils.separatorsToSystem;
 
 public class Photocopier {
@@ -17,13 +17,13 @@ public class Photocopier {
     }
 
     public static File copySampleAppToTempDir(String sampleAppName) throws IOException {
-        String pathname = FilenameUtils.concat(dirPath(sampleDir()), sampleAppName);
+        String pathname = FilenameUtils.concat(fullPath(sampleDir()), sampleAppName);
         File source = new File(pathname);
         if (!source.isDirectory()) {
             source = new File(separatorsToSystem("../") + pathname);
         }
         if (!source.isDirectory()) {
-            throw new RuntimeException("Could not find module " + sampleAppName + " at " + new File(pathname) + " nor " + dirPath(source));
+            throw new RuntimeException("Could not find module " + sampleAppName + " at " + new File(pathname) + " nor " + fullPath(source));
         }
 
         File target = folderForSampleProject(sampleAppName);

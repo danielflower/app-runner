@@ -36,7 +36,6 @@ public class SbtRunner implements AppRunner {
         this.projectRoot = projectRoot;
         this.javaCmd = javaCmd;
         this.sbtCmd = sbtCmd;
-
     }
 
     @Override

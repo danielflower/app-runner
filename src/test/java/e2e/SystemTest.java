@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -74,7 +74,7 @@ public class SystemTest {
         }, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
             put(Config.SERVER_PORT, String.valueOf(port));
-            put(Config.DATA_DIR, dirPath(dataDir));
+            put(Config.DATA_DIR, fullPath(dataDir));
         }};
 
         InvocationOutputHandler logHandler = line -> System.out.print("Test build output > " + line);

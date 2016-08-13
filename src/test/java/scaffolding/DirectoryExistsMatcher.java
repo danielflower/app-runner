@@ -5,7 +5,7 @@ import org.hamcrest.Description;
 
 import java.io.File;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class DirectoryExistsMatcher extends CustomTypeSafeMatcher<File> {
     public DirectoryExistsMatcher() {
@@ -19,7 +19,7 @@ public class DirectoryExistsMatcher extends CustomTypeSafeMatcher<File> {
 
     @Override
     protected void describeMismatchSafely(File item, Description mismatchDescription) {
-        mismatchDescription.appendText(dirPath(item) + " " + (item.isDirectory() ? "exists" : "does not exist"));
+        mismatchDescription.appendText(fullPath(item) + " " + (item.isDirectory() ? "exists" : "does not exist"));
     }
 
     public static DirectoryExistsMatcher directoryExists() {

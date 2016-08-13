@@ -15,7 +15,7 @@ import scaffolding.RestClient;
 import java.io.File;
 import java.util.HashMap;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.FileExistsMatcher.fileExists;
 
@@ -36,7 +36,7 @@ public class BackupTest {
         app = new App(new Config(new HashMap<String,String>() {{
             put(Config.SERVER_PORT, port);
             put(Config.BACKUP_URL, backupUri.toString());
-            put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
+            put(Config.DATA_DIR, fullPath(new File("target/datadirs/" + System.currentTimeMillis())));
         }}));
         app.start();
     }

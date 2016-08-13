@@ -8,7 +8,7 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import java.io.File;
 import java.util.Map;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class ExplicitJavaHome implements HomeProvider {
     private final File javaHome;
@@ -26,6 +26,6 @@ public class ExplicitJavaHome implements HomeProvider {
     }
 
     public String toString() {
-        return dirPath(javaHome);
+        return fullPath(javaHome);
     }
 }

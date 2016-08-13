@@ -52,9 +52,15 @@ public class BackupServiceTest {
 
         File appDataDir = sandbox.appDir("my-app", "data/repo/temp");
         write(appDataDir, "some.data", "Hello there");
-        File appRepoDir = sandbox.appDir("my-app", "repo");
-        Git.init().setDirectory(appRepoDir).setBare(false).call();
-        write(appRepoDir, "some.data", "Hi from repo");
+
+        for (File appRepoDir : new File[] {sandbox.appDir("my-app", "repo"), sandbox.repoDir("my-app")}) { // covers old-style repo dirs
+            Git appRepo = Git.init().setDirectory(appRepoDir).setBare(false).call();
+            write(appRepoDir, "some.data", "Hi from repo");
+            appRepo.add().addFilepattern(".").call();
+            appRepo.commit().setMessage("Hello").call();
+        }
+        write(localDir, "repos/hi.txt", "I am not backed up");
+
         FileUtils.forceDelete(new File(localDir, "repos.properties"));
 
         backupService.backup();
@@ -64,6 +70,7 @@ public class BackupServiceTest {
         assertThat(new File(backupCopyDir, "temp"), not(directoryExists()));
         assertThat(new File(backupCopyDir, "apps/my-app/data/repo/temp/some.data"), fileExists());
         assertThat(new File(backupCopyDir, "apps/my-app/repo"), not(directoryExists()));
+        assertThat(new File(backupCopyDir, "repos"), not(directoryExists()));
 
         backupService.backup();
 

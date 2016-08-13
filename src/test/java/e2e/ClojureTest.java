@@ -11,7 +11,7 @@ import scaffolding.RestClient;
 import java.io.File;
 import java.util.HashMap;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -27,7 +27,7 @@ public class ClojureTest {
 
     private final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_PORT, port);
-        put(Config.DATA_DIR, dirPath(new File("target/datadirs/" + System.currentTimeMillis())));
+        put(Config.DATA_DIR, fullPath(new File("target/datadirs/" + System.currentTimeMillis())));
     }}));
 
     @Before public void start() throws Exception {

@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class BackupService {
     private static final Logger log = LoggerFactory.getLogger(BackupService.class);
@@ -54,7 +54,7 @@ public class BackupService {
     public synchronized void backup() throws Exception {
         repo.add().setUpdate(false).addFilepattern(".").call();
         Status status = repo.status().setIgnoreSubmodules(SubmoduleWalk.IgnoreSubmoduleMode.ALL).call();
-        System.out.println("status.getUncommittedChanges() = " + status.getUncommittedChanges());
+        log.debug("status.getUncommittedChanges() = " + status.getUncommittedChanges());
         if (!status.getUncommittedChanges().isEmpty()) {
             for (String missingPath : status.getMissing()) {
                 repo.rm().addFilepattern(missingPath).call();
@@ -88,7 +88,7 @@ public class BackupService {
         try {
             local = Git.open(localDir);
         } catch (RepositoryNotFoundException e) {
-            log.info("Initialising " + dirPath(localDir) + " as a git repo for backup purposes");
+            log.info("Initialising " + fullPath(localDir) + " as a git repo for backup purposes");
             local = Git.init().setDirectory(localDir).setBare(false).call();
         }
         log.info("Setting backup URL to " + remoteUri);

@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
 
 public class MavenRunner implements AppRunner {
@@ -61,7 +61,7 @@ public class MavenRunner implements AppRunner {
                 .setBaseDirectory(projectRoot);
 
 
-            log.info("Building maven project at " + dirPath(projectRoot));
+            log.info("Building maven project at " + fullPath(projectRoot));
             runRequest(request);
             log.info("Build successful. Going to start app.");
         }
@@ -71,7 +71,7 @@ public class MavenRunner implements AppRunner {
 
         File jar = new File(new File(projectRoot, "target"), jarName);
         if (!jar.isFile()) {
-            throw new ProjectCannotStartException("Could not find the jar file at " + dirPath(jar));
+            throw new ProjectCannotStartException("Could not find the jar file at " + fullPath(jar));
         }
 
         CommandLine command = javaHomeProvider.commandLine(envVarsForApp)

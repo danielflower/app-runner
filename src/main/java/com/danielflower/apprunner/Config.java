@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class Config {
     public static final String SERVER_PORT = "appserver.port";
@@ -74,7 +74,7 @@ public class Config {
             ? (Map<String, String> env) -> leinJavaCommandProvider()
                         .commandLine(env)
                         .addArgument("-cp")
-                        .addArgument(dirPath(getFile(LEIN_JAR)))
+                        .addArgument(fullPath(getFile(LEIN_JAR)))
                         .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
                         .addArgument("clojure.main")
                         .addArgument("-m")
@@ -99,7 +99,7 @@ public class Config {
             leinJavaCommandProvider()
                 .commandLine(env)
                 .addArgument("-cp")
-                .addArgument(dirPath(getFile(LEIN_JAR)))
+                .addArgument(fullPath(getFile(LEIN_JAR)))
                 .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
 
             : CommandLineProvider.sbt_on_path;
@@ -151,7 +151,7 @@ public class Config {
     public File getDir(String name) {
         File f = new File(get(name));
         if (!f.isDirectory()) {
-            throw new AppRunnerException("Could not find " + name + " directory: " + dirPath(f));
+            throw new AppRunnerException("Could not find " + name + " directory: " + fullPath(f));
         }
         return f;
     }
@@ -161,7 +161,7 @@ public class Config {
         try {
             FileUtils.forceMkdir(f);
         } catch (IOException e) {
-            throw new AppRunnerException("Could not create " + dirPath(f));
+            throw new AppRunnerException("Could not create " + fullPath(f));
         }
         return f;
     }
@@ -169,7 +169,7 @@ public class Config {
     public File getFile(String name) {
         File f = new File(get(name));
         if (!f.isFile()) {
-            throw new AppRunnerException("Could not find " + name + " file: " + dirPath(f));
+            throw new AppRunnerException("Could not find " + name + " file: " + fullPath(f));
         }
         return f;
     }

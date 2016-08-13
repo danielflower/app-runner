@@ -31,7 +31,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -39,8 +39,7 @@ public class AppManager implements AppDescription {
     private static final Executor deletionQueue = Executors.newSingleThreadExecutor();
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
-        File root = fileSandbox.appDir(name);
-        File gitDir = fileSandbox.appDir(name, "repo");
+        File gitDir = fileSandbox.repoDir(name);
         File instanceDir = fileSandbox.tempDir(name + File.separator + "instances");
         File dataDir = fileSandbox.appDir(name, "data");
         File tempDir = fileSandbox.tempDir(name);
@@ -67,7 +66,7 @@ public class AppManager implements AppDescription {
         } catch (IOException e) {
             throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }
-        log.info("Created app manager for " + name + " in dir " + root);
+        log.info("Created app manager for " + name + " in dir " + dataDir);
         return new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
     }
 
@@ -158,7 +157,7 @@ public class AppManager implements AppDescription {
 
         buildLogHandler.consumeLine("Fetching latest changes from git...");
         File id = fetchChangesAndCreateInstanceDir();
-        buildLogHandler.consumeLine("Created new instance in " + dirPath(id));
+        buildLogHandler.consumeLine("Created new instance in " + fullPath(id));
 
         AppRunner oldRunner = currentRunner;
         currentRunner = runnerProvider.runnerFor(name(), id);
@@ -194,13 +193,13 @@ public class AppManager implements AppDescription {
     private static void quietlyDeleteTheOldInstanceDirInTheBackground(final File instanceDir) {
         deletionQueue.execute(() -> {
             try {
-                log.info("Going to delete " + dirPath(instanceDir));
+                log.info("Going to delete " + fullPath(instanceDir));
                 if (instanceDir.isDirectory()) {
                     FileUtils.deleteDirectory(instanceDir);
                 }
                 log.info("Deletion completion");
             } catch (Exception e) {
-                log.info("Couldn't delete " + dirPath(instanceDir) +
+                log.info("Couldn't delete " + fullPath(instanceDir) +
                     " but it doesn't really matter as it will get deleted on next AppRunner startup.");
             }
         });
@@ -250,8 +249,8 @@ public class AppManager implements AppDescription {
         envVarsForApp.put("APP_PORT", String.valueOf(port));
         envVarsForApp.put("APP_NAME", name);
         envVarsForApp.put("APP_ENV", "prod");
-        envVarsForApp.put("TEMP", dirPath(tempDir));
-        envVarsForApp.put("APP_DATA", dirPath(dataDir));
+        envVarsForApp.put("TEMP", fullPath(tempDir));
+        envVarsForApp.put("APP_DATA", fullPath(dataDir));
         return envVarsForApp;
     }
 
