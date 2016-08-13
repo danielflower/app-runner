@@ -1,7 +1,8 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.MavenRunnerFactory;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.web.v1.AppResource;
 import org.apache.commons.io.output.NullOutputStream;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -17,6 +18,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
@@ -27,7 +29,7 @@ public class AppResourceTest {
 
     private final MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
     private final MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    private final AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new RunnerProvider(TestConfig.config, RunnerProvider.default_providers));
+    private final AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new AppRunnerFactoryProvider(Collections.singletonList(MavenRunnerFactory.createIfAvailable(TestConfig.config).get())));
     private final AppResource appResource = new AppResource(estate);
 
     @Test
@@ -71,10 +73,7 @@ public class AppResourceTest {
 
     @Test
     public void creatingAnAppReturnsA501IfTheThereIsNoSuitableRunnerForTheRepo() throws IOException, GitAPIException {
-        AppRepo repo = AppRepo.create("maven");
-        repo.origin.rm().addFilepattern("pom.xml").call();
-        repo.origin.commit().setMessage("remove it's maveness so there is no suitable runner").call();
-
+        AppRepo repo = AppRepo.create("nodejs"); // the resource only has a maven runner registered
         UriInfo uriInfo = new MockUriInfo("http://localhost:1234/api/v1/apps");
         Response response = appResource.create(uriInfo, repo.gitUrl(), null);
         assertThat(response.getStatus(), is(501));

@@ -2,7 +2,7 @@ package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.FileSandbox;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.io.FileUtils;
@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -42,7 +43,7 @@ public class WebServerTest {
         client.setFollowRedirects(false);
         client.start();
         AppEstate estate = new AppEstate(proxyMap, fileSandbox(),
-            new RunnerProvider(null, RunnerProvider.default_providers));
+            new AppRunnerFactoryProvider(new ArrayList<>()));
         webServer = new WebServer(0, proxyMap, "test-app",
             new SystemResource(new AtomicBoolean(true)), new AppResource(estate));
         webServer.start();

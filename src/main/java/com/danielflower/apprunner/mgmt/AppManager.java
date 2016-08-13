@@ -3,7 +3,7 @@ package com.danielflower.apprunner.mgmt;
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.runners.AppRunner;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.Waiter;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -124,7 +124,7 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public synchronized void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
+    public synchronized void update(AppRunnerFactoryProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         clearLogs();
         if (!availability.isAvailable) {
             availability = Availability.unavailable("Starting");

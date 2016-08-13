@@ -62,7 +62,7 @@ public class MavenRunner implements AppRunner {
 
 
             log.info("Building maven project at " + fullPath(projectRoot));
-            runRequest(request);
+            runRequest(request, javaHomeProvider);
             log.info("Build successful. Going to start app.");
         }
 
@@ -82,7 +82,7 @@ public class MavenRunner implements AppRunner {
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
-    private void runRequest(InvocationRequest request) {
+    static void runRequest(InvocationRequest request, HomeProvider javaHomeProvider) {
         request = javaHomeProvider.mungeMavenInvocationRequest(request);
         Invoker invoker = new DefaultInvoker();
         try {
@@ -91,7 +91,7 @@ public class MavenRunner implements AppRunner {
                 throw new ProjectCannotStartException("Build returned error", result.getExecutionException());
             }
         } catch (Exception e) {
-            throw new ProjectCannotStartException("Error while building " + projectRoot.getAbsolutePath(), e);
+            throw new ProjectCannotStartException("Error while building " + fullPath(request.getBaseDirectory()), e);
         }
     }
 
@@ -116,7 +116,7 @@ public class MavenRunner implements AppRunner {
             .setShowVersion(true)
             .setGoals(Collections.singletonList("--version"))
             .setBaseDirectory(projectRoot);
-        runRequest(request);
+        runRequest(request, javaHomeProvider);
         return StringUtils.removeEndIgnoreCase(out.toString(), " - ");
     }
 }

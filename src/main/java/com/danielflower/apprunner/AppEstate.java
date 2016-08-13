@@ -3,7 +3,7 @@ package com.danielflower.apprunner;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import com.danielflower.apprunner.web.ProxyMap;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -26,9 +26,9 @@ public class AppEstate {
     private final FileSandbox fileSandbox;
     private final List<AppChangedListener> appAddedListeners = new ArrayList<>();
     private final List<AppChangedListener> appDeletedListeners = new ArrayList<>();
-    private final RunnerProvider runnerProvider;
+    private final AppRunnerFactoryProvider runnerProvider;
 
-    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, RunnerProvider runnerProvider) {
+    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, AppRunnerFactoryProvider runnerProvider) {
         this.proxyMap = proxyMap;
         this.fileSandbox = fileSandbox;
         this.runnerProvider = runnerProvider;

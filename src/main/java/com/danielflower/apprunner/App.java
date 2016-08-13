@@ -5,7 +5,7 @@ import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.BackupService;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import com.danielflower.apprunner.web.v1.AppResource;
@@ -56,7 +56,7 @@ public class App {
         estate = new AppEstate(
             proxyMap,
             fileSandbox,
-            registerdRunnerFactories());
+            registeredRunnerFactories());
 
         for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet())
             estate.addApp(repo.getValue(), repo.getKey());
@@ -150,8 +150,8 @@ public class App {
         }
     }
 
-    private RunnerProvider registerdRunnerFactories() {
-        RunnerProvider runnerProvider = new RunnerProvider(config, RunnerProvider.default_providers);
+    private AppRunnerFactoryProvider registeredRunnerFactories() {
+        AppRunnerFactoryProvider runnerProvider = AppRunnerFactoryProvider.create(config);
         log.info("Registered providers...\n" + runnerProvider.describeRunners());
         return runnerProvider;
     }
