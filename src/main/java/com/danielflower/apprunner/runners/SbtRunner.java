@@ -44,11 +44,6 @@ public class SbtRunner implements AppRunner {
     }
 
     @Override
-    public String getVersionInfo() {
-        return ProcessStarter.run(CommandLineProvider.sbt_on_path.commandLine(null).addArgument("about")).getRight();
-    }
-
-    @Override
     public void start(final InvocationOutputHandler buildLogHandler,
                       final InvocationOutputHandler consoleLogHandler,
                       final Map<String, String> envVarsForApp,

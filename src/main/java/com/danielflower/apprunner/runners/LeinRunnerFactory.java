@@ -19,7 +19,7 @@ class LeinRunnerFactory implements AppRunnerFactory {
     }
 
     @Override
-    public AppRunner appRunner(String name, File folder) {
+    public AppRunner appRunner(File folder) {
         return new LeinRunner(folder, leinJavaCommandProvider, leinCmdProvider);
     }
 

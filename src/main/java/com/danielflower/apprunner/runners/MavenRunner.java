@@ -3,7 +3,6 @@ package com.danielflower.apprunner.runners;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.shared.invoker.*;
@@ -12,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileReader;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -107,16 +105,4 @@ public class MavenRunner implements AppRunner {
         return projectRoot;
     }
 
-    @Override
-    public String getVersionInfo() {
-        StringBuffer out = new StringBuffer();
-        InvocationRequest request = new DefaultInvocationRequest()
-            .setOutputHandler((str) -> out.append(str).append(" - "))
-            .setErrorHandler((str) -> out.append(str).append(" - "))
-            .setShowVersion(true)
-            .setGoals(Collections.singletonList("--version"))
-            .setBaseDirectory(projectRoot);
-        runRequest(request, javaHomeProvider);
-        return StringUtils.removeEndIgnoreCase(out.toString(), " - ");
-    }
 }

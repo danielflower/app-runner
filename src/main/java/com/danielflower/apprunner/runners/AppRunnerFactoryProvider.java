@@ -32,7 +32,7 @@ public class AppRunnerFactoryProvider {
 
         for (AppRunnerFactory factory : factories) {
             if (factory.canRun(projectRoot)) {
-                AppRunner runner = factory.appRunner(appName, projectRoot);
+                AppRunner runner = factory.appRunner(projectRoot);
                 log.info("Using " + runner.getClass().getSimpleName() + " for " + appName);
                 return runner;
             }

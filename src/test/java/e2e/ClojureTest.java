@@ -2,6 +2,7 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
+import com.danielflower.apprunner.runners.LeinRunnerTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,6 +32,7 @@ public class ClojureTest {
     }}));
 
     @Before public void start() throws Exception {
+        LeinRunnerTest.ignoreTestIfNotSupported();
         app.start();
     }
 

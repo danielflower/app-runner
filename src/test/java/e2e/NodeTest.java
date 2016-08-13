@@ -2,6 +2,7 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
+import com.danielflower.apprunner.runners.NodeRunnerTest;
 import com.danielflower.apprunner.web.WebServer;
 import org.junit.After;
 import org.junit.Before;
@@ -32,6 +33,7 @@ public class NodeTest {
     }}));
 
     @Before public void start() throws Exception {
+        NodeRunnerTest.ignoreTestIfNotSupported();
         app.start();
     }
 

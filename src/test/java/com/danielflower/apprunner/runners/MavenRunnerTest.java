@@ -1,43 +1,46 @@
 package com.danielflower.apprunner.runners;
 
 import org.apache.commons.io.output.StringBuilderWriter;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
 
-import java.io.File;
+import java.util.Optional;
 
 import static com.danielflower.apprunner.web.WebServer.getAFreePort;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assume.assumeTrue;
+import static scaffolding.TestConfig.config;
 
 public class MavenRunnerTest {
 
+    private static MavenRunnerFactory runnerFactory;
     private final StringBuilderWriter buildLog = new StringBuilderWriter();
     private final StringBuilderWriter consoleLog = new StringBuilderWriter();
+
+    @BeforeClass
+    public static void ignoreTestIfNotSupported() throws Exception {
+        Optional<MavenRunnerFactory> runnerFactoryMaybe = MavenRunnerFactory.createIfAvailable(config);
+        assumeTrue("Skipping test because maven not detected", runnerFactoryMaybe.isPresent());
+        runnerFactory = runnerFactoryMaybe.get();
+    }
 
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws Exception {
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(
-            Photocopier.copySampleAppToTempDir(appName),
-            HomeProvider.default_java_home,
-            MavenRunner.CLEAN_AND_PACKAGE);
-
+        AppRunner runner = runnerFactory.appRunner(Photocopier.copySampleAppToTempDir(appName));
         int port = getAFreePort();
         startAndStop(1, appName, runner, port);
         startAndStop(2, appName, runner, port);
-
     }
 
     @Test
     public void theVersionIsReported() {
-        MavenRunner runner = new MavenRunner(new File("target"), HomeProvider.default_java_home, MavenRunner.CLEAN_AND_PACKAGE);
-        assertThat(runner.getVersionInfo(), anyOf(containsString("Apache Maven"), equalTo("Not available")));
+        assertThat(runnerFactory.versionInfo(), containsString("Apache Maven"));
     }
 
-    private void startAndStop(int attempt, String appName, MavenRunner runner, int port) throws Exception {
-        SbtRunnerTest.startAndStop(attempt, appName, runner, port, buildLog, consoleLog, containsString("My Maven App"), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
+    private void startAndStop(int attempt, String appName, AppRunner runner, int port) throws Exception {
+        ProcessStarterTest.startAndStop(attempt, appName, runner, port, buildLog, consoleLog, containsString("My Maven App"), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
     }
 }

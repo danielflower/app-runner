@@ -1,21 +1,30 @@
 package com.danielflower.apprunner.runners;
 
 import org.apache.commons.io.output.StringBuilderWriter;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
 
-import java.io.File;
+import java.util.Optional;
 
-import static com.danielflower.apprunner.runners.SbtRunnerTest.startAndStop;
+import static com.danielflower.apprunner.runners.ProcessStarterTest.startAndStop;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assume.assumeTrue;
+import static scaffolding.TestConfig.config;
 
 public class LeinRunnerTest {
 
+    private static LeinRunnerFactory runnerFactory;
     private StringBuilderWriter buildLog = new StringBuilderWriter();
     private StringBuilderWriter consoleLog = new StringBuilderWriter();
+
+    @BeforeClass
+    public static void ignoreTestIfNotSupported() throws Exception {
+        Optional<LeinRunnerFactory> runnerFactoryMaybe = LeinRunnerFactory.createIfAvailable(config);
+        assumeTrue("Skipping test because lein not detected", runnerFactoryMaybe.isPresent());
+        runnerFactory = runnerFactoryMaybe.get();
+    }
 
     @Test
     public void canStartAndStopLeinProjects() throws Exception {
@@ -26,16 +35,12 @@ public class LeinRunnerTest {
 
     @Test
     public void theVersionIsReported() {
-        LeinRunner runner = new LeinRunner(new File("target"), HomeProvider.default_java_home, CommandLineProvider.lein_on_path);
-        assertThat(runner.getVersionInfo(), anyOf(containsString("Lein"), equalTo("Not available")));
+        assertThat(runnerFactory.versionInfo(), containsString("Lein"));
     }
 
-    public void canStartALeinProject(int attempt) throws Exception {
+    private void canStartALeinProject(int attempt) throws Exception {
         String appName = "lein";
-        LeinRunner runner = new LeinRunner(
-            Photocopier.copySampleAppToTempDir(appName),
-            HomeProvider.default_java_home,
-            CommandLineProvider.lein_on_path);
+        AppRunner runner = runnerFactory.appRunner(Photocopier.copySampleAppToTempDir(appName));
         startAndStop(attempt, appName, runner, 45678, buildLog, consoleLog, containsString("Hello from lein"), containsString("Ran 1 tests containing 1 assertions"));
     }
 }

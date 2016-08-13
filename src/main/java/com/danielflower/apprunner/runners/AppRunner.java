@@ -12,6 +12,4 @@ public interface AppRunner {
     void shutdown();
 
     File getInstanceDir();
-
-    String getVersionInfo();
 }

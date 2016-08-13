@@ -35,11 +35,6 @@ public class LeinRunner implements AppRunner {
         return projectRoot;
     }
 
-    @Override
-    public String getVersionInfo() {
-        return ProcessStarter.run(leinCmd.commandLine(null).addArgument("--version")).getRight();
-    }
-
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
 
         runLein(buildLogHandler, envVarsForApp, "do", "test,", "uberjar,", "pom");

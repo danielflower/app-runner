@@ -33,7 +33,7 @@ public class SbtTest {
 
     @Before
     public void start() throws Exception {
-        SbtRunnerTest.ignoreTestIfNoSBT();
+        SbtRunnerTest.ignoreTestIfNotSupported();
         app.start();
     }
 
