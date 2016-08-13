@@ -6,9 +6,11 @@ import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.Availability;
 import com.danielflower.apprunner.problems.AppNotFoundException;
+import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.io.WriterOutputStream;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,7 +126,8 @@ public class AppResource {
     @ApiResponses(value = {
         @ApiResponse(code = 201, message = "The new app was successfully registered"),
         @ApiResponse(code = 200, message = "The existing app was updated"),
-        @ApiResponse(code = 400, message = "The git URL was not specified")
+        @ApiResponse(code = 400, message = "The git URL was not specified or the git repo could not be cloned"),
+        @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
     })
     public Response create(@Context UriInfo uriInfo,
                            @ApiParam(required = true, example = "https://github.com/danielflower/app-runner-home.git", value = "An SSH or HTTP git URL that points to an app-runner compatible app")
@@ -133,7 +136,9 @@ public class AppResource {
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {
-            return Response.status(400).entity("No gitUrl was specified").build();
+            return Response.status(400).entity(new JSONObject()
+                .put("message", "No git URL was specified")
+                .toString()).build();
         }
 
         try {
@@ -149,7 +154,24 @@ public class AppResource {
             } else {
                 status = 201;
             }
-            appDescription = estate.addApp(gitUrl, appName);
+            try {
+                appDescription = estate.addApp(gitUrl, appName);
+            } catch (UnsupportedProjectTypeException e) {
+                return Response.status(501)
+                    .entity(new JSONObject()
+                        .put("message", "No suitable runner found for this app")
+                        .put("gitUrl", gitUrl)
+                        .toString())
+                    .build();
+            } catch (GitAPIException e) {
+                return Response.status(400)
+                    .entity(new JSONObject()
+                        .put("message", "Could not clone git repository: " + e.getMessage())
+                        .put("gitUrl", gitUrl)
+                        .toString())
+                    .build();
+            }
+
             return Response.status(status)
                 .header("Location", uriInfo.getRequestUri() + "/" + appDescription.name())
                 .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
@@ -203,7 +225,7 @@ public class AppResource {
     private class UpdateStreamer implements StreamingOutput {
         private final String name;
 
-        public UpdateStreamer(String name) {
+        UpdateStreamer(String name) {
             this.name = name;
         }
 

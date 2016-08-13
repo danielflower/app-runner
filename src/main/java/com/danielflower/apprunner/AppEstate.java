@@ -4,8 +4,10 @@ import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import com.danielflower.apprunner.web.ProxyMap;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,8 +56,9 @@ public class AppEstate {
         }
     }
 
-    public AppDescription addApp(String gitUrl, String appName) throws Exception {
+    public AppDescription addApp(String gitUrl, String appName) throws UnsupportedProjectTypeException, IOException, GitAPIException {
         AppManager appMan = AppManager.create(gitUrl, fileSandbox, appName);
+        runnerProvider.runnerFor(appName, fileSandbox.repoDir(appName));
         appMan.addListener(proxyMap::add);
         this.add(appMan);
         return appMan;

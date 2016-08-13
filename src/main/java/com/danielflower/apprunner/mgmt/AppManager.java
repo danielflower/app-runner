@@ -46,17 +46,13 @@ public class AppManager implements AppDescription {
 
         Git git;
         try {
-            try {
-                git = Git.open(gitDir);
-            } catch (RepositoryNotFoundException e) {
-                git = Git.cloneRepository()
-                    .setURI(gitUrl)
-                    .setBare(false)
-                    .setDirectory(gitDir)
-                    .call();
-            }
-        } catch (IOException | GitAPIException e) {
-            throw new AppRunnerException("Could not open or create git repo at " + gitDir, e);
+            git = Git.open(gitDir);
+        } catch (RepositoryNotFoundException e) {
+            git = Git.cloneRepository()
+                .setURI(gitUrl)
+                .setBare(false)
+                .setDirectory(gitDir)
+                .call();
         }
 
         StoredConfig gitCfg = git.getRepository().getConfig();
