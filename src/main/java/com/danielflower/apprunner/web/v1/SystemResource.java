@@ -1,9 +1,6 @@
 package com.danielflower.apprunner.web.v1;
 
-import com.danielflower.apprunner.runners.LeinRunner;
-import com.danielflower.apprunner.runners.MavenRunner;
-import com.danielflower.apprunner.runners.NodeRunner;
-import com.danielflower.apprunner.runners.SbtRunner;
+import com.danielflower.apprunner.runners.AppRunnerFactory;
 import com.jezhumble.javasysmon.JavaSysMon;
 import com.jezhumble.javasysmon.MemoryStats;
 import io.swagger.annotations.Api;
@@ -24,7 +21,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -35,16 +31,12 @@ public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
     private final JavaSysMon javaSysMon = new JavaSysMon();
 
-    private static final Runner[] sampleProjects = new Runner[] {
-        new Runner("maven", "Java uber jars built with maven", MavenRunner.startCommands),
-        new Runner("lein", "Clojure uber jars built with leiningen", LeinRunner.startCommands),
-        new Runner("nodejs", "NodeJS apps with NPM dependencies", NodeRunner.startCommands),
-        new Runner("sbt", "Scala uber jars built with sbt", SbtRunner.startCommands),
-    };
     private final AtomicBoolean startupComplete;
+    private final List<AppRunnerFactory> factories;
 
-    public SystemResource(AtomicBoolean startupComplete) {
+    public SystemResource(AtomicBoolean startupComplete, List<AppRunnerFactory> factories) {
         this.startupComplete = startupComplete;
+        this.factories = factories;
     }
 
     @GET
@@ -56,12 +48,14 @@ public class SystemResource {
 
         JSONArray apps = new JSONArray();
         result.put("samples", apps);
-        for (Runner proj : sampleProjects) {
+        for (AppRunnerFactory factory : factories) {
             JSONObject sample = new JSONObject();
-            sample.put("name", proj.name);
-            sample.put("description", proj.description);
-            sample.put("url", uri.getRequestUri().resolve("system/samples/" + proj.zipName()));
-            sample.put("runCommands", new JSONArray(proj.commands));
+            sample.put("id", factory.id());
+            sample.put("name", factory.id()); // for backwards compatibility
+            sample.put("description", factory.description());
+            sample.put("url", uri.getRequestUri().resolve("system/samples/" + factory.sampleProjectName()));
+            sample.put("runCommands", new JSONArray(factory.startCommands()));
+            sample.put("version", factory.versionInfo());
             apps.put(sample);
         }
 
@@ -88,10 +82,10 @@ public class SystemResource {
     @Path("/samples/{name}")
     @Produces("application/zip")
     @ApiOperation("Returns a ZIP file containing a sample app")
-    public Response samples(@ApiParam(required = true, allowableValues = "maven.zip, lein.zip, nodejs.zip") @PathParam("name") String name) throws IOException {
-        List<String> sampleProjectNames = Arrays.stream(sampleProjects).map(Runner::zipName).collect(Collectors.toList());
-        if (!sampleProjectNames.contains(name)) {
-            return Response.status(404).entity("Invalid sample app name. Valid names: " + sampleProjectNames).build();
+    public Response samples(@ApiParam(required = true, allowableValues = "maven.zip, lein.zip, nodejs.zip, sbt.zip") @PathParam("name") String name) throws IOException {
+        List<String> names = factories.stream().map(AppRunnerFactory::sampleProjectName).collect(Collectors.toList());
+        if (!names.contains(name)) {
+            return Response.status(404).entity("Invalid sample app name. Valid names: " + names).build();
         }
 
         try (InputStream zipStream = getClass().getResourceAsStream("/sample-apps/" + name)) {
@@ -101,18 +95,4 @@ public class SystemResource {
         }
     }
 
-    private static class Runner {
-        public final String name;
-        public final String description;
-        public final String[] commands;
-
-        private Runner(String name, String description, String[] commands) {
-            this.name = name;
-            this.description = description;
-            this.commands = commands;
-        }
-        public String zipName() {
-            return name + ".zip";
-        }
-    }
 }

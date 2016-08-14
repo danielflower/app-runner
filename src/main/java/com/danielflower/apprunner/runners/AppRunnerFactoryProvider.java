@@ -47,4 +47,7 @@ public class AppRunnerFactoryProvider {
                 .collect(joining("\n"));
     }
 
+    public List<AppRunnerFactory> factories() {
+        return factories;
+    }
 }

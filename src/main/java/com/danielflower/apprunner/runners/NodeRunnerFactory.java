@@ -19,6 +19,26 @@ class NodeRunnerFactory implements AppRunnerFactory {
     }
 
     @Override
+    public String id() {
+        return "nodejs";
+    }
+
+    @Override
+    public String sampleProjectName() {
+        return "nodejs.zip";
+    }
+
+    @Override
+    public String description() {
+        return "NodeJS apps with NPM dependencies";
+    }
+
+    @Override
+    public String[] startCommands() {
+        return NodeRunner.startCommands;
+    }
+
+    @Override
     public AppRunner appRunner(File folder) {
         return new NodeRunner(folder, nodeExecutable, npmExecutable);
     }

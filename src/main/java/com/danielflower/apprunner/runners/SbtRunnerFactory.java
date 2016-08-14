@@ -19,6 +19,26 @@ class SbtRunnerFactory implements AppRunnerFactory {
     }
 
     @Override
+    public String id() {
+        return "sbt";
+    }
+
+    @Override
+    public String sampleProjectName() {
+        return "sbt.zip";
+    }
+
+    @Override
+    public String description() {
+        return "Scala uber jars built with sbt";
+    }
+
+    @Override
+    public String[] startCommands() {
+        return SbtRunner.startCommands;
+    }
+
+    @Override
     public AppRunner appRunner(File folder) {
         return new SbtRunner(folder, sbtJavaCommandProvider, sbtCommandProvider);
     }

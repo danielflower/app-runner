@@ -53,10 +53,13 @@ public class App {
         ProxyMap proxyMap = new ProxyMap();
         int appRunnerPort = config.getInt(SERVER_PORT);
 
+        AppRunnerFactoryProvider runnerProvider = AppRunnerFactoryProvider.create(config);
+        log.info("Registered providers...\n" + runnerProvider.describeRunners());
+
         estate = new AppEstate(
             proxyMap,
             fileSandbox,
-            registeredRunnerFactories());
+            runnerProvider);
 
         for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet())
             estate.addApp(repo.getValue(), repo.getKey());
@@ -66,8 +69,7 @@ public class App {
 
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
         webServer = new WebServer(appRunnerPort, proxyMap, defaultAppName,
-            new SystemResource(startupComplete), new AppResource(estate));
-
+            new SystemResource(startupComplete, runnerProvider.factories()), new AppResource(estate));
 
         String backupUrl = config.get(Config.BACKUP_URL, "");
         if (StringUtils.isNotBlank(backupUrl)) {
@@ -75,9 +77,7 @@ public class App {
             backupService.start();
         }
 
-
         webServer.start();
-
 
         deployAllAppsAsyncronously(estate, defaultAppName);
     }
@@ -148,12 +148,6 @@ public class App {
             log.info("Shutdown complete");
             webServer = null;
         }
-    }
-
-    private AppRunnerFactoryProvider registeredRunnerFactories() {
-        AppRunnerFactoryProvider runnerProvider = AppRunnerFactoryProvider.create(config);
-        log.info("Registered providers...\n" + runnerProvider.describeRunners());
-        return runnerProvider;
     }
 
     public static void main(String[] args) {

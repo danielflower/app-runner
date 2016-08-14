@@ -19,6 +19,26 @@ class LeinRunnerFactory implements AppRunnerFactory {
     }
 
     @Override
+    public String id() {
+        return "lein";
+    }
+
+    @Override
+    public String sampleProjectName() {
+        return "lein.zip";
+    }
+
+    @Override
+    public String description() {
+        return "Clojure uber jars built with leiningen";
+    }
+
+    @Override
+    public String[] startCommands() {
+        return LeinRunner.startCommands;
+    }
+
+    @Override
     public AppRunner appRunner(File folder) {
         return new LeinRunner(folder, leinJavaCommandProvider, leinCmdProvider);
     }

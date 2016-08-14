@@ -23,6 +23,26 @@ public class MavenRunnerFactory implements AppRunnerFactory {
     }
 
     @Override
+    public String id() {
+        return "maven";
+    }
+
+    @Override
+    public String sampleProjectName() {
+        return "maven.zip";
+    }
+
+    @Override
+    public String description() {
+        return "Java uber jars built with maven";
+    }
+
+    @Override
+    public String[] startCommands() {
+        return MavenRunner.startCommands;
+    }
+
+    @Override
     public AppRunner appRunner(File folder) {
         return new MavenRunner(folder, javaHomeProvider, CLEAN_AND_PACKAGE);
     }

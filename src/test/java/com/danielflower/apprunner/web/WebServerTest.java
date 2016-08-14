@@ -45,7 +45,7 @@ public class WebServerTest {
         AppEstate estate = new AppEstate(proxyMap, fileSandbox(),
             new AppRunnerFactoryProvider(new ArrayList<>()));
         webServer = new WebServer(0, proxyMap, "test-app",
-            new SystemResource(new AtomicBoolean(true)), new AppResource(estate));
+            new SystemResource(new AtomicBoolean(true), new ArrayList<>()), new AppResource(estate));
         webServer.start();
         appServer = new TestServer();
     }
