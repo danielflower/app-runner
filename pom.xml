@@ -6,10 +6,10 @@
 
     <groupId>com.danielflower.apprunner</groupId>
     <artifactId>app-runner</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.1-SNAPSHOT</version>
 
     <name>App Runner</name>
-    <description>The little web app runner that hosts java, clojure and nodejs apps</description>
+    <description>The little web app runner that hosts java, clojure, nodejs and scala apps</description>
     <url>https://github.com/danielflower/app-runner</url>
 
     <properties>
