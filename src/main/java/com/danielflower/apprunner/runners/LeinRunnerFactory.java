@@ -55,7 +55,7 @@ class LeinRunnerFactory implements AppRunnerFactory {
 
     public static Optional<LeinRunnerFactory> createIfAvailable(Config config) {
         CommandLineProvider leinCmdProvider = config.leinCommandProvider();
-        Pair<Boolean, String> version = ProcessStarter.run(leinCmdProvider.commandLine(null).addArgument("--version"));
+        Pair<Boolean, String> version = ProcessStarter.run(leinCmdProvider.commandLine(config.env()).addArgument("--version"));
         if (version.getLeft()) {
             return Optional.of(new LeinRunnerFactory(leinCmdProvider, config.leinJavaCommandProvider(), version.getRight()));
         }

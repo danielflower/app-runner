@@ -65,7 +65,7 @@ public class Config {
 
     public CommandLineProvider leinJavaCommandProvider() {
         return raw.containsKey(LEIN_JAVA_CMD)
-            ? (CommandLineProvider) (Map<String, String> env) -> new CommandLine(getFile(LEIN_JAVA_CMD))
+            ? (Map<String, String> env) -> new CommandLine(getFile(LEIN_JAVA_CMD))
             : javaHomeProvider();
     }
 
@@ -79,7 +79,6 @@ public class Config {
                         .addArgument("clojure.main")
                         .addArgument("-m")
                         .addArgument("leiningen.core.main")
-
             : CommandLineProvider.lein_on_path;
     }
 
@@ -172,6 +171,10 @@ public class Config {
             throw new AppRunnerException("Could not find " + name + " file: " + fullPath(f));
         }
         return f;
+    }
+
+    public Map<String, String> env() {
+        return new HashMap<>(raw);
     }
 }
 

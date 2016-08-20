@@ -14,7 +14,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ZipSamplesTask {
-    public static final Logger log = LoggerFactory.getLogger(ZipSamplesTask.class);
+    private static final Logger log = LoggerFactory.getLogger(ZipSamplesTask.class);
 
     @Test
     public void zipTheSamplesAndPutThemInTheResourcesDir() throws IOException {
@@ -30,7 +30,7 @@ public class ZipSamplesTask {
         }
     }
 
-    public static void zipDirectory(File dir, File zipFile) throws IOException {
+    private static void zipDirectory(File dir, File zipFile) throws IOException {
         try (FileOutputStream fout = new FileOutputStream(zipFile);
              ZipOutputStream zout = new ZipOutputStream(fout)) {
             zipSubDirectory("", dir, zout);

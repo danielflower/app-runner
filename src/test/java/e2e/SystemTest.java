@@ -55,6 +55,8 @@ public class SystemTest {
 
     @BeforeClass
     public static void setup() throws Exception {
+        // ensure the zips exist
+        new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
         buildAndStartUberJar(asList("-DskipTests=true", "package"));
 
         for (AppRepo app : apps) {
@@ -77,7 +79,7 @@ public class SystemTest {
             put(Config.DATA_DIR, fullPath(dataDir));
         }};
 
-        InvocationOutputHandler logHandler = line -> System.out.print("Test build output > " + line);
+        InvocationOutputHandler logHandler = line -> System.out.print("Uber jar output > " + line);
         try (Waiter startupWaiter = new Waiter("AppRunner uber jar", httpClient -> {
             try {
                 JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
@@ -266,22 +268,18 @@ public class SystemTest {
 
     @Test
     public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        // ensure the zips exist
-        new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
-
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
-        System.out.println("sysInfo.toString(4) = " + sysInfo.toString(4));
         JSONArray samples = sysInfo.getJSONArray("samples");
-        assertThat(samples.length(), is(4));
-
-        JSONAssert.assertEquals("[ " +
-            "{ name: 'maven', runCommands: [ 'mvn clean package', 'java -jar target/{artifactid}-{version}.jar' ] }, " +
-            "{ name: 'lein' }, " +
-            "{ name: 'sbt' }, " +
-            "{ name: 'nodejs' } ]", samples, JSONCompareMode.LENIENT);
 
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;
+
+            if (json.getString("name").equalsIgnoreCase("maven")) {
+                JSONAssert.assertEquals(
+                    "{ name: 'maven', runCommands: [ 'mvn clean package', 'java -jar target/{artifactid}-{version}.jar' ] }",
+                    json, JSONCompareMode.LENIENT);
+            }
+
             String url = json.getString("url");
             ContentResponse zip = client.GET(url);
             assertThat(url, zip.getStatus(), is(200));
