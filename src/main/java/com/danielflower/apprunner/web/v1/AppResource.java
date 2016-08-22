@@ -24,6 +24,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.util.*;
 
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Api(value = "Application")
@@ -231,13 +232,13 @@ public class AppResource {
 
         public void write(OutputStream output) throws IOException, WebApplicationException {
             try (Writer writer = new OutputStreamWriter(output)) {
-                writer.write("Going to build and deploy " + name + " at " + new Date() + "\n");
+                writer.write("Going to build and deploy " + name + " at " + new Date() + LINE_SEPARATOR);
                 writer.flush();
                 log.info("Going to update " + name);
                 try {
                     estate.update(name, new OutputToWriterBridge(writer));
                     log.info("Finished updating " + name);
-                    writer.write("Success\n");
+                    writer.write("Success" + LINE_SEPARATOR);
                 } catch (AppNotFoundException e) {
                     Response r = Response.status(404).entity(e.getMessage()).build();
                     throw new WebApplicationException(r);

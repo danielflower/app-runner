@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.stream.Collectors.joining;
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class AppRunnerFactoryProvider {
     public static final Logger log = LoggerFactory.getLogger(AppRunnerFactoryProvider.class);
@@ -44,7 +45,7 @@ public class AppRunnerFactoryProvider {
     public String describeRunners() {
         return factories.stream()
                 .map(AppRunnerFactory::versionInfo)
-                .collect(joining("\n"));
+                .collect(joining(LINE_SEPARATOR));
     }
 
     public List<AppRunnerFactory> factories() {

@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -134,7 +135,7 @@ public class AppManager implements AppDescription {
 
         InvocationOutputHandler buildLogHandler = line -> {
             outputHandler.consumeLine(line);
-            latestBuildLog += line + "\n";
+            latestBuildLog += line + LINE_SEPARATOR;
         };
 
         // Well this is complicated.

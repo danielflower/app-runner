@@ -6,6 +6,7 @@ import com.danielflower.apprunner.mgmt.BackupService;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
+import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import com.danielflower.apprunner.web.v1.AppResource;
@@ -13,6 +14,7 @@ import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.URIish;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.danielflower.apprunner.Config.SERVER_PORT;
 import static com.danielflower.apprunner.FileSandbox.fullPath;
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
@@ -54,15 +57,20 @@ public class App {
         int appRunnerPort = config.getInt(SERVER_PORT);
 
         AppRunnerFactoryProvider runnerProvider = AppRunnerFactoryProvider.create(config);
-        log.info("Registered providers...\n" + runnerProvider.describeRunners());
+        log.info("Registered providers..." + LINE_SEPARATOR + runnerProvider.describeRunners());
 
         estate = new AppEstate(
             proxyMap,
             fileSandbox,
             runnerProvider);
 
-        for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet())
-            estate.addApp(repo.getValue(), repo.getKey());
+        for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
+            try {
+                estate.addApp(repo.getValue(), repo.getKey());
+            } catch (UnsupportedProjectTypeException | GitAPIException e) {
+                log.warn("Error while trying to initiliase " + repo.getKey() + " (" + repo.getValue() + ") - will ignore this app.", e);
+            }
+        }
 
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
         estate.addAppDeletedListener(app -> gitRepoLoader.delete(app.name()));
@@ -90,7 +98,7 @@ public class App {
                     try {
                         estate.update(a.name(), new OutputToWriterBridge(writer));
                     } catch (Exception e) {
-                        log.warn("Error while starting up " + a.name() + "\nLogs:\n" + writer, e);
+                        log.warn("Error while starting up " + a.name() + LINE_SEPARATOR + "Logs:" + LINE_SEPARATOR + writer, e);
                     }
                 }
             }));
