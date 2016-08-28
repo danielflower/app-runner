@@ -6,7 +6,7 @@
 
     <groupId>com.danielflower.apprunner</groupId>
     <artifactId>app-runner</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.2-SNAPSHOT</version>
 
     <name>App Runner</name>
     <description>The little web app runner that hosts java, clojure, nodejs and scala apps</description>
@@ -16,7 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
         <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
-        <jetty.version>9.3.7.v20160115</jetty.version>
+        <jetty.version>9.3.11.v20160721</jetty.version>
         <swagger.version>1.5.8</swagger.version>
     </properties>
 

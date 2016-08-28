@@ -46,7 +46,7 @@ public class WebServer implements AutoCloseable {
         this.defaultAppName = defaultAppName;
         this.systemResource = systemResource;
         this.appResource = appResource;
-        jettyServer = new Server(port);
+        jettyServer = new Server();
     }
 
     public static int getAFreePort() {
@@ -60,6 +60,12 @@ public class WebServer implements AutoCloseable {
     }
 
     public void start() throws Exception {
+        HttpConfiguration config = new HttpConfiguration();
+        config.addCustomizer(new ForwardedRequestCustomizer());
+        ServerConnector serverConnector = new ServerConnector(jettyServer, new HttpConnectionFactory(config));
+        serverConnector.setPort(port);
+        jettyServer.setConnectors(new Connector[] {serverConnector});
+
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
         handlers.addHandler(createRestService());

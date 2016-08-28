@@ -1,7 +1,19 @@
 App Runner
 ----------
 
-The little web app runner that hosts java, clojure and nodejs apps.
+The little web app runner that hosts java, clojure, scala and nodejs apps. This allows
+you to easily deploy a self-hosted Platform As A Service where you can very easily add
+new apps and have App Runner build and run them by cloning the code from a Git repo.
+
+Change log
+----------
+
+* **1.2.0** Support app-runner-router (or other reverse proxies) where HTTPS is used.
+* **1.1.0** Optional support for Scala and better reporting of versions of tools such
+as java, node, lein etc. When adding a new app, it is immediately cloned and an error
+is returned if it cannot be cloned or this instance does not support the project type.
+* **1.0.7** Optional backup support: specify a Git URL in the config (`appserver.backup.url`) 
+to have the data directory backed up to a git repo once an hour.
 
 Running locally
 ---------------
