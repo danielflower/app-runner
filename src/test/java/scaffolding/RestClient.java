@@ -4,10 +4,11 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class RestClient {
 
-    public static HttpClient httpClient = new HttpClient();
+    public static HttpClient httpClient = new HttpClient(new SslContextFactory(true));
     static {
         try {
             httpClient.start();

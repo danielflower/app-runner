@@ -34,7 +34,7 @@ public class BackupTest {
         Git.init().setDirectory(backupDir).setBare(true).call();
         backupUri = new URIish(backupDir.toURI().toURL());
         app = new App(new Config(new HashMap<String,String>() {{
-            put(Config.SERVER_PORT, port);
+            put(Config.SERVER_HTTP_PORT, port);
             put(Config.BACKUP_URL, backupUri.toString());
             put(Config.DATA_DIR, fullPath(new File("target/datadirs/" + System.currentTimeMillis())));
         }}));

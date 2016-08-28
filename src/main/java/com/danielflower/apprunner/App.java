@@ -14,20 +14,25 @@ import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
+import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.URIish;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.crypto.Cipher;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.danielflower.apprunner.Config.SERVER_PORT;
 import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
@@ -54,7 +59,6 @@ public class App {
         addSampleAppIfNoAppsAlreadyThere(gitRepoLoader);
 
         ProxyMap proxyMap = new ProxyMap();
-        int appRunnerPort = config.getInt(SERVER_PORT);
 
         AppRunnerFactoryProvider runnerProvider = AppRunnerFactoryProvider.create(config);
         log.info("Registered providers..." + LINE_SEPARATOR + runnerProvider.describeRunners());
@@ -76,7 +80,33 @@ public class App {
         estate.addAppDeletedListener(app -> gitRepoLoader.delete(app.name()));
 
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
-        webServer = new WebServer(appRunnerPort, proxyMap, defaultAppName,
+
+
+        Server jettyServer = new Server();
+        HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.addCustomizer(new ForwardedRequestCustomizer());
+        List<ServerConnector> serverConnectorList = new ArrayList<>();
+        int httpPort = config.getInt(Config.SERVER_HTTP_PORT, -1);
+        if (httpPort > -1) {
+            ServerConnector httpConnector = new ServerConnector(jettyServer, new HttpConnectionFactory(new HttpConfiguration(httpConfig)));
+            httpConnector.setPort(httpPort);
+            serverConnectorList.add(httpConnector);
+        }
+        int httpsPort = config.getInt(Config.SERVER_HTTPS_PORT, -1);
+        SslContextFactory sslContextFactory = null;
+        if (httpsPort > -1) {
+            sslContextFactory = new SslContextFactory();
+            sslContextFactory.setKeyStorePath(fullPath(config.getFile("apprunner.keystore.path")));
+            sslContextFactory.setKeyStorePassword(config.get("apprunner.keystore.password"));
+            sslContextFactory.setKeyManagerPassword(config.get("apprunner.keymanager.password"));
+
+            ServerConnector httpConnector = new ServerConnector(jettyServer, sslContextFactory, new HttpConnectionFactory(new HttpConfiguration(httpConfig)));
+            httpConnector.setPort(httpsPort);
+            serverConnectorList.add(httpConnector);
+        }
+        jettyServer.setConnectors(serverConnectorList.toArray(new Connector[0]));
+
+        webServer = new WebServer(jettyServer, proxyMap, defaultAppName,
             new SystemResource(startupComplete, runnerProvider.factories()), new AppResource(estate));
 
         String backupUrl = config.get(Config.BACKUP_URL, "");
@@ -86,6 +116,16 @@ public class App {
         }
 
         webServer.start();
+
+        if (sslContextFactory != null) {
+            log.info("Supported SSL protocols: " + Arrays.toString(sslContextFactory.getSelectedProtocols()));
+            log.info("Supported Cipher suites: " + Arrays.toString(sslContextFactory.getSelectedCipherSuites()));
+
+            int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
+            if (maxKeyLen < 8192) {
+                log.warn("The current java version (" + System.getProperty("java.home") + ") limits key length to " + maxKeyLen + " bits so modern browsers may have issues connecting. Install the JCE Unlimited Strength Jurisdiction Policy to allow high strength SSL connections.");
+            }
+        }
 
         deployAllAppsAsyncronously(estate, defaultAppName);
     }
@@ -123,7 +163,7 @@ public class App {
         }
     }
 
-    void addSampleAppIfNoAppsAlreadyThere(GitRepoLoader gitRepoLoader) throws Exception {
+    private void addSampleAppIfNoAppsAlreadyThere(GitRepoLoader gitRepoLoader) throws Exception {
         if (gitRepoLoader.loadAll().isEmpty()) {
             String url = config.get(Config.INITIAL_APP_URL, null);
             if (StringUtils.isNotBlank(url)) {

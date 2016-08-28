@@ -42,8 +42,8 @@ import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
 
-    private static final int port = WebServer.getAFreePort();
-    private static final String appRunnerUrl = "http://localhost:" + port;
+    private static final int httpsPort = WebServer.getAFreePort();
+    private static final String appRunnerUrl = "https://localhost:" + httpsPort;
     private static final RestClient restClient = RestClient.create(appRunnerUrl);
     private static final AppRepo leinApp = AppRepo.create("lein");
     private static final AppRepo mavenApp = AppRepo.create("maven");
@@ -76,7 +76,10 @@ public class SystemTest {
             }
         }, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
-            put(Config.SERVER_PORT, String.valueOf(port));
+            put(Config.SERVER_HTTPS_PORT, String.valueOf(httpsPort));
+            put("apprunner.keystore.path", fullPath(new File("local/test.keystore")));
+            put("apprunner.keystore.password", "password");
+            put("apprunner.keymanager.password", "password");
             put(Config.DATA_DIR, fullPath(dataDir));
         }};
 

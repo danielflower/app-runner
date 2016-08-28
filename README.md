@@ -5,10 +5,31 @@ The little web app runner that hosts java, clojure, scala and nodejs apps. This 
 you to easily deploy a self-hosted Platform As A Service where you can very easily add
 new apps and have App Runner build and run them by cloning the code from a Git repo.
 
+### Features
+
+* Host your own Platform as a Service: you just need Java 8, plus optional build tools
+(Maven, Leinigen, Scala/SBT, NodeJS/NPM).
+* Deploy web apps with no build servers or deploy scripts needed: tell AppRunner the Git
+URL and it will automatically build and host it.
+* Auto deploy on source control change when using post-commit hooks
+* Zero downtime deployment: when changes are being deployed, a new instance is built, tests
+are run, and the app is started. Only when the new instance is running will it be made live.
+* An [optional dashboard](https://github.com/danielflower/app-runner-home) which links to
+all your apps making it easy to find, add, and deploy.
+* Horizontally scale individual app runners across multiple machines with
+[App Runner Router](https://github.com/danielflower/app-runner-router)
+
+### Who is this for?
+
+App Runner is especially useful for people or teams who are creating many little web applications
+and want the convenience of a platform such as Heroku but cannot use an external service.
+
 Change log
 ----------
 
-* **1.2.0** Support app-runner-router (or other reverse proxies) where HTTPS is used.
+* **1.2.0** Support for HTTPS (see the sample config file for more info). This is also
+the first version that HTTPS can be used on [the app runner router](https://github.com/danielflower/app-runner-router)
+(or other reverse proxy).
 * **1.1.0** Optional support for Scala and better reporting of versions of tools such
 as java, node, lein etc. When adding a new app, it is immediately cloned and an error
 is returned if it cannot be cloned or this instance does not support the project type.
