@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 @Path("/system")
 public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
+    public static final String HOST_NAME = System.getenv("COMPUTERNAME");
     private final JavaSysMon javaSysMon = new JavaSysMon();
 
     private final AtomicBoolean startupComplete;
@@ -45,6 +46,7 @@ public class SystemResource {
     public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();
         result.put("appRunnerStarted", startupComplete.get());
+        result.put("host", HOST_NAME);
 
         JSONArray apps = new JSONArray();
         result.put("samples", apps);

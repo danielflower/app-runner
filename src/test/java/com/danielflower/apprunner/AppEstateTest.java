@@ -18,7 +18,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 public class AppEstateTest {
-    AppEstate estate;
+    private AppEstate estate;
 
     @Before
     public void populate() throws IOException {

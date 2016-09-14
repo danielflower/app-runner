@@ -13,6 +13,7 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.hamcrest.CoreMatchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -212,7 +213,7 @@ public class SystemTest {
         ContentResponse resp;
 
         JSONAssert.assertEquals("{apps:[" +
-            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\"}" +
+            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\", host: \"" + System.getenv("COMPUTERNAME") + "\"}" +
             "]}", all, JSONCompareMode.LENIENT);
 
         assertThat(restClient.deploy("invalid-app-name"),
@@ -290,6 +291,8 @@ public class SystemTest {
     public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
         JSONArray samples = sysInfo.getJSONArray("samples");
+
+        assertThat(sysInfo.get("host"), CoreMatchers.equalTo(System.getenv("COMPUTERNAME")));
 
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;

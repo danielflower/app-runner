@@ -101,7 +101,8 @@ public class AppResource {
             .put("deployUrl", appUrl(app, restURI, "deploy"))
             .put("available", availability.isAvailable)
             .put("availableStatus", availability.availabilityStatus)
-            .put("gitUrl", app.gitUrl());
+            .put("gitUrl", app.gitUrl())
+            .put("host", SystemResource.HOST_NAME);
     }
 
     private static String getContributorsList(AppDescription app) {
