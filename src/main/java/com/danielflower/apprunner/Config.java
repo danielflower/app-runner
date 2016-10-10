@@ -32,6 +32,9 @@ public class Config {
     public static final String SBT_JAR = "sbt-launcher.jar";
     public static final String SBT_JAVA_CMD = "sbt.java.cmd";
 
+    public static final String GOROOT = "goroot";
+    public static final String GOPATH = "gopath";
+
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> systemEnv = System.getenv();
         Map<String, String> env = new HashMap<>(systemEnv);
@@ -104,6 +107,13 @@ public class Config {
             : CommandLineProvider.sbt_on_path;
     }
 
+    public CommandLineProvider goCommandProvider() {
+        return raw.containsKey(GOROOT)
+            ? (Map<String, String> env) ->
+            new CommandLine(fullPath(getDir(GOROOT)) + File.separator + "bin" + File.separator + goExecutableName())
+            : CommandLineProvider.go_on_path;
+    }
+
     public String nodeExecutable() {
         return get("node.exec", windowsinize("node"));
     }
@@ -116,6 +126,10 @@ public class Config {
         return raw.containsKey(JAVA_HOME)
             ? new ExplicitJavaHome(getDir(JAVA_HOME))
             : HomeProvider.default_java_home;
+    }
+
+    public static String goExecutableName() {
+        return windowsinize("go");
     }
 
     public static String javaExecutableName() {

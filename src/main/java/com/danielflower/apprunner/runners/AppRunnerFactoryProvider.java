@@ -26,6 +26,7 @@ public class AppRunnerFactoryProvider {
         NodeRunnerFactory.createIfAvailable(config).ifPresent(factories::add);
         LeinRunnerFactory.createIfAvailable(config).ifPresent(factories::add);
         SbtRunnerFactory.createIfAvailable(config).ifPresent(factories::add);
+        GoRunnerFactory.createIfAvailable(config).ifPresent((factories::add));
         return new AppRunnerFactoryProvider(factories);
     }
 
