@@ -147,7 +147,6 @@ public class AppManager implements AppDescription {
                 another.consumeLine(StringUtils.stripEnd(line, "\r\n"));
             }
             synchronized (consoleLog) {
-                log.info("CONSOLE LOG >>> ", line);
                 consoleLog.add(line);
             }
         };
