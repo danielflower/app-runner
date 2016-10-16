@@ -72,6 +72,7 @@ public class SystemTest {
             public InvocationRequest mungeMavenInvocationRequest(InvocationRequest request) {
                 return HomeProvider.default_java_home.mungeMavenInvocationRequest(request);
             }
+
             public CommandLine commandLine(Map<String, String> envVarsForApp) {
                 return HomeProvider.default_java_home.commandLine(envVarsForApp).addArgument("-Dlogback.configurationFile=src/test/resources/logback-test.xml");
             }
@@ -185,8 +186,7 @@ public class SystemTest {
             assertMavenAppAvailable("maven-status-test", true, "Running");
 
             // Detecting crashed apps not supported yet
-//            new JavaSysMon().processTree().accept((process, level) ->
-//                process.processInfo().getCommand().contains("maven-status-test"), 2);
+//            crash app
 //            assertMavenAppAvailable("maven-status-test", false, "Crashed");
         } finally {
             restClient.deleteApp("maven-status-test");
