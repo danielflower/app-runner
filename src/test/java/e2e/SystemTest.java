@@ -5,6 +5,7 @@ import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.WebServer;
+import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -211,9 +212,9 @@ public class SystemTest {
     public void theRestAPILives() throws Exception {
         JSONObject all = getAllApps();
         ContentResponse resp;
-
+        System.out.println("all.toString(4) = " + all.toString(4));
         JSONAssert.assertEquals("{apps:[" +
-            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\", host: \"" + System.getenv("COMPUTERNAME") + "\"}" +
+            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\", host: \"" + SystemResource.HOST_NAME + "\"}" +
             "]}", all, JSONCompareMode.LENIENT);
 
         assertThat(restClient.deploy("invalid-app-name"),
@@ -292,7 +293,7 @@ public class SystemTest {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
         JSONArray samples = sysInfo.getJSONArray("samples");
 
-        assertThat(sysInfo.get("host"), CoreMatchers.equalTo(System.getenv("COMPUTERNAME")));
+        assertThat(sysInfo.get("host"), CoreMatchers.equalTo(SystemResource.HOST_NAME));
 
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;

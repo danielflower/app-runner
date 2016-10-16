@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 @Path("/system")
 public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
-    static final String HOST_NAME = System.getenv("COMPUTERNAME");
+    public static final String HOST_NAME;
     private static final Long pid;
 
     private final AtomicBoolean startupComplete;
@@ -39,6 +40,14 @@ public class SystemResource {
     static {
         String name = ManagementFactory.getRuntimeMXBean().getName();
         pid = Pattern.matches("[0-9]+@.*", name) ? Long.parseLong(name.substring(0, name.indexOf('@'))) : null;
+        String host;
+        try {
+            host = InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            log.warn("Could not find host name", e);
+            host = "unknown";
+        }
+        HOST_NAME = host;
     }
 
     public SystemResource(AtomicBoolean startupComplete, List<AppRunnerFactory> factories) {
