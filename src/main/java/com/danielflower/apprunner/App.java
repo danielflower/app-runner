@@ -84,7 +84,9 @@ public class App {
 
         Server jettyServer = new Server();
         HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.addCustomizer(new ForwardedRequestCustomizer());
+        httpConfig.addCustomizer(new SecureRequestCustomizer());
+        httpConfig.addCustomizer(new ForwardedRequestCustomizer()); // must come last so the protocol doesn't get overwritten
+
         List<ServerConnector> serverConnectorList = new ArrayList<>();
         int httpPort = config.getInt(Config.SERVER_HTTP_PORT, -1);
         if (httpPort > -1) {
