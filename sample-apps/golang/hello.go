@@ -12,10 +12,11 @@ import (
 func main() {
 
 	port := os.Getenv("APP_PORT")
+	appName := os.Getenv("APP_NAME")
 	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/golang", Index)
-	router.HandleFunc("/todos", TodoIndex)
-	router.HandleFunc("/todos/{todoId}", TodoShow)
+	router.HandleFunc("/" + appName, Index)
+	router.HandleFunc("/" + appName + "/todos", TodoIndex)
+	router.HandleFunc("/" + appName + "/todos/{todoId}", TodoShow)
 
 	log.Fatal(http.ListenAndServe(":"+port, router))
 }

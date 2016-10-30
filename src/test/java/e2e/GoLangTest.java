@@ -47,5 +47,7 @@ public class GoLangTest {
         assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
         assertThat(restClient.deploy(appId).getStatus(), is(200));
         assertThat(restClient.homepage(appId), is(equalTo(200, containsString("Welcome!\n"))));
+        assertThat(restClient.get("/" + appId + "/todos/"), is(equalTo(200, containsString("Todo Index!\n"))));
+        assertThat(restClient.get("/" + appId + "/todos/abc"), is(equalTo(200, containsString("Todo show: abc\n"))));
     }
 }
