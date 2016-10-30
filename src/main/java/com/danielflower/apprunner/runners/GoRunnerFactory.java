@@ -26,12 +26,12 @@ class GoRunnerFactory implements AppRunnerFactory {
 
     @Override
     public String id() {
-        return "go";
+        return "golang";
     }
 
     @Override
     public String sampleProjectName() {
-        return "golang";
+        return "golang.zip";
     }
 
     @Override
