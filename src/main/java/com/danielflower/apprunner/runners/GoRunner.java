@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class GoRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(GoRunner.class);
 
-    public static final String[] startCommands = new String[]{"go build", "go test", "./{app_dir_name}"};
+    public static final String[] startCommands = new String[]{"go get", "go build", "go test", "./{app_dir_name}"};
     private final File projectRoot;
     private final String goPath;
     private final CommandLineProvider goCmd;
