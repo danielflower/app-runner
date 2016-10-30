@@ -101,7 +101,8 @@ public class AppResource {
             .put("deployUrl", appUrl(app, restURI, "deploy"))
             .put("available", availability.isAvailable)
             .put("availableStatus", availability.availabilityStatus)
-            .put("gitUrl", app.gitUrl());
+            .put("gitUrl", app.gitUrl())
+            .put("host", SystemResource.HOST_NAME);
     }
 
     private static String getContributorsList(AppDescription app) {
@@ -133,7 +134,7 @@ public class AppResource {
     public Response create(@Context UriInfo uriInfo,
                            @ApiParam(required = true, example = "https://github.com/danielflower/app-runner-home.git", value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @ApiParam(example = "app-runner-home", value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
+                           @ApiParam(value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {

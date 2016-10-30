@@ -36,6 +36,7 @@ public class WebServerTest {
     private WebServer webServer;
     private ProxyMap proxyMap = new ProxyMap();
     private TestServer appServer;
+    private String webServerUrl;
 
     @Before
     public void setup() throws Exception {
@@ -44,7 +45,9 @@ public class WebServerTest {
         client.start();
         AppEstate estate = new AppEstate(proxyMap, fileSandbox(),
             new AppRunnerFactoryProvider(new ArrayList<>()));
-        webServer = new WebServer(0, proxyMap, "test-app",
+        int port = WebServer.getAFreePort();
+        webServerUrl = "http://localhost:" + port;
+        webServer = new WebServer(new Server(port), proxyMap, "test-app",
             new SystemResource(new AtomicBoolean(true), new ArrayList<>()), new AppResource(estate));
         webServer.start();
         appServer = new TestServer();
@@ -71,14 +74,14 @@ public class WebServerTest {
     public void aRequestToTheRootResultsInARedirect() throws Exception {
         proxyMap.add("test-app", appServer.url);
 
-        ContentResponse resp = client.GET(webServer.baseUrl() + "/");
+        ContentResponse resp = client.GET(webServerUrl + "/");
         assertThat(resp.getStatus(), is(302));
         String location = resp.getHeaders().get("Location");
-        assertThat(location, is(webServer.baseUrl() + "/test-app"));
+        assertThat(location, is(webServerUrl + "/test-app"));
         resp = client.GET(location);
         location = resp.getHeaders().get("Location");
         assertThat(resp.getStatus(), is(302));
-        assertThat(location, is(webServer.baseUrl() + "/test-app/"));
+        assertThat(location, is(webServerUrl + "/test-app/"));
 
     }
 
@@ -86,14 +89,14 @@ public class WebServerTest {
     public void prefixesCanBeProxiedToOtherServices() throws Exception {
         proxyMap.add("sample-app", appServer.url);
 
-        ContentResponse resp = client.GET(webServer.baseUrl() + "/sample-app/");
+        ContentResponse resp = client.GET(webServerUrl + "/sample-app/");
         assertThat(resp.getContentAsString(), containsString("Hello from test server"));
         assertThat(resp.getStatus(), is(200));
     }
 
     @Test
     public void nonProxiedAndOtherNonSpecialURLsResultIn404s() throws Exception {
-        ContentResponse resp = client.GET(webServer.baseUrl() + "/blahblabhlbah");
+        ContentResponse resp = client.GET(webServerUrl + "/blahblabhlbah");
         assertThat(resp.getStatus(), is(404));
     }
 
@@ -102,7 +105,7 @@ public class WebServerTest {
         private final Server jettyServer;
         final URL url;
 
-        public TestServer() throws Exception {
+        TestServer() throws Exception {
             jettyServer = new Server(0);
             jettyServer.setHandler(new AbstractHandler() {
                 public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {

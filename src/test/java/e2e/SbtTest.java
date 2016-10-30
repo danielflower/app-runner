@@ -27,7 +27,7 @@ public class SbtTest {
     private final AppRepo appRepo = AppRepo.create(appId);
 
     private final App app = new App(new Config(new HashMap<String, String>() {{
-        put(Config.SERVER_PORT, port);
+        put(Config.SERVER_HTTP_PORT, port);
         put(Config.DATA_DIR, fullPath(new File("target/datadirs/" + System.currentTimeMillis())));
     }}));
 

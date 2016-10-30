@@ -1,8 +1,6 @@
 package com.danielflower.apprunner.web.v1;
 
 import com.danielflower.apprunner.runners.AppRunnerFactory;
-import com.jezhumble.javasysmon.JavaSysMon;
-import com.jezhumble.javasysmon.MemoryStats;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
@@ -21,18 +19,36 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
+import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Api(value = "System")
 @Path("/system")
 public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
-    private final JavaSysMon javaSysMon = new JavaSysMon();
+    public static final String HOST_NAME;
+    private static final Long pid;
 
     private final AtomicBoolean startupComplete;
     private final List<AppRunnerFactory> factories;
+
+    static {
+        String name = ManagementFactory.getRuntimeMXBean().getName();
+        pid = Pattern.matches("[0-9]+@.*", name) ? Long.parseLong(name.substring(0, name.indexOf('@'))) : null;
+        String host;
+        try {
+            host = InetAddress.getLocalHost().getHostName();
+        } catch (Exception e) {
+            log.warn("Could not find host name", e);
+            host = "unknown";
+        }
+        HOST_NAME = host;
+    }
 
     public SystemResource(AtomicBoolean startupComplete, List<AppRunnerFactory> factories) {
         this.startupComplete = startupComplete;
@@ -45,6 +61,8 @@ public class SystemResource {
     public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();
         result.put("appRunnerStarted", startupComplete.get());
+        result.put("host", HOST_NAME);
+        result.put("user", System.getProperty("user.name"));
 
         JSONArray apps = new JSONArray();
         result.put("samples", apps);
@@ -59,20 +77,15 @@ public class SystemResource {
             apps.put(sample);
         }
 
-        if (javaSysMon.supportedPlatform()) {
-            JSONObject os = new JSONObject();
-            result.put("os", os);
-            os.put("osName", javaSysMon.osName());
-            os.put("numCpus", javaSysMon.numCpus());
-            os.put("cpuFrequencyInHz", javaSysMon.cpuFrequencyInHz());
-            os.put("uptimeInSeconds", javaSysMon.uptimeInSeconds());
-            os.put("appRunnerPid", javaSysMon.currentPid());
-            MemoryStats physical = javaSysMon.physical();
-            os.put("physicalMemoryInBytes", physical.getTotalBytes());
-            os.put("physicalMemoryFreeInBytes", physical.getFreeBytes());
-            MemoryStats swap = javaSysMon.physical();
-            os.put("swapMemoryInBytes", swap.getTotalBytes());
-            os.put("swapMemoryFreeInBytes", swap.getFreeBytes());
+        Runtime runtime = Runtime.getRuntime();
+        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+        JSONObject os = new JSONObject();
+        result.put("os", os);
+        os.put("osName", System.getProperty("os.name"));
+        os.put("numCpus", runtime.availableProcessors());
+        os.put("uptimeInSeconds", runtimeMXBean.getUptime() / 1000);
+        if (pid != null) {
+            os.put("appRunnerPid", pid.longValue());
         }
 
         return Response.ok(result.toString(4)).build();

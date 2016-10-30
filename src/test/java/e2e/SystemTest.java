@@ -5,6 +5,7 @@ import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.WebServer;
+import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -13,6 +14,7 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.hamcrest.CoreMatchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -42,8 +44,8 @@ import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
 
-    private static final int port = WebServer.getAFreePort();
-    private static final String appRunnerUrl = "http://localhost:" + port;
+    private static final int httpsPort = WebServer.getAFreePort();
+    private static final String appRunnerUrl = "https://localhost:" + httpsPort;
     private static final RestClient restClient = RestClient.create(appRunnerUrl);
     private static final AppRepo leinApp = AppRepo.create("lein");
     private static final AppRepo mavenApp = AppRepo.create("maven");
@@ -71,12 +73,16 @@ public class SystemTest {
             public InvocationRequest mungeMavenInvocationRequest(InvocationRequest request) {
                 return HomeProvider.default_java_home.mungeMavenInvocationRequest(request);
             }
+
             public CommandLine commandLine(Map<String, String> envVarsForApp) {
                 return HomeProvider.default_java_home.commandLine(envVarsForApp).addArgument("-Dlogback.configurationFile=src/test/resources/logback-test.xml");
             }
         }, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
-            put(Config.SERVER_PORT, String.valueOf(port));
+            put(Config.SERVER_HTTPS_PORT, String.valueOf(httpsPort));
+            put("apprunner.keystore.path", fullPath(new File("local/test.keystore")));
+            put("apprunner.keystore.password", "password");
+            put("apprunner.keymanager.password", "password");
             put(Config.DATA_DIR, fullPath(dataDir));
         }};
 
@@ -181,8 +187,7 @@ public class SystemTest {
             assertMavenAppAvailable("maven-status-test", true, "Running");
 
             // Detecting crashed apps not supported yet
-//            new JavaSysMon().processTree().accept((process, level) ->
-//                process.processInfo().getCommand().contains("maven-status-test"), 2);
+//            crash app
 //            assertMavenAppAvailable("maven-status-test", false, "Crashed");
         } finally {
             restClient.deleteApp("maven-status-test");
@@ -207,9 +212,9 @@ public class SystemTest {
     public void theRestAPILives() throws Exception {
         JSONObject all = getAllApps();
         ContentResponse resp;
-
+        System.out.println("all.toString(4) = " + all.toString(4));
         JSONAssert.assertEquals("{apps:[" +
-            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\"}" +
+            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\", host: \"" + SystemResource.HOST_NAME + "\"}" +
             "]}", all, JSONCompareMode.LENIENT);
 
         assertThat(restClient.deploy("invalid-app-name"),
@@ -287,6 +292,8 @@ public class SystemTest {
     public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
         JSONArray samples = sysInfo.getJSONArray("samples");
+
+        assertThat(sysInfo.get("host"), CoreMatchers.equalTo(SystemResource.HOST_NAME));
 
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;

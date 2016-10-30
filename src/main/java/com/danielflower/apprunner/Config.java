@@ -19,7 +19,8 @@ import java.util.Properties;
 import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class Config {
-    public static final String SERVER_PORT = "appserver.port";
+    public static final String SERVER_HTTP_PORT = "appserver.port";
+    public static final String SERVER_HTTPS_PORT = "appserver.https.port";
     public static final String DATA_DIR = "appserver.data.dir";
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
     public static final String INITIAL_APP_URL = "appserver.initial.app.url";
@@ -152,8 +153,8 @@ public class Config {
         return s;
     }
 
-    public int getInt(String name) {
-        String s = get(name);
+    public int getInt(String name, int defaultValue) {
+        String s = get(name, String.valueOf(defaultValue));
         try {
             return Integer.parseInt(s);
         } catch (NumberFormatException e) {
