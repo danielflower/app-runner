@@ -5,6 +5,7 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.Availability;
+import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
@@ -33,9 +34,11 @@ public class AppResource {
     public static final Logger log = LoggerFactory.getLogger(AppResource.class);
 
     private final AppEstate estate;
+    private final SystemInfo systemInfo;
 
-    public AppResource(AppEstate estate) {
+    public AppResource(AppEstate estate, SystemInfo systemInfo) {
         this.estate = estate;
+        this.systemInfo = systemInfo;
     }
 
     @GET
@@ -88,7 +91,7 @@ public class AppResource {
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
     }
 
-    private static JSONObject appJson(URI uri, AppDescription app) {
+    private JSONObject appJson(URI uri, AppDescription app) {
         URI restURI = uri.resolve("/api/v1/");
 
         Availability availability = app.currentAvailability();
@@ -102,7 +105,7 @@ public class AppResource {
             .put("available", availability.isAvailable)
             .put("availableStatus", availability.availabilityStatus)
             .put("gitUrl", app.gitUrl())
-            .put("host", SystemResource.HOST_NAME);
+            .put("host", systemInfo.hostName);
     }
 
     private static String getContributorsList(AppDescription app) {

@@ -65,3 +65,5 @@ Run with `java -jar app-runner-{version}.jar /path/to/config.properties`
 
 See `sample-config.properties` for sample configuration. The `local` directory in this repo also
 has sample start scripts and logging configuration.
+
+[![Build Status](https://travis-ci.org/danielflower/app-runner.svg?branch=master)](https://travis-ci.org/danielflower/app-runner)

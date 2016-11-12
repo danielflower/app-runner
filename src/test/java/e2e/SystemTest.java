@@ -5,7 +5,6 @@ import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.WebServer;
-import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -14,7 +13,6 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.hamcrest.CoreMatchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -37,8 +35,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
 
@@ -213,7 +210,7 @@ public class SystemTest {
         JSONObject all = getAllApps();
         assertThat(all.getInt("appCount"), is(1));
         JSONAssert.assertEquals("{apps:[" +
-            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\", host: \"" + SystemResource.HOST_NAME + "\"}" +
+            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\" }" +
             "]}", all, JSONCompareMode.LENIENT);
 
         assertThat(restClient.deploy("invalid-app-name"),
@@ -291,7 +288,9 @@ public class SystemTest {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
         JSONArray samples = sysInfo.getJSONArray("samples");
 
-        assertThat(sysInfo.get("host"), CoreMatchers.equalTo(SystemResource.HOST_NAME));
+        assertThat(sysInfo.get("host"), is(notNullValue()));
+        assertThat(sysInfo.get("user"), is(notNullValue()));
+        assertThat(sysInfo.get("os"), is(notNullValue()));
 
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;
