@@ -42,13 +42,13 @@ public class AppResource {
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Gets all registered apps")
     public String apps(@Context UriInfo uriInfo) {
-
         JSONObject result = new JSONObject();
         List<JSONObject> apps = new ArrayList<>();
         estate.all()
             .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
             .forEach(d -> apps.add(
                 appJson(uriInfo.getRequestUri(), d)));
+        result.put("appCount", apps.size());
         result.put("apps", apps);
         return result.toString(4);
     }

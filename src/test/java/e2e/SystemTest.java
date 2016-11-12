@@ -211,8 +211,7 @@ public class SystemTest {
     @Test
     public void theRestAPILives() throws Exception {
         JSONObject all = getAllApps();
-        ContentResponse resp;
-        System.out.println("all.toString(4) = " + all.toString(4));
+        assertThat(all.getInt("appCount"), is(1));
         JSONAssert.assertEquals("{apps:[" +
             "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\", host: \"" + SystemResource.HOST_NAME + "\"}" +
             "]}", all, JSONCompareMode.LENIENT);
@@ -220,7 +219,7 @@ public class SystemTest {
         assertThat(restClient.deploy("invalid-app-name"),
             is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: maven"))));
 
-        resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
         assertThat(resp.getStatus(), is(200));
         JSONObject single = new JSONObject(resp.getContentAsString());
         JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(0), single, JSONCompareMode.STRICT_ORDER);
@@ -229,7 +228,6 @@ public class SystemTest {
     private static JSONObject getAllApps() throws InterruptedException, ExecutionException, TimeoutException {
         ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
         assertThat(resp.getStatus(), is(200));
-
         return new JSONObject(resp.getContentAsString());
     }
 
