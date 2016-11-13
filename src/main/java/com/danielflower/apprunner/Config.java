@@ -34,7 +34,6 @@ public class Config {
     public static final String SBT_JAVA_CMD = "sbt.java.cmd";
 
     public static final String GOROOT = "goroot";
-    public static final String GOPATH = "gopath";
 
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> systemEnv = System.getenv();
