@@ -17,33 +17,22 @@ public class GoRunner implements AppRunner {
 
     public static final String[] startCommands = new String[]{"go get", "go build", "go test", "./{app_dir_name}"};
     private final File projectRoot;
-    private final String goPath;
     private final CommandLineProvider goCmd;
     private ExecuteWatchdog watchDog;
 
-    public GoRunner(File projectRoot, String goPath, CommandLineProvider goCmd) {
+    public GoRunner(File projectRoot, CommandLineProvider goCmd) {
         this.projectRoot = projectRoot;
-        this.goPath = goPath;
         this.goCmd = goCmd;
     }
 
     @Override
     public File getInstanceDir() {
-        return projectRoot;
+        return projectRoot.getParentFile().getParentFile();
     }
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
-        envVarsForApp.put("GOPATH", goPath);
-        try {
-            rungo(buildLogHandler, envVarsForApp, "get");
-        } catch (Exception e) {
-            /*
-            This is a hacky way to build go project:
-            "go get" cmd can be run outside of GOPATH to only get the src of dependencies but throw exception on trying to build a package.
-            Then "go build" cmd can be run outside of GOPATH to produce executable binary of the app on current dir.
-             */
-            log.debug("Ignoring the exception", e.getMessage());
-        }
+        envVarsForApp.put("GOPATH", projectRoot.getParentFile().getParentFile().getAbsolutePath());
+        rungo(buildLogHandler, envVarsForApp, "get");
         rungo(buildLogHandler, envVarsForApp, "build");
         rungo(buildLogHandler, envVarsForApp, "test");
 

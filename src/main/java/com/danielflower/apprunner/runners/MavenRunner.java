@@ -102,7 +102,7 @@ public class MavenRunner implements AppRunner {
 
     @Override
     public File getInstanceDir() {
-        return projectRoot;
+        return projectRoot.getParentFile().getParentFile();
     }
 
 }

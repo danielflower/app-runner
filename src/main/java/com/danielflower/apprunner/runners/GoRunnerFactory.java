@@ -9,19 +9,15 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Optional;
 
-import static com.danielflower.apprunner.FileSandbox.fullPath;
-
 class GoRunnerFactory implements AppRunnerFactory {
 
     public static final Logger log = LoggerFactory.getLogger(GoRunnerFactory.class);
     private final CommandLineProvider goCommandProvider;
     private final String versionInfo;
-    private final String goPath;
 
-    public GoRunnerFactory(CommandLineProvider goCommandProvider, String versionInfo, String goPath) {
+    public GoRunnerFactory(CommandLineProvider goCommandProvider, String versionInfo) {
         this.goCommandProvider = goCommandProvider;
         this.versionInfo = versionInfo;
-        this.goPath = goPath;
     }
 
     @Override
@@ -46,7 +42,7 @@ class GoRunnerFactory implements AppRunnerFactory {
 
     @Override
     public AppRunner appRunner(File folder) {
-        return new GoRunner(folder, goPath, goCommandProvider);
+        return new GoRunner(folder, goCommandProvider);
     }
 
     @Override
@@ -68,11 +64,8 @@ class GoRunnerFactory implements AppRunnerFactory {
     public static Optional<GoRunnerFactory> createIfAvailable(Config config) {
         CommandLineProvider goCmdProvider = config.goCommandProvider();
         Pair<Boolean, String> version = ProcessStarter.run(goCmdProvider.commandLine(config.env()).addArgument("version"));
-        String goPath = config.get(Config.GOPATH, fullPath(config.getOrCreateDir(Config.DATA_DIR)) + File.separator + "go");
-        File goPathDir = new File(goPath);
-        goPathDir.mkdirs();
         if (version.getLeft()) {
-            return Optional.of(new GoRunnerFactory(goCmdProvider, version.getRight(), goPath));
+            return Optional.of(new GoRunnerFactory(goCmdProvider, version.getRight()));
         }
         return Optional.empty();
     }
