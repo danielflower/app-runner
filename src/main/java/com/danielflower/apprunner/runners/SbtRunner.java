@@ -40,7 +40,7 @@ public class SbtRunner implements AppRunner {
 
     @Override
     public File getInstanceDir() {
-        return projectRoot.getParentFile().getParentFile();
+        return projectRoot;
     }
 
     @Override

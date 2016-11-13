@@ -32,7 +32,7 @@ public class LeinRunner implements AppRunner {
 
     @Override
     public File getInstanceDir() {
-        return projectRoot.getParentFile().getParentFile();
+        return projectRoot;
     }
 
     public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {

@@ -30,11 +30,7 @@ public class AppRunnerFactoryProvider {
         return new AppRunnerFactoryProvider(factories);
     }
 
-    public AppRunner runnerFor(String appName, File instanceWorkspace) throws UnsupportedProjectTypeException {
-        File projectRoot = instanceWorkspace;
-        if (instanceWorkspace.getAbsolutePath().contains("instances")) {
-            projectRoot = new File(instanceWorkspace, "src" + File.separator + appName);
-        }
+    public AppRunner runnerFor(String appName, File projectRoot) throws UnsupportedProjectTypeException {
 
         for (AppRunnerFactory factory : factories) {
             if (factory.canRun(projectRoot)) {

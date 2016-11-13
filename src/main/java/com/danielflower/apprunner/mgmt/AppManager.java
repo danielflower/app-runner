@@ -206,7 +206,7 @@ public class AppManager implements AppDescription {
         try {
             git.fetch().setRemote("origin").call();
             git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
-            return copyToNewInstanceWorkspace();
+            return copyToNewInstanceDir();
         } catch (Exception e) {
             if (!availability.isAvailable) {
                 availability = Availability.unavailable("Could not fetch from git: " + e.getMessage());
@@ -259,12 +259,11 @@ public class AppManager implements AppDescription {
         void onAppStarted(String name, URL newUrl);
     }
 
-    private File copyToNewInstanceWorkspace() throws IOException {
-        File dest = new File(instanceDir, String.valueOf(System.currentTimeMillis())
-                + File.separator + "src" + File.separator + name);
+    private File copyToNewInstanceDir() throws IOException {
+        File dest = new File(instanceDir, String.valueOf(System.currentTimeMillis()));
         dest.mkdir();
         FileUtils.copyDirectory(git.getRepository().getWorkTree(), dest, pathname -> !pathname.getName().equals(".git"));
-        return dest.getParentFile().getParentFile();
+        return dest;
     }
 
     public static String nameFromUrl(String gitUrl) {
