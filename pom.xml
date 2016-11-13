@@ -269,7 +269,6 @@
     </dependencies>
 
 
-
     <build>
         <defaultGoal>clean install</defaultGoal>
         <plugins>
@@ -330,6 +329,9 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.danielflower.apprunner.App</mainClass>
+                                    <manifestEntries>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                             <filters>

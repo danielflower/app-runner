@@ -284,14 +284,15 @@ public class SystemTest {
     }
 
     @Test
-    public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    public void theSystemApiReturnsOsInfoAndZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
-        JSONArray samples = sysInfo.getJSONArray("samples");
 
+        assertThat(sysInfo.getString("appRunnerVersion"), startsWith("1."));
         assertThat(sysInfo.get("host"), is(notNullValue()));
         assertThat(sysInfo.get("user"), is(notNullValue()));
         assertThat(sysInfo.get("os"), is(notNullValue()));
 
+        JSONArray samples = sysInfo.getJSONArray("samples");
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;
 

@@ -6,6 +6,7 @@ import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -32,6 +33,7 @@ public class SystemResource {
 
     private final AtomicBoolean startupComplete;
     private final List<AppRunnerFactory> factories;
+    private final String appRunnerVersion = ObjectUtils.firstNonNull(SystemResource.class.getPackage().getImplementationVersion(), "master");
 
     public SystemResource(SystemInfo systemInfo, AtomicBoolean startupComplete, List<AppRunnerFactory> factories) {
         this.systemInfo = systemInfo;
@@ -45,6 +47,7 @@ public class SystemResource {
     public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();
         result.put("appRunnerStarted", startupComplete.get());
+        result.put("appRunnerVersion", appRunnerVersion);
         result.put("host", systemInfo.hostName);
         result.put("user", systemInfo.user);
 
