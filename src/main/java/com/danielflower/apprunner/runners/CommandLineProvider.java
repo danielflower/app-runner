@@ -10,5 +10,7 @@ public interface CommandLineProvider {
 
     CommandLineProvider sbt_on_path = (Map<String, String> m) -> new CommandLine(SystemUtils.IS_OS_WINDOWS ? "sbt.bat" : "sbt");
 
+    CommandLineProvider go_on_path = (Map<String, String> m) -> new CommandLine(SystemUtils.IS_OS_WINDOWS ? "go.exe" : "go");
+
     CommandLine commandLine(Map<String, String> envVarsForApp);
 }
