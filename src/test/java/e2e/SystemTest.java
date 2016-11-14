@@ -5,7 +5,6 @@ import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.WebServer;
-import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -14,7 +13,6 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.hamcrest.CoreMatchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -37,8 +35,7 @@ import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
 
@@ -211,16 +208,15 @@ public class SystemTest {
     @Test
     public void theRestAPILives() throws Exception {
         JSONObject all = getAllApps();
-        ContentResponse resp;
-        System.out.println("all.toString(4) = " + all.toString(4));
+        assertThat(all.getInt("appCount"), is(1));
         JSONAssert.assertEquals("{apps:[" +
-            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\", host: \"" + SystemResource.HOST_NAME + "\"}" +
+            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\" }" +
             "]}", all, JSONCompareMode.LENIENT);
 
         assertThat(restClient.deploy("invalid-app-name"),
             is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: maven"))));
 
-        resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
         assertThat(resp.getStatus(), is(200));
         JSONObject single = new JSONObject(resp.getContentAsString());
         JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(0), single, JSONCompareMode.STRICT_ORDER);
@@ -229,7 +225,6 @@ public class SystemTest {
     private static JSONObject getAllApps() throws InterruptedException, ExecutionException, TimeoutException {
         ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
         assertThat(resp.getStatus(), is(200));
-
         return new JSONObject(resp.getContentAsString());
     }
 
@@ -289,12 +284,15 @@ public class SystemTest {
     }
 
     @Test
-    public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
+    public void theSystemApiReturnsOsInfoAndZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
+
+        assertThat(sysInfo.getString("appRunnerVersion"), startsWith("1."));
+        assertThat(sysInfo.get("host"), is(notNullValue()));
+        assertThat(sysInfo.get("user"), is(notNullValue()));
+        assertThat(sysInfo.get("os"), is(notNullValue()));
+
         JSONArray samples = sysInfo.getJSONArray("samples");
-
-        assertThat(sysInfo.get("host"), CoreMatchers.equalTo(SystemResource.HOST_NAME));
-
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;
 

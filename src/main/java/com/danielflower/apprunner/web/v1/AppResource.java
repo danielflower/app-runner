@@ -5,6 +5,7 @@ import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.Availability;
+import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
@@ -33,22 +34,24 @@ public class AppResource {
     public static final Logger log = LoggerFactory.getLogger(AppResource.class);
 
     private final AppEstate estate;
+    private final SystemInfo systemInfo;
 
-    public AppResource(AppEstate estate) {
+    public AppResource(AppEstate estate, SystemInfo systemInfo) {
         this.estate = estate;
+        this.systemInfo = systemInfo;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Gets all registered apps")
     public String apps(@Context UriInfo uriInfo) {
-
         JSONObject result = new JSONObject();
         List<JSONObject> apps = new ArrayList<>();
         estate.all()
             .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
             .forEach(d -> apps.add(
                 appJson(uriInfo.getRequestUri(), d)));
+        result.put("appCount", apps.size());
         result.put("apps", apps);
         return result.toString(4);
     }
@@ -88,7 +91,7 @@ public class AppResource {
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
     }
 
-    private static JSONObject appJson(URI uri, AppDescription app) {
+    private JSONObject appJson(URI uri, AppDescription app) {
         URI restURI = uri.resolve("/api/v1/");
 
         Availability availability = app.currentAvailability();
@@ -102,7 +105,7 @@ public class AppResource {
             .put("available", availability.isAvailable)
             .put("availableStatus", availability.availabilityStatus)
             .put("gitUrl", app.gitUrl())
-            .put("host", SystemResource.HOST_NAME);
+            .put("host", systemInfo.hostName);
     }
 
     private static String getContributorsList(AppDescription app) {
@@ -134,7 +137,7 @@ public class AppResource {
     public Response create(@Context UriInfo uriInfo,
                            @ApiParam(required = true, example = "https://github.com/danielflower/app-runner-home.git", value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @ApiParam(value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
+                           @ApiParam(example = "test-app", value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {

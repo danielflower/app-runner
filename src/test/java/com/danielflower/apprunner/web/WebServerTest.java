@@ -2,6 +2,7 @@ package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.FileSandbox;
+import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
@@ -47,8 +48,9 @@ public class WebServerTest {
             new AppRunnerFactoryProvider(new ArrayList<>()));
         int port = WebServer.getAFreePort();
         webServerUrl = "http://localhost:" + port;
+        SystemInfo systemInfo = SystemInfo.create();
         webServer = new WebServer(new Server(port), proxyMap, "test-app",
-            new SystemResource(new AtomicBoolean(true), new ArrayList<>()), new AppResource(estate));
+            new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>()), new AppResource(estate, systemInfo));
         webServer.start();
         appServer = new TestServer();
     }

@@ -1,10 +1,7 @@
 package com.danielflower.apprunner;
 
 import com.danielflower.apprunner.io.OutputToWriterBridge;
-import com.danielflower.apprunner.mgmt.AppManager;
-import com.danielflower.apprunner.mgmt.BackupService;
-import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
-import com.danielflower.apprunner.mgmt.GitRepoLoader;
+import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import com.danielflower.apprunner.web.ProxyMap;
@@ -50,6 +47,9 @@ public class App {
     }
 
     public void start() throws Exception {
+        SystemInfo systemInfo = SystemInfo.create();
+        log.info(systemInfo.toString());
+
         File dataDir = config.getOrCreateDir(Config.DATA_DIR);
         FileSandbox fileSandbox = new FileSandbox(dataDir);
 
@@ -84,6 +84,7 @@ public class App {
 
         Server jettyServer = new Server();
         HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setOutputBufferSize(128);
         httpConfig.addCustomizer(new SecureRequestCustomizer());
         httpConfig.addCustomizer(new ForwardedRequestCustomizer()); // must come last so the protocol doesn't get overwritten
 
@@ -109,7 +110,7 @@ public class App {
         jettyServer.setConnectors(serverConnectorList.toArray(new Connector[0]));
 
         webServer = new WebServer(jettyServer, proxyMap, defaultAppName,
-            new SystemResource(startupComplete, runnerProvider.factories()), new AppResource(estate));
+            new SystemResource(systemInfo, startupComplete, runnerProvider.factories()), new AppResource(estate, systemInfo));
 
         String backupUrl = config.get(Config.BACKUP_URL, "");
         if (StringUtils.isNotBlank(backupUrl)) {

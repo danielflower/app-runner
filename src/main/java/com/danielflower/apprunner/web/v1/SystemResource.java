@@ -1,10 +1,12 @@
 package com.danielflower.apprunner.web.v1;
 
+import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactory;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -19,38 +21,22 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
-import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Api(value = "System")
 @Path("/system")
 public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
-    public static final String HOST_NAME;
-    private static final Long pid;
+    private final SystemInfo systemInfo;
 
     private final AtomicBoolean startupComplete;
     private final List<AppRunnerFactory> factories;
+    private final String appRunnerVersion = ObjectUtils.firstNonNull(SystemResource.class.getPackage().getImplementationVersion(), "master");
 
-    static {
-        String name = ManagementFactory.getRuntimeMXBean().getName();
-        pid = Pattern.matches("[0-9]+@.*", name) ? Long.parseLong(name.substring(0, name.indexOf('@'))) : null;
-        String host;
-        try {
-            host = InetAddress.getLocalHost().getHostName();
-        } catch (Exception e) {
-            log.warn("Could not find host name", e);
-            host = "unknown";
-        }
-        HOST_NAME = host;
-    }
-
-    public SystemResource(AtomicBoolean startupComplete, List<AppRunnerFactory> factories) {
+    public SystemResource(SystemInfo systemInfo, AtomicBoolean startupComplete, List<AppRunnerFactory> factories) {
+        this.systemInfo = systemInfo;
         this.startupComplete = startupComplete;
         this.factories = factories;
     }
@@ -61,8 +47,9 @@ public class SystemResource {
     public Response systemInfo(@Context UriInfo uri) throws IOException {
         JSONObject result = new JSONObject();
         result.put("appRunnerStarted", startupComplete.get());
-        result.put("host", HOST_NAME);
-        result.put("user", System.getProperty("user.name"));
+        result.put("appRunnerVersion", appRunnerVersion);
+        result.put("host", systemInfo.hostName);
+        result.put("user", systemInfo.user);
 
         JSONArray apps = new JSONArray();
         result.put("samples", apps);
@@ -77,16 +64,17 @@ public class SystemResource {
             apps.put(sample);
         }
 
-        Runtime runtime = Runtime.getRuntime();
-        RuntimeMXBean runtimeMXBean = ManagementFactory.getRuntimeMXBean();
+
         JSONObject os = new JSONObject();
         result.put("os", os);
-        os.put("osName", System.getProperty("os.name"));
-        os.put("numCpus", runtime.availableProcessors());
-        os.put("uptimeInSeconds", runtimeMXBean.getUptime() / 1000);
-        if (pid != null) {
-            os.put("appRunnerPid", pid.longValue());
-        }
+        os.put("osName", systemInfo.osName);
+        os.put("numCpus", systemInfo.numCpus);
+        os.put("uptimeInSeconds", systemInfo.uptimeInMillis()  / 1000L);
+        os.put("appRunnerPid", systemInfo.pid);
+
+        JSONArray keys = new JSONArray();
+        systemInfo.publicKeys.forEach(keys::put);
+        result.put("publicKeys", keys);
 
         return Response.ok(result.toString(4)).build();
     }
