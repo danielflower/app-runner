@@ -23,7 +23,7 @@ public class GoRunner implements AppRunner {
     private final CommandLineProvider goCmd;
     private ExecuteWatchdog watchDog;
 
-    /**
+    /*
      * Go project need special folder layout to build and run
      * e.g.
      * /instances

@@ -27,7 +27,7 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
-* **1.3.3** GoLang support
+* **1.3.4** GoLang support
 * **1.2.0** Support for HTTPS (see the sample config file for more info). This is also
 the first version that HTTPS can be used on [the app runner router](https://github.com/danielflower/app-runner-router)
 (or other reverse proxy).
