@@ -46,6 +46,7 @@ public class GoRunner implements AppRunner {
                 }
             } catch (IOException e) {
                 log.error("Failed to move go project into its sub dir.", e.getMessage());
+                throw new RuntimeException(e.getMessage());
             }
         } else {
             this.instanceDir = this.projectRoot = projectRoot;

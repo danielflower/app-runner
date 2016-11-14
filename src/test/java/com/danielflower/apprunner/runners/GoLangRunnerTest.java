@@ -40,7 +40,7 @@ public class GoLangRunnerTest {
 
     private void canStartAnGOProject(int attempt) throws Exception {
         String appName = "golang";
-        File projectRoot = Photocopier.folderForSampleProject(appName+"_workspace" + File.separator + "src" + File.separator + appName);
+        File projectRoot = Photocopier.folderForSampleProject("instances" + File.separator + appName);
         FileUtils.copyDirectory(new File(Photocopier.sampleDir(), appName),
                 projectRoot);
         AppRunner runner = goRunnerFactory.appRunner(projectRoot);
