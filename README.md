@@ -1,7 +1,7 @@
 App Runner
 ----------
 
-The little web app runner that hosts java, clojure, scala and nodejs apps. This allows
+The little web app runner that hosts java, clojure, scala, golang and nodejs apps. This allows
 you to easily deploy a self-hosted Platform As A Service where you can very easily add
 new apps and have App Runner build and run them by cloning the code from a Git repo.
 
@@ -27,6 +27,7 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
+* **1.3.3** GoLang support
 * **1.2.0** Support for HTTPS (see the sample config file for more info). This is also
 the first version that HTTPS can be used on [the app runner router](https://github.com/danielflower/app-runner-router)
 (or other reverse proxy).
@@ -54,7 +55,7 @@ installed:
 * Maven (if you wish to support Maven builds)
 * Lein (if you wish to support Clojure builds)
 * NodeJS and NPM (if you wish to support Nodejs builds)
-* Scala and SBT
+* Scala and SBT (if you wish to support Scala builds)
 * GoLang (if you wish to support go builds)
 
 It's easiest if each tool is available to run from the path, but you can point to specific

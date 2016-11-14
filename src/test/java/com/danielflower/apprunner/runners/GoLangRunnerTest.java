@@ -2,6 +2,7 @@ package com.danielflower.apprunner.runners;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
@@ -12,6 +13,7 @@ import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
 
 public class GoLangRunnerTest {
@@ -23,6 +25,7 @@ public class GoLangRunnerTest {
     @BeforeClass public static void ignoreTestIfNotSupported() throws Exception {
         Optional<GoRunnerFactory> goRunnerFactoryMaybe = GoRunnerFactory.createIfAvailable(TestConfig.config);
         assumeTrue("Skipping GO test because Go not detected", goRunnerFactoryMaybe.isPresent());
+        assumeFalse("Skipping go tests on Windows because the firewall seems to block it", SystemUtils.IS_OS_WINDOWS);
         goRunnerFactory = goRunnerFactoryMaybe.get();
     }
 
