@@ -8,7 +8,7 @@ new apps and have App Runner build and run them by cloning the code from a Git r
 ### Features
 
 * Host your own Platform as a Service: you just need Java 8, plus optional build tools
-(Maven, Leinigen, Scala/SBT, NodeJS/NPM).
+(Maven, Leinigen, Scala/SBT, go compiler, NodeJS/NPM).
 * Deploy web apps with no build servers or deploy scripts needed: tell AppRunner the Git
 URL and it will automatically build and host it.
 * Auto deploy on source control change when using post-commit hooks
@@ -27,8 +27,12 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
+* **1.4.0** Added a PUT `/apps/{name}` method to change the GIT URL of an app, and made it so `POST`ing 
+an app to `/apps` that already exists returns a 400 error. Also fixed the return type (to `application/json`) for 
+`POST /apps`. There is also `--app-name=your-app-name` passed as a command line parameter to Node apps, mostly to aid
+in finding which app is which when looking at running processes.
 * **1.3.4** GoLang support
-* **1.2.0** Support for HTTPS (see the sample config file for more info). This is also
+* **1.2.2** Support for HTTPS (see the sample config file for more info). This is also
 the first version that HTTPS can be used on [the app runner router](https://github.com/danielflower/app-runner-router)
 (or other reverse proxy).
 * **1.1.0** Optional support for Scala and better reporting of versions of tools such
