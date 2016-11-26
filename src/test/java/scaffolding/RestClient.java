@@ -43,6 +43,14 @@ public class RestClient {
             .content(new FormContentProvider(fields)).send();
     }
 
+    public ContentResponse updateApp(String gitUrl, String appName) throws Exception {
+        Fields fields = new Fields();
+        fields.add("gitUrl", gitUrl);
+        return client.newRequest(appRunnerUrl + "/api/v1/apps/" + appName)
+            .method("PUT")
+            .content(new FormContentProvider(fields)).send();
+    }
+
     public ContentResponse deploy(String app) throws Exception {
         return client.POST(appRunnerUrl + "/api/v1/apps/" + app + "/deploy")
             .header("Accept", "application/json") // to simulate products like the Stash commit hook

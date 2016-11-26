@@ -56,7 +56,7 @@ public class SystemInfo {
                     KeyPair keyPair = KeyPair.load(jSch, i.getName(), null);
                     StringBuilder sb = new StringBuilder();
                     try (StringBuilderWriter sbw = new StringBuilderWriter(sb);
-                         OutputStream os = new WriterOutputStream(sbw)) {
+                         OutputStream os = new WriterOutputStream(sbw, "UTF-8")) {
                         keyPair.writePublicKey(os, keyPair.getPublicKeyComment());
                     } finally {
                         keyPair.dispose();

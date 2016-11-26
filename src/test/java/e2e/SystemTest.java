@@ -98,7 +98,11 @@ public class SystemTest {
     }
 
     private static void shutDownAppRunner() throws Exception {
-        restClient.stop(mavenApp.name);
+        JSONObject apps = new JSONObject(restClient.get("/api/v1/apps").getContentAsString());
+        for (Object o : apps.getJSONArray("apps")) {
+            JSONObject app = (JSONObject) o;
+            restClient.stop(app.getString("name"));
+        }
         mavenRunner.shutdown();
     }
 
@@ -166,7 +170,8 @@ public class SystemTest {
         buildAndStartUberJar(Collections.emptyList());
 
         assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
-        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
+        JSONObject allApps = getAllApps();
+        assertThat("Actual apps: " + allApps.toString(4), allApps.getJSONArray("apps").length(), is(1));
     }
 
 
@@ -199,8 +204,8 @@ public class SystemTest {
 
     private static void updateHeaderAndCommit(AppRepo mavenApp, String replacement) throws IOException, GitAPIException {
         File indexHtml = new File(mavenApp.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
-        String newVersion = FileUtils.readFileToString(indexHtml).replaceAll("<h1>.*</h1>", "<h1>" + replacement + "</h1>");
-        FileUtils.write(indexHtml, newVersion, false);
+        String newVersion = FileUtils.readFileToString(indexHtml, "UTF-8").replaceAll("<h1>.*</h1>", "<h1>" + replacement + "</h1>");
+        FileUtils.write(indexHtml, newVersion, "UTF-8", false);
         mavenApp.origin.add().addFilepattern(".").call();
         mavenApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
     }
@@ -228,34 +233,6 @@ public class SystemTest {
         return new JSONObject(resp.getContentAsString());
     }
 
-    @Test
-    public void postingToAnExistingNameChangesTheURL() throws Exception {
-        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
-        String webUrl = new JSONObject(resp.getContentAsString()).getString("url");
-
-        AppRepo newMavenApp = AppRepo.create("maven");
-        updateHeaderAndCommit(newMavenApp, "Different repo");
-        assertThat(restClient.createApp(newMavenApp.gitUrl()).getStatus(), is(200));
-        restClient.deploy(newMavenApp.name);
-
-        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
-
-        assertThat(
-            client.GET(webUrl),
-            is(equalTo(200, containsString("Different repo"))));
-
-        // put the old app back. The git repo can no longer to a fastforward merge
-
-        updateHeaderAndCommit(mavenApp, "My maven app");
-        assertThat(restClient.createApp(mavenApp.gitUrl()).getStatus(), is(200));
-        restClient.deploy(mavenApp.name);
-
-        assertThat(
-            client.GET(webUrl),
-            is(equalTo(200, containsString("My maven app"))));
-
-        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
-    }
 
     @Test
     public void appsCanBeDeleted() throws Exception {
@@ -270,7 +247,33 @@ public class SystemTest {
         assertThat(
             restClient.deleteApp("another-app"),
             is(equalTo(200, containsString("another-app"))));
+        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
+    }
 
+    @Test
+    public void appsCanHaveTheirGitUrlsUpdated() throws Exception {
+
+        AppRepo originalApp = AppRepo.create("maven");
+        updateHeaderAndCommit(originalApp, "From original repo");
+        assertThat(restClient.createApp(originalApp.gitUrl(), "some-app"), equalTo(201, containsString(originalApp.gitUrl())));
+        restClient.deploy("some-app");
+        assertThat(
+            restClient.homepage("some-app"),
+            is(equalTo(200, containsString("From original repo"))));
+
+        AppRepo changedApp = AppRepo.create("maven");
+        updateHeaderAndCommit(changedApp, "From changed repo");
+        assertThat(restClient.updateApp(changedApp.gitUrl(), "some-app"), equalTo(200, containsString(changedApp.gitUrl())));
+        restClient.deploy("some-app");
+        assertThat(
+            restClient.homepage("some-app"),
+            is(equalTo(200, containsString("From changed repo"))));
+
+
+        assertThat(restClient.updateApp(changedApp.gitUrl(), "this-does-not-exist"), equalTo(404, containsString("No application called this-does-not-exist exists")));
+        assertThat(restClient.updateApp("", "some-app"), equalTo(400, containsString("No git URL was specified")));
+        assertThat(restClient.createApp(originalApp.gitUrl(), "some-app"), equalTo(400, containsString("There is already an app with that ID")));
+        restClient.deleteApp("some-app");
         assertThat(getAllApps().getJSONArray("apps").length(), is(1));
     }
 
