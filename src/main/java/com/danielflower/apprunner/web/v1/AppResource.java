@@ -134,9 +134,9 @@ public class AppResource {
         @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
     })
     public Response create(@Context UriInfo uriInfo,
-                           @ApiParam(required = true, example = "https://github.com/danielflower/app-runner-home.git", value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @ApiParam(required = true, value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @ApiParam(example = "test-app", value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
+                           @ApiParam(value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {
@@ -202,9 +202,9 @@ public class AppResource {
         @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
     })
     public Response update(@Context UriInfo uriInfo,
-                           @ApiParam(required = true, example = "https://github.com/danielflower/app-runner-home.git", value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @ApiParam(required = true, value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @ApiParam(example = "test-app", value = "The ID of the app to update")
+                           @ApiParam(value = "The ID of the app to update")
                            @PathParam("name") String appName) {
         log.info("Received request to update " + appName + " to " + gitUrl);
         if (isBlank(gitUrl) || isBlank(appName)) {
