@@ -272,7 +272,7 @@ public class SystemTest {
 
         assertThat(restClient.updateApp(changedApp.gitUrl(), "this-does-not-exist"), equalTo(404, containsString("No application called this-does-not-exist exists")));
         assertThat(restClient.updateApp("", "some-app"), equalTo(400, containsString("No git URL was specified")));
-        assertThat(restClient.createApp(originalApp.gitUrl(), "some-app"), equalTo(400, containsString("There is already an app with that ID")));
+        assertThat(restClient.createApp(originalApp.gitUrl(), "some-app"), equalTo(409, containsString("There is already an app with that ID")));
         restClient.deleteApp("some-app");
         assertThat(getAllApps().getJSONArray("apps").length(), is(1));
     }

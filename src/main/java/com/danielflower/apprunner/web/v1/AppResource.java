@@ -130,7 +130,8 @@ public class AppResource {
     @ApiOperation(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
     @ApiResponses(value = {
         @ApiResponse(code = 201, message = "The new app was successfully registered"),
-        @ApiResponse(code = 400, message = "The git URL was not specified or the git repo could not be cloned, or there is already an app with that name"),
+        @ApiResponse(code = 400, message = "The git URL was not specified or the git repo could not be cloned"),
+        @ApiResponse(code = 409, message = "There is already an app with that name"),
         @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
     })
     public Response create(@Context UriInfo uriInfo,
@@ -149,7 +150,7 @@ public class AppResource {
 
         Optional<AppDescription> existing = estate.app(appName);
         if (existing.isPresent()) {
-            return Response.status(400).entity(new JSONObject()
+            return Response.status(409).entity(new JSONObject()
                 .put("message", "There is already an app with that ID")
                 .toString()).build();
         }
