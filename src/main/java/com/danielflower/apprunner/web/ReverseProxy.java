@@ -26,10 +26,6 @@ public class ReverseProxy extends AsyncProxyServlet {
         this.proxyMap = proxyMap;
     }
 
-    protected void addViaHeader(Request proxyRequest) {
-        super.addViaHeader(proxyRequest);
-    }
-
     protected String filterServerResponseHeader(HttpServletRequest clientRequest, Response serverResponse, String headerName, String headerValue) {
         if (headerName.equalsIgnoreCase("location")) {
             URI targetUri = serverResponse.getRequest().getURI();

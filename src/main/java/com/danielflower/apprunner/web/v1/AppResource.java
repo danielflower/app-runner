@@ -127,6 +127,7 @@ public class AppResource {
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @ApiOperation(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
     @ApiResponses(value = {
         @ApiResponse(code = 201, message = "The new app was successfully registered"),
@@ -195,6 +196,7 @@ public class AppResource {
     @PUT
     @Path("/{name}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @ApiOperation(value = "Updates the git URL of an existing app")
     @ApiResponses(value = {
         @ApiResponse(code = 200, message = "Success - call deploy after this to build and deploy from the new URL"),
