@@ -126,7 +126,7 @@ public class AppResource {
     }
 
     @POST
-    @Produces(MediaType.APPLICATION_JSON)
+    @Produces("*/*") // Should be application/json, but this causes problems in the swagger-ui when it runs against pre 1.4 app runners
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @ApiOperation(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
     @ApiResponses(value = {
@@ -165,10 +165,12 @@ public class AppResource {
             appDescription = estate.addApp(gitUrl, appName);
             return Response.status(status)
                 .header("Location", uriInfo.getRequestUri() + "/" + appDescription.name())
+                .header("Content-Type", "application/json")
                 .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
                 .build();
         } catch (UnsupportedProjectTypeException e) {
             return Response.status(501)
+                .header("Content-Type", "application/json")
                 .entity(new JSONObject()
                     .put("message", "No suitable runner found for this app")
                     .put("gitUrl", gitUrl)
@@ -176,6 +178,7 @@ public class AppResource {
                 .build();
         } catch (GitAPIException e) {
             return Response.status(400)
+                .header("Content-Type", "application/json")
                 .entity(new JSONObject()
                     .put("message", "Could not clone git repository: " + e.getMessage())
                     .put("gitUrl", gitUrl)
@@ -184,12 +187,15 @@ public class AppResource {
         } catch (Exception e) {
             String errorId = "ERR" + System.currentTimeMillis();
             log.error("Error while adding app. ErrorID=" + errorId, e);
-            return Response.serverError().entity(new JSONObject()
-                .put("message", "Error while adding app")
-                .put("errorID", errorId)
-                .put("detailedError", e.toString())
-                .put("gitUrl", gitUrl)
-                .toString(4)).build();
+            return Response.serverError()
+                .header("Content-Type", "application/json")
+                .entity(new JSONObject()
+                    .put("message", "Error while adding app")
+                    .put("errorID", errorId)
+                    .put("detailedError", e.toString())
+                    .put("gitUrl", gitUrl)
+                    .toString(4))
+                .build();
         }
     }
 
