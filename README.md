@@ -27,7 +27,7 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
-* **1.5.0** Fixed bug where sometimes creating a new app it would say there are no suitable runners, even though there are.
+* **1.5.1** Fixed bug where sometimes creating a new app it would say there are no suitable runners, even though there are.
 Also added `lastBuild` and `lastSuccessfulBuild` to the `app` API to provide information about when and what
 was built (the git commit info is included). 
 * **1.4.0** Added a PUT `/apps/{name}` method to change the GIT URL of an app, and made it so `POST`ing 

@@ -39,7 +39,7 @@ public class MockAppDescription implements AppDescription {
 
     @Override
     public BuildStatus lastSuccessfulBuild() {
-        return BuildStatus.notStarted(null);
+        return null;
     }
 
     public String latestBuildLog() {

@@ -253,7 +253,6 @@ public class SystemTest {
         JSONObject single = new JSONObject(resp.getContentAsString());
         JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(0), single, JSONCompareMode.STRICT_ORDER);
 
-        System.out.println("single = " + single.toString(4));
         assertThat(single.has("lastBuild"), is(true));
         assertThat(single.has("lastSuccessfulBuild"), is(true));
     }

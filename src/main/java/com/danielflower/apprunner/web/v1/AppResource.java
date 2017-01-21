@@ -104,7 +104,7 @@ public class AppResource {
             .put("available", availability.isAvailable)
             .put("availableStatus", availability.availabilityStatus)
             .put("lastBuild", lastBuildStatus.toJSON())
-            .put("lastSuccessfulBuild", lastSuccessfulBuild.toJSON())
+            .put("lastSuccessfulBuild", lastSuccessfulBuild == null ? null : lastSuccessfulBuild.toJSON())
             .put("gitUrl", app.gitUrl())
             .put("host", systemInfo.hostName);
     }

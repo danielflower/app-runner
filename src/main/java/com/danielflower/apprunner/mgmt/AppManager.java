@@ -114,7 +114,6 @@ public class AppManager implements AppDescription {
         this.tempDir = tempDir;
         this.contributors = new ArrayList<>();
         this.lastBuildStatus = BuildStatus.notStarted(gitCommit);
-        this.lastSuccessfulBuildStatus = BuildStatus.notStarted(gitCommit);
     }
 
     public String name() {
