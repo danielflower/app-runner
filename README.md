@@ -28,6 +28,8 @@ Change log
 ----------
 
 * **1.5.0** Fixed bug where sometimes creating a new app it would say there are no suitable runners, even though there are.
+Also added `lastBuild` and `lastSuccessfulBuild` to the `app` API to provide information about when and what
+was built (the git commit info is included). 
 * **1.4.0** Added a PUT `/apps/{name}` method to change the GIT URL of an app, and made it so `POST`ing 
 an app to `/apps` that already exists returns a 400 error. Also fixed the return type (to `application/json`) for 
 `POST /apps`. There is also `--app-name=your-app-name` passed as a command line parameter to Node apps, mostly to aid

@@ -12,6 +12,10 @@ public interface AppDescription {
 
     Availability currentAvailability();
 
+    BuildStatus lastBuildStatus();
+
+    BuildStatus lastSuccessfulBuild();
+
     String latestBuildLog();
 
     String latestConsoleLog();

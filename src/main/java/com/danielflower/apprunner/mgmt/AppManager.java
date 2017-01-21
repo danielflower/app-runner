@@ -3,6 +3,7 @@ package com.danielflower.apprunner.mgmt;
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.runners.AppRunner;
+import com.danielflower.apprunner.runners.AppRunnerFactory;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.Waiter;
 import com.danielflower.apprunner.web.WebServer;
@@ -22,10 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -36,7 +34,6 @@ import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
-    private volatile Availability availability = Availability.unavailable("Not started");
     private static final Executor deletionQueue = Executors.newSingleThreadExecutor();
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
@@ -66,11 +63,25 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + dataDir);
-        AppManager appManager = new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
+        GitCommit gitCommit = getCurrentHead(name, git);
+        AppManager appManager = new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir, gitCommit);
         if (isNew) {
             appManager.gitUpdateFromOrigin();
         }
         return appManager;
+    }
+
+    private GitCommit getCurrentHead() {
+        return getCurrentHead(name, git);
+    }
+    private static GitCommit getCurrentHead(String name, Git git) {
+        GitCommit gitCommit = null;
+        try {
+            gitCommit = GitCommit.fromHEAD(git);
+        } catch (Exception e) {
+            log.warn("Could not find git commit info for " + name, e);
+        }
+        return gitCommit;
     }
 
     private void gitUpdateFromOrigin() throws GitAPIException {
@@ -90,8 +101,11 @@ public class AppManager implements AppDescription {
     private AppRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
+    private volatile Availability availability = Availability.unavailable("Not started");
+    private volatile BuildStatus lastBuildStatus;
+    private volatile BuildStatus lastSuccessfulBuildStatus;
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir, GitCommit gitCommit) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
@@ -99,6 +113,8 @@ public class AppManager implements AppDescription {
         this.dataDir = dataDir;
         this.tempDir = tempDir;
         this.contributors = new ArrayList<>();
+        this.lastBuildStatus = BuildStatus.notStarted(gitCommit);
+        this.lastSuccessfulBuildStatus = BuildStatus.notStarted(gitCommit);
     }
 
     public String name() {
@@ -112,6 +128,16 @@ public class AppManager implements AppDescription {
     @Override
     public Availability currentAvailability() {
         return availability;
+    }
+
+    @Override
+    public BuildStatus lastBuildStatus() {
+        return lastBuildStatus;
+    }
+
+    @Override
+    public BuildStatus lastSuccessfulBuild() {
+        return lastSuccessfulBuildStatus;
     }
 
     public String latestBuildLog() {
@@ -139,10 +165,7 @@ public class AppManager implements AppDescription {
 
     public synchronized void update(AppRunnerFactoryProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         clearLogs();
-        if (!availability.isAvailable) {
-            availability = Availability.unavailable("Starting");
-        }
-
+        markBuildAsFetching();
 
         InvocationOutputHandler buildLogHandler = line -> {
             outputHandler.consumeLine(line);
@@ -164,11 +187,15 @@ public class AppManager implements AppDescription {
 
 
         buildLogHandler.consumeLine("Fetching latest changes from git...");
-        File id = fetchChangesAndCreateInstanceDir();
-        buildLogHandler.consumeLine("Created new instance in " + fullPath(id));
+        File instanceDir = fetchChangesAndCreateInstanceDir();
+        buildLogHandler.consumeLine("Created new instance in " + fullPath(instanceDir));
 
         AppRunner oldRunner = currentRunner;
-        currentRunner = runnerProvider.runnerFor(name(), id);
+        AppRunnerFactory appRunnerFactory = runnerProvider.runnerFor(name(), instanceDir);
+        String runnerId = appRunnerFactory.id();
+        markBuildAsStarting(runnerId);
+        currentRunner = appRunnerFactory.appRunner(instanceDir);
+        log.info("Using " + appRunnerFactory.id() + " for " + name);
         int port = WebServer.getAFreePort();
 
         Map<String, String> envVarsForApp = createAppEnvVars(port, name, dataDir, tempDir);
@@ -176,13 +203,10 @@ public class AppManager implements AppDescription {
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
         } catch (Exception e) {
-            if (!availability.isAvailable) {
-                availability = Availability.unavailable("Crashed during startup");
-            }
+            recordBuildFailure("Crashed during startup", runnerId);
             throw e;
         }
-        availability = Availability.available();
-
+        recordBuildSuccess(runnerId);
         buildLogHandle.set(null);
 
         for (AppChangeListener listener : listeners) {
@@ -193,8 +217,34 @@ public class AppManager implements AppDescription {
             log.info("Shutting down previous version of " + name);
             oldRunner.shutdown();
             buildLogHandler.consumeLine("Deployment complete.");
-            File instanceDir = oldRunner.getInstanceDir();
-            quietlyDeleteTheOldInstanceDirInTheBackground(instanceDir);
+            File oldInstanceDir = oldRunner.getInstanceDir();
+            quietlyDeleteTheOldInstanceDirInTheBackground(oldInstanceDir);
+        }
+    }
+
+    private void markBuildAsFetching() {
+        lastBuildStatus = BuildStatus.fetching(new Date());
+        if (!availability.isAvailable) {
+            availability = Availability.unavailable("Starting");
+        }
+    }
+
+    private void markBuildAsStarting(String runnerId) {
+        lastBuildStatus = BuildStatus.inProgress(new Date(), getCurrentHead(), runnerId);
+        if (!availability.isAvailable) {
+            availability = Availability.unavailable("Starting");
+        }
+    }
+
+    private void recordBuildSuccess(String runnerId) {
+        lastBuildStatus = lastSuccessfulBuildStatus = BuildStatus.success(lastBuildStatus.startTime, new Date(), getCurrentHead(), runnerId);
+        availability = Availability.available();
+    }
+
+    private void recordBuildFailure(String message, String runnerId) {
+        lastBuildStatus = BuildStatus.failure(lastBuildStatus.startTime, new Date(), message, getCurrentHead(), runnerId);
+        if (!availability.isAvailable) {
+            availability = Availability.unavailable(message);
         }
     }
 
@@ -218,9 +268,7 @@ public class AppManager implements AppDescription {
             gitUpdateFromOrigin();
             return copyToNewInstanceDir();
         } catch (Exception e) {
-            if (!availability.isAvailable) {
-                availability = Availability.unavailable("Could not fetch from git: " + e.getMessage());
-            }
+            recordBuildFailure("Could not fetch from git: " + e.getMessage(), null);
             throw e;
         }
     }
@@ -237,7 +285,6 @@ public class AppManager implements AppDescription {
                 }
             }
             log.info("getting the contributors " + contributors);
-
         } catch (Exception e) {
             log.warn("Failed to get authors from repo: " + e.getMessage());
         }

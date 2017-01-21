@@ -2,10 +2,7 @@ package com.danielflower.apprunner.web.v1;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
-import com.danielflower.apprunner.mgmt.AppDescription;
-import com.danielflower.apprunner.mgmt.AppManager;
-import com.danielflower.apprunner.mgmt.Availability;
-import com.danielflower.apprunner.mgmt.SystemInfo;
+import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
@@ -95,6 +92,8 @@ public class AppResource {
         URI restURI = uri.resolve("/api/v1/");
 
         Availability availability = app.currentAvailability();
+        BuildStatus lastBuildStatus = app.lastBuildStatus();
+        BuildStatus lastSuccessfulBuild = app.lastSuccessfulBuild();
         return new JSONObject()
             .put("name", app.name())
             .put("contributors", getContributorsList(app))
@@ -104,6 +103,8 @@ public class AppResource {
             .put("deployUrl", appUrl(app, restURI, "deploy"))
             .put("available", availability.isAvailable)
             .put("availableStatus", availability.availabilityStatus)
+            .put("lastBuild", lastBuildStatus.toJSON())
+            .put("lastSuccessfulBuild", lastSuccessfulBuild.toJSON())
             .put("gitUrl", app.gitUrl())
             .put("host", systemInfo.hostName);
     }

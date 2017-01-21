@@ -239,6 +239,7 @@ public class SystemTest {
     @Test
     public void theRestAPILives() throws Exception {
         JSONObject all = getAllApps();
+        System.out.println("all = " + all.toString(4));
         assertThat(all.getInt("appCount"), is(1));
         JSONAssert.assertEquals("{apps:[" +
             "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\" }" +
@@ -251,6 +252,10 @@ public class SystemTest {
         assertThat(resp.getStatus(), is(200));
         JSONObject single = new JSONObject(resp.getContentAsString());
         JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(0), single, JSONCompareMode.STRICT_ORDER);
+
+        System.out.println("single = " + single.toString(4));
+        assertThat(single.has("lastBuild"), is(true));
+        assertThat(single.has("lastSuccessfulBuild"), is(true));
     }
 
     private static JSONObject getAllApps() throws InterruptedException, ExecutionException, TimeoutException {

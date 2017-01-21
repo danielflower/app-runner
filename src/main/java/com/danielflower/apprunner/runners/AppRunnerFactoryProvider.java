@@ -30,16 +30,12 @@ public class AppRunnerFactoryProvider {
         return new AppRunnerFactoryProvider(factories);
     }
 
-    public AppRunner runnerFor(String appName, File projectRoot) throws UnsupportedProjectTypeException {
-
+    public AppRunnerFactory runnerFor(String appName, File projectRoot) throws UnsupportedProjectTypeException {
         for (AppRunnerFactory factory : factories) {
             if (factory.canRun(projectRoot)) {
-                AppRunner runner = factory.appRunner(projectRoot);
-                log.info("Using " + runner.getClass().getSimpleName() + " for " + appName);
-                return runner;
+                return factory;
             }
         }
-
         throw new UnsupportedProjectTypeException("No app runner found for " + appName);
     }
 
