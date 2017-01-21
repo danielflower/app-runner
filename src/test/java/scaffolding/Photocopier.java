@@ -17,6 +17,12 @@ public class Photocopier {
     }
 
     public static File copySampleAppToTempDir(String sampleAppName) throws IOException {
+        File target = folderForSampleProject(sampleAppName);
+        copySampleAppToDir(sampleAppName, target);
+        return target;
+    }
+
+    public static void copySampleAppToDir(String sampleAppName, File target) throws IOException {
         String pathname = FilenameUtils.concat(fullPath(sampleDir()), sampleAppName);
         File source = new File(pathname);
         if (!source.isDirectory()) {
@@ -25,10 +31,7 @@ public class Photocopier {
         if (!source.isDirectory()) {
             throw new RuntimeException("Could not find module " + sampleAppName + " at " + new File(pathname) + " nor " + fullPath(source));
         }
-
-        File target = folderForSampleProject(sampleAppName);
         FileUtils.copyDirectory(source, target);
-        return target;
     }
 
     public static File folderForSampleProject(String moduleName) {

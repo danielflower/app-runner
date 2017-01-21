@@ -16,7 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
         <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
-        <jetty.version>9.3.14.v20161028</jetty.version>
+        <jetty.version>9.4.0.v20161208</jetty.version>
         <swagger.version>1.5.10</swagger.version>
         <jersey.version>2.24.1</jersey.version>
     </properties>
@@ -61,12 +61,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.21</version>
+            <version>1.7.22</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.1.7</version>
+            <version>1.1.9</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -213,7 +213,7 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>4.5.0.201609210915-r</version>
+            <version>4.6.0.201612231935-r</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>

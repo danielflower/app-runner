@@ -12,7 +12,11 @@ import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.PersonIdent;
+import org.hamcrest.Matchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -21,6 +25,7 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
+import scaffolding.Photocopier;
 import scaffolding.RestClient;
 
 import java.io.File;
@@ -174,6 +179,27 @@ public class SystemTest {
         assertThat("Actual apps: " + allApps.toString(4), allApps.getJSONArray("apps").length(), is(1));
     }
 
+    @Test
+    public void pushingAnEmptyRepoIsRejected() throws Exception {
+        File dir = Photocopier.folderForSampleProject("empty-project");
+        InitCommand initCommand = Git.init();
+        initCommand.setDirectory(dir);
+        Git origin = initCommand.call();
+
+        ContentResponse resp = restClient.createApp(dir.toURI().toString(), "empty-project");
+        assertThat(resp, equalTo(501, containsString("No suitable runner found for this app")));
+
+        Photocopier.copySampleAppToDir("maven", dir);
+        origin.add().addFilepattern(".").call();
+        origin.commit().setMessage("Initial commit")
+            .setAuthor(new PersonIdent("Author Test", "author@email.com"))
+            .call();
+
+        resp = restClient.createApp(dir.toURI().toString(), "empty-project");
+        assertThat(resp, equalTo(201, containsString("empty-project")));
+        assertThat(new JSONObject(resp.getContentAsString()).get("name"), Matchers.equalTo("empty-project"));
+        assertThat(restClient.deleteApp("empty-project"), equalTo(200, containsString("{")));
+    }
 
     @Test
     public void stoppedAppsSayTheyAreStopped() throws Exception {

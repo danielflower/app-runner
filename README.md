@@ -27,6 +27,7 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
+* **1.5.0** Fixed bug where sometimes creating a new app it would say there are no suitable runners, even though there are.
 * **1.4.0** Added a PUT `/apps/{name}` method to change the GIT URL of an app, and made it so `POST`ing 
 an app to `/apps` that already exists returns a 400 error. Also fixed the return type (to `application/json`) for 
 `POST /apps`. There is also `--app-name=your-app-name` passed as a command line parameter to Node apps, mostly to aid
@@ -34,7 +35,7 @@ in finding which app is which when looking at running processes.
 * **1.3.4** GoLang support
 * **1.2.2** Support for HTTPS (see the sample config file for more info). This is also
 the first version that HTTPS can be used on [the app runner router](https://github.com/danielflower/app-runner-router)
-(or other reverse proxy).
+(or other reverse proxies).
 * **1.1.0** Optional support for Scala and better reporting of versions of tools such
 as java, node, lein etc. When adding a new app, it is immediately cloned and an error
 is returned if it cannot be cloned or this instance does not support the project type.

@@ -46,8 +46,10 @@ public class AppManager implements AppDescription {
         File tempDir = fileSandbox.tempDir(name);
 
         Git git;
+        boolean isNew = false;
         try {
             git = Git.open(gitDir);
+            isNew = true;
         } catch (RepositoryNotFoundException e) {
             git = Git.cloneRepository()
                 .setURI(gitUrl)
@@ -64,7 +66,17 @@ public class AppManager implements AppDescription {
             throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }
         log.info("Created app manager for " + name + " in dir " + dataDir);
-        return new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
+        AppManager appManager = new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
+        if (isNew) {
+            appManager.gitUpdateFromOrigin();
+        }
+        return appManager;
+    }
+
+    private void gitUpdateFromOrigin() throws GitAPIException {
+        git.fetch().setRemote("origin").call();
+        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
+        this.contributors = getContributorsFromRepo();
     }
 
     private final String gitUrl;
@@ -131,7 +143,6 @@ public class AppManager implements AppDescription {
             availability = Availability.unavailable("Starting");
         }
 
-        this.contributors = getContributorsFromRepo();
 
         InvocationOutputHandler buildLogHandler = line -> {
             outputHandler.consumeLine(line);
@@ -204,8 +215,7 @@ public class AppManager implements AppDescription {
 
     private File fetchChangesAndCreateInstanceDir() throws GitAPIException, IOException {
         try {
-            git.fetch().setRemote("origin").call();
-            git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
+            gitUpdateFromOrigin();
             return copyToNewInstanceDir();
         } catch (Exception e) {
             if (!availability.isAvailable) {

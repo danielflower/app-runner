@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -105,7 +106,7 @@ public class AppEstate {
 
     public String allAppNames() {
         return all()
-            .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
+            .sorted(Comparator.comparing(AppDescription::name))
             .map(AppDescription::name)
             .collect(Collectors.joining(", "));
     }
