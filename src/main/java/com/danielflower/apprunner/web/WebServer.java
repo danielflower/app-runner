@@ -12,6 +12,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -90,7 +91,9 @@ public class WebServer implements AutoCloseable {
         sch.setContextPath("/api/v1");
         sch.addServlet(holder, "/*");
 
-        return sch;
+        GzipHandler gzipHandler = new GzipHandler();
+        gzipHandler.setHandler(sch);
+        return gzipHandler;
     }
 
     private static class CORSFilter implements ContainerResponseFilter {
