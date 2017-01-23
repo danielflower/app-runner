@@ -33,6 +33,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class WebServerTest {
 
+    private static final int PROXY_TIMEOUT = 3000;
     private HttpClient client;
     private WebServer webServer;
     private ProxyMap proxyMap = new ProxyMap();
@@ -50,9 +51,16 @@ public class WebServerTest {
         webServerUrl = "http://localhost:" + port;
         SystemInfo systemInfo = SystemInfo.create();
         webServer = new WebServer(new Server(port), proxyMap, "test-app",
-            new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>()), new AppResource(estate, systemInfo));
+            new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>()), new AppResource(estate, systemInfo), PROXY_TIMEOUT, PROXY_TIMEOUT);
         webServer.start();
         appServer = new TestServer();
+    }
+
+    @Test
+    public void slowStuffTimesOut() throws Exception {
+        proxyMap.add("test-app", appServer.url);
+        ContentResponse resp = client.GET(webServerUrl + "/test-app/slow?millis=" + (PROXY_TIMEOUT + 1000));
+        assertThat(resp.getStatus(), is(504));
     }
 
     public static FileSandbox fileSandbox() {
@@ -113,6 +121,13 @@ public class WebServerTest {
                 public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
                     if (target.equals("/test-app")) {
                         response.sendRedirect("/test-app/");
+                    } else if (target.equalsIgnoreCase("/test-app/slow")) {
+                        try {
+                            Thread.sleep(Long.parseLong(request.getParameter("millis")));
+                        } catch (InterruptedException e) {
+                            Thread.interrupted();
+                        }
+                        response.getWriter().append("This was slow");
                     } else {
                         response.setHeader("Server", "Test-Server");
                         response.getWriter().append("Hello from test server").close();

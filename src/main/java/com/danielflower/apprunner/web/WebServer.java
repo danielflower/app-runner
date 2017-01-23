@@ -40,13 +40,17 @@ public class WebServer implements AutoCloseable {
     private final String defaultAppName;
     private final SystemResource systemResource;
     private final AppResource appResource;
+    private final int idleTimeout;
+    private final int totalTimeout;
 
-    public WebServer(Server jettyServer, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource) {
+    public WebServer(Server jettyServer, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout) {
         this.jettyServer = jettyServer;
         this.proxyMap = proxyMap;
         this.defaultAppName = defaultAppName;
         this.systemResource = systemResource;
         this.appResource = appResource;
+        this.idleTimeout = idleTimeout;
+        this.totalTimeout = totalTimeout;
     }
 
     public static int getAFreePort() {
@@ -127,7 +131,9 @@ public class WebServer implements AutoCloseable {
         AsyncProxyServlet servlet = new ReverseProxy(proxyMap);
         ServletHolder proxyServletHolder = new ServletHolder(servlet);
         proxyServletHolder.setAsyncSupported(true);
-        proxyServletHolder.setInitParameter("maxThreads", "100");
+        proxyServletHolder.setInitParameter("maxThreads", "256");
+        proxyServletHolder.setInitParameter("idleTimeout", String.valueOf(idleTimeout));
+        proxyServletHolder.setInitParameter("timeout", String.valueOf(totalTimeout));
         ServletHandler proxyHandler = new ServletHandler();
         proxyHandler.addServletWithMapping(proxyServletHolder, "/*");
         return proxyHandler;

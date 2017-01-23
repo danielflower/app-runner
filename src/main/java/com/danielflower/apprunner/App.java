@@ -110,7 +110,8 @@ public class App {
         jettyServer.setConnectors(serverConnectorList.toArray(new Connector[0]));
 
         webServer = new WebServer(jettyServer, proxyMap, defaultAppName,
-            new SystemResource(systemInfo, startupComplete, runnerProvider.factories()), new AppResource(estate, systemInfo));
+            new SystemResource(systemInfo, startupComplete, runnerProvider.factories()), new AppResource(estate, systemInfo),
+            config.getInt("apprunner.proxy.idle.timeout", 30000), config.getInt("apprunner.proxy.total.timeout", 60000));
 
         String backupUrl = config.get(Config.BACKUP_URL, "");
         if (StringUtils.isNotBlank(backupUrl)) {
