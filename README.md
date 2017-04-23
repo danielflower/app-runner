@@ -27,6 +27,7 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
+* **1.5.6** Added backup info to the apps API and added app name validation
 * **1.5.4** Added optional config for handling proxy timeouts: `apprunner.proxy.idle.timeout` (default 30000ms) `apprunner.proxy.total.timeout` (default 60000ms).
 * **1.5.1** Fixed bug where sometimes creating a new app it would say there are no suitable runners, even though there are.
 Also added `lastBuild` and `lastSuccessfulBuild` to the `app` API to provide information about when and what
