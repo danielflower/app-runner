@@ -5,6 +5,7 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
+import java.time.Instant;
 import java.util.Date;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -22,37 +23,39 @@ public class BuildStatusTest {
 
     @Test
     public void fetchingWorks() {
-        Date startTime = new Date();
+        Instant startTime = Instant.now();
         JSONObject s = BuildStatus.fetching(startTime).toJSON();
         JSONAssert.assertEquals("{" +
-            "status: 'fetching', startTime: " + startTime.getTime() + ", description: 'Fetching changes from git'" +
+            "status: 'fetching', startTime: '" + startTime.toString() + "', description: 'Fetching changes from git'" +
             "}", s, JSONCompareMode.STRICT);
     }
     @Test
     public void inProgressWorks() {
-        Date now = new Date();
+        Instant now = Instant.now();
         JSONObject s = BuildStatus.inProgress(now, aCommit(), "maven").toJSON();
         JSONAssert.assertEquals("{" +
-            "runnerId: 'maven', status: 'building', startTime: " + now.getTime() + ", description: 'Building now...', commit: {}" +
+            "runnerId: 'maven', status: 'building', startTime: '" + now.toString() + "', description: 'Building now...', commit: {}" +
             "}", s, JSONCompareMode.LENIENT);
     }
+
     @Test
     public void successWorks() {
-        Date start = new Date();
-        Date end = new Date(start.getTime() + 10000);
+        Instant start = Instant.now();
+        Instant end = start.plusMillis(10000);
         JSONObject s = BuildStatus.success(start, end, aCommit(), "maven").toJSON();
         JSONAssert.assertEquals("{" +
-            "status: 'success', startTime: " + start.getTime() + ", endTime: " + end.getTime() + ", " +
+            "status: 'success', startTime: '" + start.toString() + "', endTime: '" + end.toString() + "', " +
             "description: 'Completed successfully in 10 seconds', commit: {}" +
             "}", s, JSONCompareMode.LENIENT);
     }
+
     @Test
     public void failureWorks() {
-        Date start = new Date();
-        Date end = new Date(start.getTime() + 10000);
+        Instant start = Instant.now();
+        Instant end = start.plusMillis(10000);
         JSONObject s = BuildStatus.failure(start, end, "Oh no", aCommit(), "maven").toJSON();
         JSONAssert.assertEquals("{" +
-            "status: 'failed', startTime: " + start.getTime() + ", endTime: " + end.getTime() + ", " +
+            "status: 'failed', startTime: '" + start.toString() + "', endTime: '" + end.toString() + "', " +
             "description: 'Oh no', commit: {}" +
             "}", s, JSONCompareMode.LENIENT);
     }

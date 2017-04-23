@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -226,26 +227,26 @@ public class AppManager implements AppDescription {
     }
 
     private void markBuildAsFetching() {
-        lastBuildStatus = BuildStatus.fetching(new Date());
+        lastBuildStatus = BuildStatus.fetching(Instant.now());
         if (!availability.isAvailable) {
             availability = Availability.unavailable("Starting");
         }
     }
 
     private void markBuildAsStarting(String runnerId) {
-        lastBuildStatus = BuildStatus.inProgress(new Date(), getCurrentHead(), runnerId);
+        lastBuildStatus = BuildStatus.inProgress(Instant.now(), getCurrentHead(), runnerId);
         if (!availability.isAvailable) {
             availability = Availability.unavailable("Starting");
         }
     }
 
     private void recordBuildSuccess(String runnerId) {
-        lastBuildStatus = lastSuccessfulBuildStatus = BuildStatus.success(lastBuildStatus.startTime, new Date(), getCurrentHead(), runnerId);
+        lastBuildStatus = lastSuccessfulBuildStatus = BuildStatus.success(lastBuildStatus.startTime, Instant.now(), getCurrentHead(), runnerId);
         availability = Availability.available();
     }
 
     private void recordBuildFailure(String message, String runnerId) {
-        lastBuildStatus = BuildStatus.failure(lastBuildStatus.startTime, new Date(), message, getCurrentHead(), runnerId);
+        lastBuildStatus = BuildStatus.failure(lastBuildStatus.startTime, Instant.now(), message, getCurrentHead(), runnerId);
         if (!availability.isAvailable) {
             availability = Availability.unavailable(message);
         }
