@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.web.v1;
 
+import com.danielflower.apprunner.mgmt.BackupService;
 import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactory;
 import io.swagger.annotations.Api;
@@ -21,6 +22,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -33,12 +35,14 @@ public class SystemResource {
 
     private final AtomicBoolean startupComplete;
     private final List<AppRunnerFactory> factories;
+    private final BackupService backupService;
     private final String appRunnerVersion = ObjectUtils.firstNonNull(SystemResource.class.getPackage().getImplementationVersion(), "master");
 
-    public SystemResource(SystemInfo systemInfo, AtomicBoolean startupComplete, List<AppRunnerFactory> factories) {
+    public SystemResource(SystemInfo systemInfo, AtomicBoolean startupComplete, List<AppRunnerFactory> factories, BackupService backupService) {
         this.systemInfo = systemInfo;
         this.startupComplete = startupComplete;
         this.factories = factories;
+        this.backupService = backupService;
     }
 
     @GET
@@ -50,6 +54,17 @@ public class SystemResource {
         result.put("appRunnerVersion", appRunnerVersion);
         result.put("host", systemInfo.hostName);
         result.put("user", systemInfo.user);
+
+        if (backupService != null) {
+            JSONObject backupJson = new JSONObject()
+                .put("backupUrl", backupService.remoteUri);
+            Instant lastBackup = backupService.lastSuccessfulBackupTime;
+            if (lastBackup != null) {
+                backupJson.put("lastSuccessfulBackup", lastBackup.toString());
+            }
+            backupService.lastRunError().ifPresent(e -> backupJson.put("lastBackupError", e.getMessage()));
+            result.put("backupInfo", backupJson);
+        }
 
         JSONArray apps = new JSONArray();
         result.put("samples", apps);

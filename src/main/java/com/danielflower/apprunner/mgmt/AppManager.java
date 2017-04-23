@@ -37,6 +37,10 @@ public class AppManager implements AppDescription {
     private static final Executor deletionQueue = Executors.newSingleThreadExecutor();
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
+        if (!name.matches("^[A-Za-z0-9_-]+$")) {
+            throw new ValidationException("The app name can only contain letters, numbers, hyphens and underscores");
+        }
+
         File gitDir = fileSandbox.repoDir(name);
         File instanceDir = fileSandbox.tempDir(name + File.separator + "instances");
         File dataDir = fileSandbox.appDir(name, "data");

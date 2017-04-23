@@ -51,7 +51,7 @@ public class WebServerTest {
         webServerUrl = "http://localhost:" + port;
         SystemInfo systemInfo = SystemInfo.create();
         webServer = new WebServer(new Server(port), proxyMap, "test-app",
-            new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>()), new AppResource(estate, systemInfo), PROXY_TIMEOUT, PROXY_TIMEOUT);
+            new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>(), null), new AppResource(estate, systemInfo), PROXY_TIMEOUT, PROXY_TIMEOUT);
         webServer.start();
         appServer = new TestServer();
     }

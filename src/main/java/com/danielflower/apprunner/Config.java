@@ -98,10 +98,10 @@ public class Config {
         return raw.containsKey(SBT_JAR)
             ? (Map<String, String> env) ->
 
-            leinJavaCommandProvider()
+            sbtJavaCommandProvider()
                 .commandLine(env)
                 .addArgument("-cp")
-                .addArgument(fullPath(getFile(LEIN_JAR)))
+                .addArgument(fullPath(getFile(SBT_JAR)))
                 .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
 
             : CommandLineProvider.sbt_on_path;

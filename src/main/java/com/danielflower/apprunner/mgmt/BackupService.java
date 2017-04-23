@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -27,11 +28,14 @@ public class BackupService {
     private static final Logger log = LoggerFactory.getLogger(BackupService.class);
 
     private final Git repo;
+    public final String remoteUri;
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private volatile Exception lastError = null;
+    public volatile Instant lastSuccessfulBackupTime;
 
-    public BackupService(Git dataDirRepo) {
+    public BackupService(Git dataDirRepo, String remoteUri) {
         this.repo = dataDirRepo;
+        this.remoteUri = remoteUri;
     }
 
     public void start() {
@@ -39,6 +43,7 @@ public class BackupService {
             try {
                 log.info("Going to backup data dir");
                 backup();
+                lastSuccessfulBackupTime = Instant.now();
                 lastError = null;
             } catch (Exception e) {
                 lastError = e;
@@ -107,6 +112,6 @@ public class BackupService {
         URL inputUrl = BackupService.class.getResource("/dataDirGitIgnore.txt");
         FileUtils.copyURLToFile(inputUrl, new File(localDir, ".gitignore"));
 
-        return new BackupService(local);
+        return new BackupService(local, remoteUri.toString());
     }
 }

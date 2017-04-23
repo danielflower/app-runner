@@ -132,7 +132,7 @@ public class AppResource {
     @ApiOperation(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
     @ApiResponses(value = {
         @ApiResponse(code = 201, message = "The new app was successfully registered"),
-        @ApiResponse(code = 400, message = "The git URL was not specified or the git repo could not be cloned"),
+        @ApiResponse(code = 400, message = "The git URL was not specified or the git repo could not be cloned, or the app name is not valid."),
         @ApiResponse(code = 409, message = "There is already an app with that name"),
         @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
     })
@@ -183,6 +183,13 @@ public class AppResource {
                 .entity(new JSONObject()
                     .put("message", "Could not clone git repository: " + e.getMessage())
                     .put("gitUrl", gitUrl)
+                    .toString(4))
+                .build();
+        } catch (ValidationException ve) {
+            return Response.status(400)
+                .header("Content-Type", "application/json")
+                .entity(new JSONObject()
+                    .put("message", ve.getMessage())
                     .toString(4))
                 .build();
         } catch (Exception e) {

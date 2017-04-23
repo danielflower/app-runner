@@ -60,6 +60,7 @@ public class App {
 
         ProxyMap proxyMap = new ProxyMap();
 
+        log.info("Detecting providers...");
         AppRunnerFactoryProvider runnerProvider = AppRunnerFactoryProvider.create(config);
         log.info("Registered providers..." + LINE_SEPARATOR + runnerProvider.describeRunners());
 
@@ -109,15 +110,17 @@ public class App {
         }
         jettyServer.setConnectors(serverConnectorList.toArray(new Connector[0]));
 
-        webServer = new WebServer(jettyServer, proxyMap, defaultAppName,
-            new SystemResource(systemInfo, startupComplete, runnerProvider.factories()), new AppResource(estate, systemInfo),
-            config.getInt("apprunner.proxy.idle.timeout", 30000), config.getInt("apprunner.proxy.total.timeout", 60000));
-
         String backupUrl = config.get(Config.BACKUP_URL, "");
         if (StringUtils.isNotBlank(backupUrl)) {
             backupService = BackupService.prepare(dataDir, new URIish(backupUrl));
             backupService.start();
         }
+
+
+        webServer = new WebServer(jettyServer, proxyMap, defaultAppName,
+            new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService), new AppResource(estate, systemInfo),
+            config.getInt("apprunner.proxy.idle.timeout", 30000), config.getInt("apprunner.proxy.total.timeout", 60000));
+
 
         webServer.start();
 
@@ -159,9 +162,11 @@ public class App {
     }
 
     private void deleteOldTempFiles(File tempDir) {
+        long start = System.currentTimeMillis();
         log.info("Deleting contents of temporary folder at " + fullPath(tempDir));
         try {
             FileUtils.deleteDirectory(tempDir);
+            log.info("File deletion complete in " + (System.currentTimeMillis() - start) + "ms");
         } catch (IOException e) {
             log.warn("Failed to delete " + fullPath(tempDir), e);
         }

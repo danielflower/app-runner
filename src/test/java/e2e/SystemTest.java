@@ -281,6 +281,13 @@ public class SystemTest {
     }
 
     @Test
+    public void appNamesCannotContainSpaces() throws Exception {
+        AppRepo originalApp = AppRepo.create("maven");
+        assertThat(restClient.createApp(originalApp.gitUrl(), "some app"),
+            equalTo(400, containsString("app name can only contain letters, numbers, hyphens and underscores")));
+    }
+
+    @Test
     public void appsCanHaveTheirGitUrlsUpdated() throws Exception {
 
         AppRepo originalApp = AppRepo.create("maven");

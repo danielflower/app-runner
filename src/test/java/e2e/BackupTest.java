@@ -38,7 +38,9 @@ public class BackupTest {
             put(Config.BACKUP_URL, backupUri.toString());
             put(Config.DATA_DIR, fullPath(new File("target/datadirs/" + System.currentTimeMillis())));
         }}));
+        System.out.println("************************************");
         app.start();
+        System.out.println("************************************");
     }
 
     @After public void shutdownApp() {
@@ -58,4 +60,5 @@ public class BackupTest {
         assertThat(new File(backupCopyDir, "repos.properties"), fileExists());
 
     }
+
 }
