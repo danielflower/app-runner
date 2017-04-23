@@ -7,6 +7,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.json.JSONObject;
 
+import java.time.Instant;
 import java.util.Date;
 
 public class GitCommit {
@@ -44,6 +45,7 @@ public class GitCommit {
         return new JSONObject()
             .put("id", id)
             .put("date", commitDate.getTime())
+            .put("dateISO", Instant.ofEpochMilli(commitDate.getTime()).toString())
             .put("author", author)
             .put("message", message);
     }
