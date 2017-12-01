@@ -25,13 +25,14 @@ public class AppRunnerFactoryProvider {
     public static AppRunnerFactoryProvider create(Config config) throws ExecutionException, InterruptedException {
         // This is done asyncronously because around half the startup time in tests was due to these calls.
 
-        ExecutorService executorService = Executors.newFixedThreadPool(5 /* the number of factories */);
+        ExecutorService executorService = Executors.newFixedThreadPool(6 /* the number of factories */);
         List<Future<Optional<? extends AppRunnerFactory>>> futures = new ArrayList<>();
         futures.add(executorService.submit(() -> MavenRunnerFactory.createIfAvailable(config)));
         futures.add(executorService.submit(() -> NodeRunnerFactory.createIfAvailable(config)));
         futures.add(executorService.submit(() -> LeinRunnerFactory.createIfAvailable(config)));
         futures.add(executorService.submit(() -> SbtRunnerFactory.createIfAvailable(config)));
         futures.add(executorService.submit(() -> GoRunnerFactory.createIfAvailable(config)));
+        futures.add(executorService.submit(() -> GradleRunnerFactory.createIfAvailable(config)));
 
         List<AppRunnerFactory> factories = new ArrayList<>();
         for (Future<Optional<? extends AppRunnerFactory>> future : futures) {
