@@ -85,7 +85,7 @@ public class GradleRunner implements AppRunner {
         CommandLine command = javaHomeProvider.commandLine(envVarsForApp)
             .addArgument("-Djava.io.tmpdir=" + envVarsForApp.get("TEMP"))
             .addArgument("-jar")
-            .addArgument(jar.get().getPath());
+            .addArgument(fullPath(jar.get()));
 
         return ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }

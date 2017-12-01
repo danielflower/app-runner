@@ -41,6 +41,6 @@ public class GradleRunnerTest {
     }
 
     private void startAndStop(int attempt, String appName, AppRunner runner, int port) throws Exception {
-        ProcessStarterTest.startAndStop(attempt, appName, runner, port, buildLog, consoleLog, containsString("My Gradle App"), containsString("Task :shadowJar"));
+        ProcessStarterTest.startAndStop(attempt, appName, runner, port, buildLog, consoleLog, containsString("My Gradle App"), containsString(":shadowJar"));
     }
 }
