@@ -11,7 +11,7 @@ public interface HomeProvider extends CommandLineProvider {
     HomeProvider default_java_home = new HomeProvider() {
         public InvocationRequest mungeMavenInvocationRequest(InvocationRequest request) { return request; }
 
-        public CommandLine commandLine(@Nullable Map<String, String> envVarsForApp) { return new CommandLine(Config.javaExecutableName()); }
+        public CommandLine commandLine(Map<String, String> envVarsForApp) { return new CommandLine(Config.javaExecutableName()); }
     };
 
     InvocationRequest mungeMavenInvocationRequest(InvocationRequest request);
