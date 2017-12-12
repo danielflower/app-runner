@@ -78,3 +78,7 @@ See `sample-config.properties` for sample configuration. The `local` directory i
 has sample start scripts and logging configuration.
 
 [![Build Status](https://travis-ci.org/danielflower/app-runner.svg?branch=master)](https://travis-ci.org/danielflower/app-runner)
+
+## Contribute
+
+You will also need to provide `M2_HOME=/path/to/maven/home` before you run source code and test cases.

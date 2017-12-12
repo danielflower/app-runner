@@ -136,6 +136,10 @@ public class Config {
         return windowsinize("java");
     }
 
+    public static String gradleExecutableName() {
+        return windowsinize("gradle");
+    }
+
     private static String windowsinize(String command) {
         return SystemUtils.IS_OS_WINDOWS ? command + ".exe" : command;
     }
