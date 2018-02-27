@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Writer;
 
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
+
 public class OutputToWriterBridge implements InvocationOutputHandler {
     public static final Logger log = LoggerFactory.getLogger(OutputToWriterBridge.class);
     private final Writer writer;
@@ -17,7 +19,7 @@ public class OutputToWriterBridge implements InvocationOutputHandler {
 
     public void consumeLine(String line) {
         try {
-            writer.write(line + "\n");
+            writer.write(line + LINE_SEPARATOR);
             writer.flush();
         } catch (IOException e) {
             log.info("Error while writing", e);

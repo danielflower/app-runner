@@ -20,14 +20,10 @@ public class ReverseProxy extends AsyncProxyServlet {
     public static final Logger log = LoggerFactory.getLogger(ReverseProxy.class);
 
     private final ProxyMap proxyMap;
-    public static final Pattern APP_REQUEST = Pattern.compile("/([^/?]+)(.*)");
+    private static final Pattern APP_REQUEST = Pattern.compile("/([^/?]+)(.*)");
 
     public ReverseProxy(ProxyMap proxyMap) {
         this.proxyMap = proxyMap;
-    }
-
-    protected void addViaHeader(Request proxyRequest) {
-        super.addViaHeader(proxyRequest);
     }
 
     protected String filterServerResponseHeader(HttpServletRequest clientRequest, Response serverResponse, String headerName, String headerValue) {
@@ -53,7 +49,6 @@ public class ReverseProxy extends AsyncProxyServlet {
             if (url != null) {
                 String query = isEmpty(clientRequest.getQueryString()) ? "" : "?" + clientRequest.getQueryString();
                 String newTarget = url.toString() + matcher.group(2) + query;
-//                newTarget = newTarget.replaceAll(":[0-9]+/", ":8081/");
                 log.info("Proxying to " + newTarget);
                 return newTarget;
             }
@@ -63,7 +58,7 @@ public class ReverseProxy extends AsyncProxyServlet {
     }
 
     protected void onProxyRewriteFailed(HttpServletRequest clientRequest, HttpServletResponse proxyResponse) {
-        // this is called if rewriteTarget returns null2
+        // this is called if rewriteTarget returns null
         try {
             proxyResponse.getWriter().write("404 Not Found");
         } catch (IOException e) {

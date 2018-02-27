@@ -8,5 +8,9 @@ import java.util.Map;
 public interface CommandLineProvider {
     CommandLineProvider lein_on_path = (Map<String, String> m) -> new CommandLine(SystemUtils.IS_OS_WINDOWS ? "lein.bat" : "lein");
 
+    CommandLineProvider sbt_on_path = (Map<String, String> m) -> new CommandLine(SystemUtils.IS_OS_WINDOWS ? "sbt.bat" : "sbt");
+
+    CommandLineProvider go_on_path = (Map<String, String> m) -> new CommandLine(SystemUtils.IS_OS_WINDOWS ? "go.exe" : "go");
+
     CommandLine commandLine(Map<String, String> envVarsForApp);
 }

@@ -6,9 +6,13 @@ import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.proxy.AsyncProxyServlet;
-import org.eclipse.jetty.server.*;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -26,27 +30,27 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.ServerSocket;
-import java.net.URL;
 import java.util.HashMap;
 
 public class WebServer implements AutoCloseable {
     public static final Logger log = LoggerFactory.getLogger(WebServer.class);
-    private int port;
     private final ProxyMap proxyMap;
     private Server jettyServer;
     private final String defaultAppName;
     private final SystemResource systemResource;
     private final AppResource appResource;
+    private final int idleTimeout;
+    private final int totalTimeout;
 
-    public WebServer(int port, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource) {
-        this.port = port;
+    public WebServer(Server jettyServer, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout) {
+        this.jettyServer = jettyServer;
         this.proxyMap = proxyMap;
         this.defaultAppName = defaultAppName;
         this.systemResource = systemResource;
         this.appResource = appResource;
-        jettyServer = new Server(port);
+        this.idleTimeout = idleTimeout;
+        this.totalTimeout = totalTimeout;
     }
 
     public static int getAFreePort() {
@@ -60,15 +64,17 @@ public class WebServer implements AutoCloseable {
     }
 
     public void start() throws Exception {
+
         HandlerList handlers = new HandlerList();
         handlers.addHandler(createHomeRedirect());
         handlers.addHandler(createRestService());
         handlers.addHandler(createReverseProxy(proxyMap));
         jettyServer.setHandler(handlers);
         jettyServer.start();
-
-        port = ((ServerConnector) jettyServer.getConnectors()[0]).getLocalPort();
-        log.info("Started web server at " + baseUrl());
+        for (Connector connector : jettyServer.getConnectors()) {
+            log.info("Endpoint: " + StringUtils.join(connector.toString().split("[{}]+"), " ", 1, 3));
+        }
+        log.info("Started web server");
     }
 
     private Handler createRestService() {
@@ -89,7 +95,9 @@ public class WebServer implements AutoCloseable {
         sch.setContextPath("/api/v1");
         sch.addServlet(holder, "/*");
 
-        return sch;
+        GzipHandler gzipHandler = new GzipHandler();
+        gzipHandler.setHandler(sch);
+        return gzipHandler;
     }
 
     private static class CORSFilter implements ContainerResponseFilter {
@@ -123,7 +131,9 @@ public class WebServer implements AutoCloseable {
         AsyncProxyServlet servlet = new ReverseProxy(proxyMap);
         ServletHolder proxyServletHolder = new ServletHolder(servlet);
         proxyServletHolder.setAsyncSupported(true);
-        proxyServletHolder.setInitParameter("maxThreads", "100");
+        proxyServletHolder.setInitParameter("maxThreads", "256");
+        proxyServletHolder.setInitParameter("idleTimeout", String.valueOf(idleTimeout));
+        proxyServletHolder.setInitParameter("timeout", String.valueOf(totalTimeout));
         ServletHandler proxyHandler = new ServletHandler();
         proxyHandler.addServletWithMapping(proxyServletHolder, "/*");
         return proxyHandler;
@@ -133,13 +143,5 @@ public class WebServer implements AutoCloseable {
         jettyServer.stop();
         jettyServer.join();
         jettyServer.destroy();
-    }
-
-    public URL baseUrl() {
-        try {
-            return new URL("http", "localhost", port, "");
-        } catch (MalformedURLException e) {
-            throw new AppRunnerException(e);
-        }
     }
 }

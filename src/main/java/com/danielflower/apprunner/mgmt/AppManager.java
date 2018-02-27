@@ -3,7 +3,8 @@ package com.danielflower.apprunner.mgmt;
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.runners.AppRunner;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.AppRunnerFactory;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.Waiter;
 import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -22,42 +23,41 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
-    private volatile Availability availability = Availability.unavailable("Not started");
     private static final Executor deletionQueue = Executors.newSingleThreadExecutor();
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
-        File root = fileSandbox.appDir(name);
-        File gitDir = fileSandbox.appDir(name, "repo");
+        if (!name.matches("^[A-Za-z0-9_-]+$")) {
+            throw new ValidationException("The app name can only contain letters, numbers, hyphens and underscores");
+        }
+
+        File gitDir = fileSandbox.repoDir(name);
         File instanceDir = fileSandbox.tempDir(name + File.separator + "instances");
         File dataDir = fileSandbox.appDir(name, "data");
         File tempDir = fileSandbox.tempDir(name);
 
         Git git;
+        boolean isNew = false;
         try {
-            try {
-                git = Git.open(gitDir);
-            } catch (RepositoryNotFoundException e) {
-                git = Git.cloneRepository()
-                    .setURI(gitUrl)
-                    .setBare(false)
-                    .setDirectory(gitDir)
-                    .call();
-            }
-        } catch (IOException | GitAPIException e) {
-            throw new AppRunnerException("Could not open or create git repo at " + gitDir, e);
+            git = Git.open(gitDir);
+            isNew = true;
+        } catch (RepositoryNotFoundException e) {
+            git = Git.cloneRepository()
+                .setURI(gitUrl)
+                .setBare(false)
+                .setDirectory(gitDir)
+                .call();
         }
 
         StoredConfig gitCfg = git.getRepository().getConfig();
@@ -67,8 +67,32 @@ public class AppManager implements AppDescription {
         } catch (IOException e) {
             throw new AppRunnerException("Error while setting remote on Git repo at " + gitDir, e);
         }
-        log.info("Created app manager for " + name + " in dir " + root);
-        return new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir);
+        log.info("Created app manager for " + name + " in dir " + dataDir);
+        GitCommit gitCommit = getCurrentHead(name, git);
+        AppManager appManager = new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir, gitCommit);
+        if (isNew) {
+            appManager.gitUpdateFromOrigin();
+        }
+        return appManager;
+    }
+
+    private GitCommit getCurrentHead() {
+        return getCurrentHead(name, git);
+    }
+    private static GitCommit getCurrentHead(String name, Git git) {
+        GitCommit gitCommit = null;
+        try {
+            gitCommit = GitCommit.fromHEAD(git);
+        } catch (Exception e) {
+            log.warn("Could not find git commit info for " + name, e);
+        }
+        return gitCommit;
+    }
+
+    private void gitUpdateFromOrigin() throws GitAPIException {
+        git.fetch().setRemote("origin").call();
+        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
+        this.contributors = getContributorsFromRepo();
     }
 
     private final String gitUrl;
@@ -82,8 +106,11 @@ public class AppManager implements AppDescription {
     private AppRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
+    private volatile Availability availability = Availability.unavailable("Not started");
+    private volatile BuildStatus lastBuildStatus;
+    private volatile BuildStatus lastSuccessfulBuildStatus;
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir, GitCommit gitCommit) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
@@ -91,6 +118,7 @@ public class AppManager implements AppDescription {
         this.dataDir = dataDir;
         this.tempDir = tempDir;
         this.contributors = new ArrayList<>();
+        this.lastBuildStatus = BuildStatus.notStarted(gitCommit);
     }
 
     public String name() {
@@ -104,6 +132,16 @@ public class AppManager implements AppDescription {
     @Override
     public Availability currentAvailability() {
         return availability;
+    }
+
+    @Override
+    public BuildStatus lastBuildStatus() {
+        return lastBuildStatus;
+    }
+
+    @Override
+    public BuildStatus lastSuccessfulBuild() {
+        return lastSuccessfulBuildStatus;
     }
 
     public String latestBuildLog() {
@@ -129,17 +167,13 @@ public class AppManager implements AppDescription {
         }
     }
 
-    public synchronized void update(RunnerProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
+    public synchronized void update(AppRunnerFactoryProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         clearLogs();
-        if (!availability.isAvailable) {
-            availability = Availability.unavailable("Starting");
-        }
-
-        this.contributors = getContributorsFromRepo();
+        markBuildAsFetching();
 
         InvocationOutputHandler buildLogHandler = line -> {
             outputHandler.consumeLine(line);
-            latestBuildLog += line + "\n";
+            latestBuildLog += line + LINE_SEPARATOR;
         };
 
         // Well this is complicated.
@@ -157,11 +191,15 @@ public class AppManager implements AppDescription {
 
 
         buildLogHandler.consumeLine("Fetching latest changes from git...");
-        File id = fetchChangesAndCreateInstanceDir();
-        buildLogHandler.consumeLine("Created new instance in " + dirPath(id));
+        File instanceDir = fetchChangesAndCreateInstanceDir();
+        buildLogHandler.consumeLine("Created new instance in " + fullPath(instanceDir));
 
         AppRunner oldRunner = currentRunner;
-        currentRunner = runnerProvider.runnerFor(name(), id);
+        AppRunnerFactory appRunnerFactory = runnerProvider.runnerFor(name(), instanceDir);
+        String runnerId = appRunnerFactory.id();
+        markBuildAsStarting(runnerId);
+        currentRunner = appRunnerFactory.appRunner(instanceDir);
+        log.info("Using " + appRunnerFactory.id() + " for " + name);
         int port = WebServer.getAFreePort();
 
         Map<String, String> envVarsForApp = createAppEnvVars(port, name, dataDir, tempDir);
@@ -169,13 +207,10 @@ public class AppManager implements AppDescription {
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
             currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
         } catch (Exception e) {
-            if (!availability.isAvailable) {
-                availability = Availability.unavailable("Crashed during startup");
-            }
+            recordBuildFailure("Crashed during startup", runnerId);
             throw e;
         }
-        availability = Availability.available();
-
+        recordBuildSuccess(runnerId);
         buildLogHandle.set(null);
 
         for (AppChangeListener listener : listeners) {
@@ -186,21 +221,47 @@ public class AppManager implements AppDescription {
             log.info("Shutting down previous version of " + name);
             oldRunner.shutdown();
             buildLogHandler.consumeLine("Deployment complete.");
-            File instanceDir = oldRunner.getInstanceDir();
-            quietlyDeleteTheOldInstanceDirInTheBackground(instanceDir);
+            File oldInstanceDir = oldRunner.getInstanceDir();
+            quietlyDeleteTheOldInstanceDirInTheBackground(oldInstanceDir);
+        }
+    }
+
+    private void markBuildAsFetching() {
+        lastBuildStatus = BuildStatus.fetching(Instant.now());
+        if (!availability.isAvailable) {
+            availability = Availability.unavailable("Starting");
+        }
+    }
+
+    private void markBuildAsStarting(String runnerId) {
+        lastBuildStatus = BuildStatus.inProgress(Instant.now(), getCurrentHead(), runnerId);
+        if (!availability.isAvailable) {
+            availability = Availability.unavailable("Starting");
+        }
+    }
+
+    private void recordBuildSuccess(String runnerId) {
+        lastBuildStatus = lastSuccessfulBuildStatus = BuildStatus.success(lastBuildStatus.startTime, Instant.now(), getCurrentHead(), runnerId);
+        availability = Availability.available();
+    }
+
+    private void recordBuildFailure(String message, String runnerId) {
+        lastBuildStatus = BuildStatus.failure(lastBuildStatus.startTime, Instant.now(), message, getCurrentHead(), runnerId);
+        if (!availability.isAvailable) {
+            availability = Availability.unavailable(message);
         }
     }
 
     private static void quietlyDeleteTheOldInstanceDirInTheBackground(final File instanceDir) {
         deletionQueue.execute(() -> {
             try {
-                log.info("Going to delete " + dirPath(instanceDir));
+                log.info("Going to delete " + fullPath(instanceDir));
                 if (instanceDir.isDirectory()) {
                     FileUtils.deleteDirectory(instanceDir);
                 }
                 log.info("Deletion completion");
             } catch (Exception e) {
-                log.info("Couldn't delete " + dirPath(instanceDir) +
+                log.info("Couldn't delete " + fullPath(instanceDir) +
                     " but it doesn't really matter as it will get deleted on next AppRunner startup.");
             }
         });
@@ -208,13 +269,10 @@ public class AppManager implements AppDescription {
 
     private File fetchChangesAndCreateInstanceDir() throws GitAPIException, IOException {
         try {
-            git.fetch().setRemote("origin").call();
-            git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
+            gitUpdateFromOrigin();
             return copyToNewInstanceDir();
         } catch (Exception e) {
-            if (!availability.isAvailable) {
-                availability = Availability.unavailable("Could not fetch from git: " + e.getMessage());
-            }
+            recordBuildFailure("Could not fetch from git: " + e.getMessage(), null);
             throw e;
         }
     }
@@ -231,7 +289,6 @@ public class AppManager implements AppDescription {
                 }
             }
             log.info("getting the contributors " + contributors);
-
         } catch (Exception e) {
             log.warn("Failed to get authors from repo: " + e.getMessage());
         }
@@ -250,8 +307,8 @@ public class AppManager implements AppDescription {
         envVarsForApp.put("APP_PORT", String.valueOf(port));
         envVarsForApp.put("APP_NAME", name);
         envVarsForApp.put("APP_ENV", "prod");
-        envVarsForApp.put("TEMP", dirPath(tempDir));
-        envVarsForApp.put("APP_DATA", dirPath(dataDir));
+        envVarsForApp.put("TEMP", fullPath(tempDir));
+        envVarsForApp.put("APP_DATA", fullPath(dataDir));
         return envVarsForApp;
     }
 

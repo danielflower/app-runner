@@ -1,67 +1,46 @@
 package com.danielflower.apprunner.runners;
 
-import com.danielflower.apprunner.io.OutputToWriterBridge;
-import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.io.output.StringBuilderWriter;
-import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.api.ContentResponse;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import scaffolding.Photocopier;
-import scaffolding.TestConfig;
 
+import java.util.Optional;
+
+import static com.danielflower.apprunner.web.WebServer.getAFreePort;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assume.assumeTrue;
+import static scaffolding.TestConfig.config;
 
 public class MavenRunnerTest {
 
-    private static final HttpClient client = new HttpClient();
+    private static MavenRunnerFactory runnerFactory;
     private final StringBuilderWriter buildLog = new StringBuilderWriter();
     private final StringBuilderWriter consoleLog = new StringBuilderWriter();
 
-    @BeforeClass public static void setup() throws Exception {
-        client.start();
-    }
-
-    @AfterClass public static void stop() throws Exception {
-        client.stop();
+    @BeforeClass
+    public static void ignoreTestIfNotSupported() throws Exception {
+        Optional<MavenRunnerFactory> runnerFactoryMaybe = MavenRunnerFactory.createIfAvailable(config);
+        assumeTrue("Skipping test because maven not detected", runnerFactoryMaybe.isPresent());
+        runnerFactory = runnerFactoryMaybe.get();
     }
 
     @Test
     public void canStartAMavenProcessByPackagingAndRunning() throws Exception {
         String appName = "maven";
-        MavenRunner runner = new MavenRunner(
-            Photocopier.copySampleAppToTempDir(appName),
-            HomeProvider.default_java_home,
-            MavenRunner.CLEAN_AND_PACKAGE);
-
-        try {
-            startAndStop(appName, runner);
-            startAndStop(appName, runner);
-        } catch (ProjectCannotStartException e) {
-            System.out.println(buildLog);
-            System.out.println(consoleLog);
-            throw e;
-        }
+        AppRunner runner = runnerFactory.appRunner(Photocopier.copySampleAppToTempDir(appName));
+        int port = getAFreePort();
+        startAndStop(1, appName, runner, port);
+        startAndStop(2, appName, runner, port);
     }
 
-    private void startAndStop(String appName, MavenRunner runner) throws Exception {
-        try (Waiter startupWaiter = Waiter.waitForApp(appName, 45678)) {
-            runner.start(
-                new OutputToWriterBridge(buildLog),
-                new OutputToWriterBridge(consoleLog),
-                TestConfig.testEnvVars(45678, appName),
-                startupWaiter);
-        }
-        try {
-            ContentResponse resp = client.GET("http://localhost:45678/" + appName + "/");
-            assertThat(resp.getStatus(), is(200));
-            assertThat(resp.getContentAsString(), containsString("My Maven App"));
-            assertThat(buildLog.toString(), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
-        } finally {
-            runner.shutdown();
-        }
+    @Test
+    public void theVersionIsReported() {
+        assertThat(runnerFactory.versionInfo(), containsString("Apache Maven"));
+    }
+
+    private void startAndStop(int attempt, String appName, AppRunner runner, int port) throws Exception {
+        ProcessStarterTest.startAndStop(attempt, appName, runner, port, buildLog, consoleLog, containsString("My Maven App"), containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"));
     }
 }

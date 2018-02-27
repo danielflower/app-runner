@@ -6,19 +6,24 @@
 
     <groupId>com.danielflower.apprunner</groupId>
     <artifactId>app-runner</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.5-SNAPSHOT</version>
 
     <name>App Runner</name>
-    <description>The little web app runner that hosts java, clojure and nodejs apps</description>
+    <description>The little web app runner that hosts java, clojure, nodejs and scala apps</description>
     <url>https://github.com/danielflower/app-runner</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
         <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
-        <jetty.version>9.3.7.v20160115</jetty.version>
-        <swagger.version>1.5.8</swagger.version>
+        <jetty.version>9.4.0.v20161208</jetty.version>
+        <swagger.version>1.5.10</swagger.version>
+        <jersey.version>2.24.1</jersey.version>
     </properties>
+
+    <prerequisites>
+        <maven>3.0.4</maven>
+    </prerequisites>
 
     <ciManagement>
         <system>travis-ci</system>
@@ -56,12 +61,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.21</version>
+            <version>1.7.22</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.1.7</version>
+            <version>1.1.9</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -69,12 +74,12 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.4</version>
+            <version>3.5</version>
         </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-            <version>2.4</version>
+            <version>2.5</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -127,17 +132,17 @@
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-server</artifactId>
-            <version>2.22.2</version>
+            <version>${jersey.version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet-core</artifactId>
-            <version>2.22.2</version>
+            <version>${jersey.version}</version>
         </dependency>
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
-            <version>2.22.2</version>
+            <version>${jersey.version}</version>
         </dependency>
         <dependency>
             <groupId>javax.ws.rs</groupId>
@@ -179,8 +184,7 @@
         <dependency>
             <groupId>com.jcraft</groupId>
             <artifactId>jsch</artifactId>
-            <version>0.1.51</version>
-            <scope>runtime</scope>
+            <version>0.1.54</version>
         </dependency>
         <dependency>
             <groupId>com.jcraft</groupId>
@@ -209,20 +213,14 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>4.3.0.201604071810-r</version>
+            <version>4.6.0.201612231935-r</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20151123</version>
+            <version>20160810</version>
         </dependency>
         <!-- end git stuff -->
-
-        <dependency>
-            <groupId>com.danielflower.apprunner</groupId>
-            <artifactId>javasysmon</artifactId>
-            <version>0.3.5.0</version>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -269,21 +267,20 @@
         <dependency>
             <groupId>org.skyscreamer</groupId>
             <artifactId>jsonassert</artifactId>
-            <version>1.3.0</version>
+            <version>1.4.0</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
 
-
     <build>
+        <defaultGoal>clean install</defaultGoal>
         <plugins>
 
             <plugin>
                 <groupId>com.github.danielflower.mavenplugins</groupId>
                 <artifactId>multi-module-maven-release-plugin</artifactId>
-                <version>2.0.3</version>
+                <version>2.1.3</version>
                 <configuration>
                     <releaseGoals>
                         <releaseGoal>clean</releaseGoal>
@@ -336,6 +333,9 @@
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.danielflower.apprunner.App</mainClass>
+                                    <manifestEntries>
+                                        <Implementation-Version>${project.version}</Implementation-Version>
+                                    </manifestEntries>
                                 </transformer>
                             </transformers>
                             <filters>
@@ -374,7 +374,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
-                        <version>2.4</version>
+                        <version>3.0.0</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
@@ -387,7 +387,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>2.10.1</version>
+                        <version>2.10.3</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
@@ -400,7 +400,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>1.5</version>
+                        <version>1.6</version>
                         <executions>
                             <execution>
                                 <id>sign-artifacts</id>

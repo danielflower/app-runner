@@ -16,17 +16,24 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 
 public class Config {
-    public static final String SERVER_PORT = "appserver.port";
+    public static final String SERVER_HTTP_PORT = "appserver.port";
+    public static final String SERVER_HTTPS_PORT = "appserver.https.port";
     public static final String DATA_DIR = "appserver.data.dir";
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
     public static final String INITIAL_APP_URL = "appserver.initial.app.url";
+    public static final String BACKUP_URL = "appserver.backup.url";
 
     public static final String JAVA_HOME = "java.home";
     public static final String LEIN_JAR = "lein.jar";
     public static final String LEIN_JAVA_CMD = "lein.java.cmd";
+
+    public static final String SBT_JAR = "sbt-launcher.jar";
+    public static final String SBT_JAVA_CMD = "sbt.java.cmd";
+
+    public static final String GOROOT = "goroot";
 
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> systemEnv = System.getenv();
@@ -61,7 +68,7 @@ public class Config {
 
     public CommandLineProvider leinJavaCommandProvider() {
         return raw.containsKey(LEIN_JAVA_CMD)
-            ? (CommandLineProvider) (Map<String, String> env) -> new CommandLine(getFile(LEIN_JAVA_CMD))
+            ? (Map<String, String> env) -> new CommandLine(getFile(LEIN_JAVA_CMD))
             : javaHomeProvider();
     }
 
@@ -70,13 +77,41 @@ public class Config {
             ? (Map<String, String> env) -> leinJavaCommandProvider()
                         .commandLine(env)
                         .addArgument("-cp")
-                        .addArgument(dirPath(getFile(LEIN_JAR)))
+                        .addArgument(fullPath(getFile(LEIN_JAR)))
                         .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
                         .addArgument("clojure.main")
                         .addArgument("-m")
                         .addArgument("leiningen.core.main")
-
             : CommandLineProvider.lein_on_path;
+    }
+
+    public CommandLineProvider sbtJavaCommandProvider() {
+        return raw.containsKey(SBT_JAVA_CMD)
+            ? (Map<String, String> env) ->
+
+            new CommandLine(getFile(SBT_JAVA_CMD))
+
+            : javaHomeProvider();
+    }
+
+    public CommandLineProvider sbtCommandProvider() {
+        return raw.containsKey(SBT_JAR)
+            ? (Map<String, String> env) ->
+
+            sbtJavaCommandProvider()
+                .commandLine(env)
+                .addArgument("-cp")
+                .addArgument(fullPath(getFile(SBT_JAR)))
+                .addArgument("-Djava.io.tmpdir=" + env.get("TEMP"))
+
+            : CommandLineProvider.sbt_on_path;
+    }
+
+    public CommandLineProvider goCommandProvider() {
+        return raw.containsKey(GOROOT)
+            ? (Map<String, String> env) ->
+            new CommandLine(fullPath(getDir(GOROOT)) + File.separator + "bin" + File.separator + goExecutableName())
+            : CommandLineProvider.go_on_path;
     }
 
     public String nodeExecutable() {
@@ -93,8 +128,16 @@ public class Config {
             : HomeProvider.default_java_home;
     }
 
+    public static String goExecutableName() {
+        return windowsinize("go");
+    }
+
     public static String javaExecutableName() {
         return windowsinize("java");
+    }
+
+    public static String gradleExecutableName() {
+        return windowsinize("gradle");
     }
 
     private static String windowsinize(String command) {
@@ -113,8 +156,8 @@ public class Config {
         return s;
     }
 
-    public int getInt(String name) {
-        String s = get(name);
+    public int getInt(String name, int defaultValue) {
+        String s = get(name, String.valueOf(defaultValue));
         try {
             return Integer.parseInt(s);
         } catch (NumberFormatException e) {
@@ -125,7 +168,7 @@ public class Config {
     public File getDir(String name) {
         File f = new File(get(name));
         if (!f.isDirectory()) {
-            throw new AppRunnerException("Could not find " + name + " directory: " + dirPath(f));
+            throw new AppRunnerException("Could not find " + name + " directory: " + fullPath(f));
         }
         return f;
     }
@@ -135,7 +178,7 @@ public class Config {
         try {
             FileUtils.forceMkdir(f);
         } catch (IOException e) {
-            throw new AppRunnerException("Could not create " + dirPath(f));
+            throw new AppRunnerException("Could not create " + fullPath(f));
         }
         return f;
     }
@@ -143,9 +186,13 @@ public class Config {
     public File getFile(String name) {
         File f = new File(get(name));
         if (!f.isFile()) {
-            throw new AppRunnerException("Could not find " + name + " file: " + dirPath(f));
+            throw new AppRunnerException("Could not find " + name + " file: " + fullPath(f));
         }
         return f;
+    }
+
+    public Map<String, String> env() {
+        return new HashMap<>(raw);
     }
 }
 

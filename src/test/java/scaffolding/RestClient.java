@@ -4,18 +4,21 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.util.Fields;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class RestClient {
 
-    public static RestClient create(String appRunnerUrl) {
-        HttpClient c = new HttpClient();
+    public static HttpClient httpClient = new HttpClient(new SslContextFactory(true));
+    static {
         try {
-            c.start();
-            return new RestClient(c, appRunnerUrl);
-
+            httpClient.start();
         } catch (Exception e) {
-            throw new RuntimeException("Unable to make client", e);
+            throw new RuntimeException("Could not start httpClient", e);
         }
+    }
+
+    public static RestClient create(String appRunnerUrl) {
+        return new RestClient(httpClient, appRunnerUrl);
     }
 
     private final HttpClient client;
@@ -25,6 +28,7 @@ public class RestClient {
         this.client = client;
         this.appRunnerUrl = appRunnerUrl;
     }
+
     public ContentResponse createApp(String gitUrl) throws Exception {
         return createApp(gitUrl, null);
     }
@@ -36,6 +40,14 @@ public class RestClient {
             fields.add("appName", appName);
         }
         return client.POST(appRunnerUrl + "/api/v1/apps")
+            .content(new FormContentProvider(fields)).send();
+    }
+
+    public ContentResponse updateApp(String gitUrl, String appName) throws Exception {
+        Fields fields = new Fields();
+        fields.add("gitUrl", gitUrl);
+        return client.newRequest(appRunnerUrl + "/api/v1/apps/" + appName)
+            .method("PUT")
             .content(new FormContentProvider(fields)).send();
     }
 
@@ -61,11 +73,4 @@ public class RestClient {
         return client.GET(appRunnerUrl + url);
     }
 
-    public void stop() {
-        try {
-            client.stop();
-        } catch (Exception e) {
-            // ignore
-        }
-    }
 }

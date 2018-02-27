@@ -1,16 +1,22 @@
 package e2e;
 
 import com.danielflower.apprunner.Config;
-import com.danielflower.apprunner.runners.HomeProvider;
-import com.danielflower.apprunner.runners.MavenRunner;
-import com.danielflower.apprunner.runners.Waiter;
+import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
+import com.danielflower.apprunner.mgmt.GitRepoLoader;
+import com.danielflower.apprunner.runners.*;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.lib.PersonIdent;
+import org.hamcrest.Matchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
@@ -19,6 +25,7 @@ import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
+import scaffolding.Photocopier;
 import scaffolding.RestClient;
 
 import java.io.File;
@@ -31,45 +38,57 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
-import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
 
-    private static final int port = WebServer.getAFreePort();
-    private static final String appRunnerUrl = "http://localhost:" + port;
+    private static final int httpsPort = WebServer.getAFreePort();
+    private static final String appRunnerUrl = "https://localhost:" + httpsPort;
     private static final RestClient restClient = RestClient.create(appRunnerUrl);
-    private static final HttpClient client = new HttpClient();
     private static final AppRepo leinApp = AppRepo.create("lein");
     private static final AppRepo mavenApp = AppRepo.create("maven");
     private static final AppRepo nodeApp = AppRepo.create("nodejs");
     private static final File dataDir = new File("target/datadirs/" + System.currentTimeMillis());
     private static MavenRunner mavenRunner;
-    private static List<AppRepo> apps = asList(mavenApp, nodeApp, leinApp);
+    private static final HttpClient client = RestClient.httpClient;
 
     @BeforeClass
     public static void setup() throws Exception {
-        client.start();
+        // ensure the zips exist
+        new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
         buildAndStartUberJar(asList("-DskipTests=true", "package"));
 
-        for (AppRepo app : apps) {
-            assertThat(restClient.createApp(app.gitUrl()).getStatus(), is(201));
-            assertThat(restClient.deploy(app.name).getStatus(), is(200));
-        }
+        createAndDeploy(mavenApp);
+    }
+
+    private static void createAndDeploy(AppRepo app) throws Exception {
+        assertThat(restClient.createApp(app.gitUrl()).getStatus(), is(201));
+        assertThat(restClient.deploy(app.name).getStatus(), is(200));
     }
 
     private static void buildAndStartUberJar(List<String> goals) throws Exception {
-        mavenRunner = new MavenRunner(new File("."), HomeProvider.default_java_home, goals);
+        mavenRunner = new MavenRunner(new File("."), new HomeProvider() {
+            public InvocationRequest mungeMavenInvocationRequest(InvocationRequest request) {
+                return HomeProvider.default_java_home.mungeMavenInvocationRequest(request);
+            }
+
+            public CommandLine commandLine(Map<String, String> envVarsForApp) {
+                return HomeProvider.default_java_home.commandLine(envVarsForApp).addArgument("-Dlogback.configurationFile=src/test/resources/logback-test.xml");
+            }
+        }, goals);
         Map<String, String> env = new HashMap<String, String>(System.getenv()) {{
-            put(Config.SERVER_PORT, String.valueOf(port));
-            put(Config.DATA_DIR, dirPath(dataDir));
+            put(Config.SERVER_HTTPS_PORT, String.valueOf(httpsPort));
+            put("apprunner.keystore.path", fullPath(new File("local/test.keystore")));
+            put("apprunner.keystore.password", "password");
+            put("apprunner.keymanager.password", "password");
+            put(Config.DATA_DIR, fullPath(dataDir));
         }};
 
-        InvocationOutputHandler logHandler = line -> System.out.print("Test build output > " + line);
+        InvocationOutputHandler logHandler = line -> System.out.print("Uber jar output > " + line);
         try (Waiter startupWaiter = new Waiter("AppRunner uber jar", httpClient -> {
             try {
                 JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
@@ -84,8 +103,10 @@ public class SystemTest {
     }
 
     private static void shutDownAppRunner() throws Exception {
-        for (AppRepo app : apps) {
-            restClient.stop(app.name);
+        JSONObject apps = new JSONObject(restClient.get("/api/v1/apps").getContentAsString());
+        for (Object o : apps.getJSONArray("apps")) {
+            JSONObject app = (JSONObject) o;
+            restClient.stop(app.getString("name"));
         }
         mavenRunner.shutdown();
     }
@@ -93,51 +114,91 @@ public class SystemTest {
     @AfterClass
     public static void cleanup() throws Exception {
         shutDownAppRunner();
-        restClient.stop();
-        client.stop();
     }
 
     @Test
     public void leinAppsWork() throws Exception {
+        LeinRunnerTest.ignoreTestIfNotSupported();
+        createAndDeploy(leinApp);
         assertThat(restClient.homepage(leinApp.name),
             is(equalTo(200, containsString("Hello from lein"))));
+        assertThat(restClient.deleteApp(leinApp.name), equalTo(200, containsString("{")));
+        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
     }
 
     @Test
     public void nodeAppsWork() throws Exception {
+        NodeRunnerTest.ignoreTestIfNotSupported();
+        createAndDeploy(nodeApp);
         assertThat(restClient.homepage(nodeApp.name),
             is(equalTo(200, containsString("Hello from nodejs!"))));
+        assertThat(restClient.deleteApp(nodeApp.name), equalTo(200, containsString("{")));
+        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
     }
 
     @Test
-    public void canCloneARepoAndStartItAndRestartingAppRunnerIsFine() throws Exception {
-        assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
+    public void canUpdateAppsByDeployingThem() throws Exception {
+        AppRepo changesApp = AppRepo.create("maven");
+        restClient.createApp(changesApp.gitUrl(), "changes-app");
+        restClient.deploy("changes-app");
 
-        shutDownAppRunner();
-        buildAndStartUberJar(Collections.emptyList());
+        assertThat(restClient.homepage("changes-app"), is(equalTo(200, containsString("My Maven App"))));
 
-        assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
-        leinAppsWork();
-        nodeAppsWork();
+        updateHeaderAndCommit(changesApp, "My new and improved maven app!");
 
-        updateHeaderAndCommit(mavenApp, "My new and improved maven app!");
-
-        assertThat(restClient.deploy(mavenApp.name),
+        assertThat(restClient.deploy("changes-app"),
             is(equalTo(200, containsString("buildLogUrl"))));
 
-        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/" + mavenApp.name).getContentAsString());
+        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/changes-app").getContentAsString());
 
         assertThat(
             client.GET(appInfo.getString("url")),
             is(equalTo(200, containsString("My new and improved maven app!"))));
-
 
         assertThat(
             client.GET(appInfo.getString("buildLogUrl")),
             is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
         assertThat(
             client.GET(appInfo.getString("consoleLogUrl")),
-            is(equalTo(200, containsString("Starting maven in prod"))));
+            is(equalTo(200, containsString("Starting changes-app in prod"))));
+
+        restClient.deleteApp("changes-app");
+    }
+
+    @Test
+    public void appRunnerCanStartEvenWithInvalidApps() throws Exception {
+        shutDownAppRunner();
+
+        GitRepoLoader repoLoader = FileBasedGitRepoLoader.getGitRepoLoader(dataDir);
+        repoLoader.save("invalid-app", "invalid-url");
+
+        buildAndStartUberJar(Collections.emptyList());
+
+        assertThat(restClient.homepage(mavenApp.name), is(equalTo(200, containsString("My Maven App"))));
+        JSONObject allApps = getAllApps();
+        assertThat("Actual apps: " + allApps.toString(4), allApps.getJSONArray("apps").length(), is(1));
+    }
+
+    @Test
+    public void pushingAnEmptyRepoIsRejected() throws Exception {
+        File dir = Photocopier.folderForSampleProject("empty-project");
+        InitCommand initCommand = Git.init();
+        initCommand.setDirectory(dir);
+        Git origin = initCommand.call();
+
+        ContentResponse resp = restClient.createApp(dir.toURI().toString(), "empty-project");
+        assertThat(resp, equalTo(501, containsString("No suitable runner found for this app")));
+
+        Photocopier.copySampleAppToDir("maven", dir);
+        origin.add().addFilepattern(".").call();
+        origin.commit().setMessage("Initial commit")
+            .setAuthor(new PersonIdent("Author Test", "author@email.com"))
+            .call();
+
+        resp = restClient.createApp(dir.toURI().toString(), "empty-project");
+        assertThat(resp, equalTo(201, containsString("empty-project")));
+        assertThat(new JSONObject(resp.getContentAsString()).get("name"), Matchers.equalTo("empty-project"));
+        assertThat(restClient.deleteApp("empty-project"), equalTo(200, containsString("{")));
     }
 
     @Test
@@ -154,8 +215,7 @@ public class SystemTest {
             assertMavenAppAvailable("maven-status-test", true, "Running");
 
             // Detecting crashed apps not supported yet
-//            new JavaSysMon().processTree().accept((process, level) ->
-//                process.processInfo().getCommand().contains("maven-status-test"), 2);
+//            crash app
 //            assertMavenAppAvailable("maven-status-test", false, "Crashed");
         } finally {
             restClient.deleteApp("maven-status-test");
@@ -170,8 +230,8 @@ public class SystemTest {
 
     private static void updateHeaderAndCommit(AppRepo mavenApp, String replacement) throws IOException, GitAPIException {
         File indexHtml = new File(mavenApp.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
-        String newVersion = FileUtils.readFileToString(indexHtml).replaceAll("<h1>.*</h1>", "<h1>" + replacement + "</h1>");
-        FileUtils.write(indexHtml, newVersion, false);
+        String newVersion = FileUtils.readFileToString(indexHtml, "UTF-8").replaceAll("<h1>.*</h1>", "<h1>" + replacement + "</h1>");
+        FileUtils.write(indexHtml, newVersion, "UTF-8", false);
         mavenApp.origin.add().addFilepattern(".").call();
         mavenApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
     }
@@ -179,58 +239,30 @@ public class SystemTest {
     @Test
     public void theRestAPILives() throws Exception {
         JSONObject all = getAllApps();
-        ContentResponse resp;
-
+        System.out.println("all = " + all.toString(4));
+        assertThat(all.getInt("appCount"), is(1));
         JSONAssert.assertEquals("{apps:[" +
-            "{ name: \"lein\" }," +
-            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\"}," +
-            "{ name: \"nodejs\" }" +
+            "{ name: \"maven\", url: \"" + appRunnerUrl + "/maven/\" }" +
             "]}", all, JSONCompareMode.LENIENT);
 
         assertThat(restClient.deploy("invalid-app-name"),
-            is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: lein, maven, nodejs"))));
+            is(equalTo(404, is("No app found with name 'invalid-app-name'. Valid names: maven"))));
 
-        resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
+        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
         assertThat(resp.getStatus(), is(200));
         JSONObject single = new JSONObject(resp.getContentAsString());
-        JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(1), single, JSONCompareMode.STRICT_ORDER);
+        JSONAssert.assertEquals(all.getJSONArray("apps").getJSONObject(0), single, JSONCompareMode.STRICT_ORDER);
+
+        assertThat(single.has("lastBuild"), is(true));
+        assertThat(single.has("lastSuccessfulBuild"), is(true));
     }
 
     private static JSONObject getAllApps() throws InterruptedException, ExecutionException, TimeoutException {
         ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps");
         assertThat(resp.getStatus(), is(200));
-
         return new JSONObject(resp.getContentAsString());
     }
 
-    @Test
-    public void postingToAnExistingNameChangesTheURL() throws Exception {
-        ContentResponse resp = client.GET(appRunnerUrl + "/api/v1/apps/maven");
-        String webUrl = new JSONObject(resp.getContentAsString()).getString("url");
-
-        AppRepo newMavenApp = AppRepo.create("maven");
-        updateHeaderAndCommit(newMavenApp, "Different repo");
-        assertThat(restClient.createApp(newMavenApp.gitUrl()).getStatus(), is(200));
-        restClient.deploy(newMavenApp.name);
-
-        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size()));
-
-        assertThat(
-            client.GET(webUrl),
-            is(equalTo(200, containsString("Different repo"))));
-
-        // put the old app back. The git repo can no longer to a fastforward merge
-
-        updateHeaderAndCommit(mavenApp, "My maven app");
-        assertThat(restClient.createApp(mavenApp.gitUrl()).getStatus(), is(200));
-        restClient.deploy(mavenApp.name);
-
-        assertThat(
-            client.GET(webUrl),
-            is(equalTo(200, containsString("My maven app"))));
-
-        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size()));
-    }
 
     @Test
     public void appsCanBeDeleted() throws Exception {
@@ -240,13 +272,46 @@ public class SystemTest {
         assertThat(restClient.createApp(newMavenApp.gitUrl(), "another-app").getStatus(), is(201));
         restClient.deploy(newMavenApp.name);
 
-        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size() + 1));
+        assertThat(getAllApps().getJSONArray("apps").length(), is(2));
 
         assertThat(
             restClient.deleteApp("another-app"),
             is(equalTo(200, containsString("another-app"))));
+        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
+    }
 
-        assertThat(getAllApps().getJSONArray("apps").length(), is(apps.size()));
+    @Test
+    public void appNamesCannotContainSpaces() throws Exception {
+        AppRepo originalApp = AppRepo.create("maven");
+        assertThat(restClient.createApp(originalApp.gitUrl(), "some app"),
+            equalTo(400, containsString("app name can only contain letters, numbers, hyphens and underscores")));
+    }
+
+    @Test
+    public void appsCanHaveTheirGitUrlsUpdated() throws Exception {
+
+        AppRepo originalApp = AppRepo.create("maven");
+        updateHeaderAndCommit(originalApp, "From original repo");
+        assertThat(restClient.createApp(originalApp.gitUrl(), "some-app"), equalTo(201, containsString(originalApp.gitUrl())));
+        restClient.deploy("some-app");
+        assertThat(
+            restClient.homepage("some-app"),
+            is(equalTo(200, containsString("From original repo"))));
+
+        AppRepo changedApp = AppRepo.create("maven");
+        updateHeaderAndCommit(changedApp, "From changed repo");
+        assertThat(restClient.updateApp(changedApp.gitUrl(), "some-app"), equalTo(200, containsString(changedApp.gitUrl())));
+        restClient.deploy("some-app");
+        assertThat(
+            restClient.homepage("some-app"),
+            is(equalTo(200, containsString("From changed repo"))));
+
+
+        assertThat(restClient.updateApp(changedApp.gitUrl(), "this-does-not-exist"), equalTo(404, containsString("No application called this-does-not-exist exists")));
+        assertThat(restClient.updateApp("", "some-app"), equalTo(400, containsString("No git URL was specified")));
+        assertThat(restClient.createApp(originalApp.gitUrl(), "some-app"), equalTo(409, containsString("There is already an app with that ID")));
+        restClient.deleteApp("some-app");
+        assertThat(getAllApps().getJSONArray("apps").length(), is(1));
     }
 
     @Test
@@ -259,22 +324,24 @@ public class SystemTest {
     }
 
     @Test
-    public void theSystemApiReturnsZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
-        // ensure the zips exist
-        new ZipSamplesTask().zipTheSamplesAndPutThemInTheResourcesDir();
-
+    public void theSystemApiReturnsOsInfoAndZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
-        System.out.println("sysInfo.toString(4) = " + sysInfo.toString(4));
+
+        assertThat(sysInfo.getString("appRunnerVersion"), startsWith("1."));
+        assertThat(sysInfo.get("host"), is(notNullValue()));
+        assertThat(sysInfo.get("user"), is(notNullValue()));
+        assertThat(sysInfo.get("os"), is(notNullValue()));
+
         JSONArray samples = sysInfo.getJSONArray("samples");
-        assertThat(samples.length(), is(3));
-
-        JSONAssert.assertEquals("[ " +
-            "{ name: 'maven', runCommands: [ 'mvn clean package', 'java -jar target/{artifactid}-{version}.jar' ] }, " +
-            "{ name: 'lein' }, " +
-            "{ name: 'nodejs' } ]", samples, JSONCompareMode.LENIENT);
-
         for (Object app : samples) {
             JSONObject json = (JSONObject) app;
+
+            if (json.getString("name").equalsIgnoreCase("maven")) {
+                JSONAssert.assertEquals(
+                    "{ name: 'maven', runCommands: [ 'mvn clean package', 'java -jar target/{artifactid}-{version}.jar' ] }",
+                    json, JSONCompareMode.LENIENT);
+            }
+
             String url = json.getString("url");
             ContentResponse zip = client.GET(url);
             assertThat(url, zip.getStatus(), is(200));
