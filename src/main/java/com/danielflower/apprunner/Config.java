@@ -115,7 +115,7 @@ public class Config {
     }
 
     public String pythonVirtualEnvExecutable(int majorVersion) {
-        return get("python.virtualenv." + majorVersion + ".exec", windowsinize("virtualenv"));
+        return get("python." + majorVersion + ".virtualenv.exec", windowsinize("virtualenv"));
     }
 
     public String pythonExecutable(int majorVersion) {

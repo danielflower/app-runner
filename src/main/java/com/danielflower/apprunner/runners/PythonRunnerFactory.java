@@ -67,27 +67,27 @@ public class PythonRunnerFactory implements AppRunnerFactory {
         public static Optional<PythonRunnerFactory> createIfAvailable(Config config, int majorVersion) {
             String virtualenvExecutable = config.pythonVirtualEnvExecutable(majorVersion);
             String pythonExecutable = config.pythonExecutable(majorVersion);
+            String pythonVersionInfo;
 
             Pair<Boolean, String> pythonProc = ProcessStarter.run(new CommandLine(pythonExecutable).addArgument("--version"));
             if (pythonProc.getLeft()) {
-                String pythonVersionInfo = pythonProc.getRight();
+                pythonVersionInfo = pythonProc.getRight();
                 if (! pythonVersionInfo.startsWith("Python " + majorVersion + ".")){
                     log.warn("Python version info from " + pythonExecutable + " does not match requested version " + majorVersion + ": " + pythonVersionInfo);
                     return Optional.empty();
                 }
             }
             else {
-                log.warn(pythonExecutable + " couldn't be run, so the PythonRunnerFactory has not been created");
+                //log.warn(pythonExecutable + " couldn't be run, so the PythonRunnerFactory has not been created");
                 return Optional.empty();
             }
 
             Pair<Boolean, String> virtualenvProc = ProcessStarter.run(new CommandLine(virtualenvExecutable).addArgument("--version"));
             if (virtualenvProc.getLeft()) {
-                String versionInfo = "Python virtualenv " + virtualenvProc.getRight();
-                return Optional.of(new PythonRunnerFactory(virtualenvExecutable, pythonExecutable, versionInfo, majorVersion));
+                return Optional.of(new PythonRunnerFactory(virtualenvExecutable, pythonExecutable, pythonVersionInfo, majorVersion));
             }
             else {
-                log.warn("virtualenv couldn't be run, so the PythonRunnerFactory has not been created");
+                //log.warn("virtualenv couldn't be run, so the PythonRunnerFactory has not been created");
                 return Optional.empty();
             }
         }

@@ -41,27 +41,27 @@ public class PythonRunner implements AppRunner {
         final String virtPipExec;
 
         if (SystemUtils.IS_OS_WINDOWS) {
-            virtPythonExec = projectRoot + "\\server\\Scripts\\python.exe";
-            virtPipExec = projectRoot + "\\server\\Scripts\\pip.exe";
+            virtPythonExec = projectRoot.getAbsolutePath() + "\\server\\Scripts\\pythonw.exe";
+            virtPipExec = projectRoot.getAbsolutePath() + "\\server\\Scripts\\pip.exe";
         }
         else{
-            virtPythonExec = projectRoot + "/server/bin/python";
-            virtPipExec = projectRoot + "/server/bin/pip";
+            virtPythonExec = projectRoot.getAbsolutePath() + "/server/bin/python";
+            virtPipExec = projectRoot.getAbsolutePath() + "/server/bin/pip";
         }
 
         CommandLine virtualenvCmd = new CommandLine(virtualenvExec)
-            .addArgument("--python=\"" + pythonExec + "\"")
+            .addArgument("--python=" + pythonExec)
             .addArgument("server");
 
         buildLogHandler.consumeLine("Creating virtualenv: " + StringUtils.join(virtualenvCmd.toStrings(), " "));
         ProcessStarter.run(buildLogHandler, envVarsForApp, virtualenvCmd, projectRoot, TimeUnit.MINUTES.toMillis(30));
 
-        File requirements = new File(projectRoot + File.separator + "requirements.txt");
+        File requirements = new File(projectRoot.getAbsolutePath() + File.separator + "requirements.txt");
         if (requirements.exists()) {
             CommandLine pipCmd = new CommandLine(virtPipExec)
                 .addArgument("install")
                 .addArgument("-r")
-                .addArgument(requirements.getPath());
+                .addArgument(requirements.getAbsolutePath());
 
             buildLogHandler.consumeLine("Installing dependencies: " + StringUtils.join(pipCmd.toStrings(), " "));
             ProcessStarter.run(buildLogHandler, envVarsForApp, pipCmd, projectRoot, TimeUnit.MINUTES.toMillis(30));
@@ -71,9 +71,11 @@ public class PythonRunner implements AppRunner {
             .addArgument(scriptName)
             .addArgument("--app-name=" + envVarsForApp.get("APP_NAME")); //Add app name to command line so ps can identify which app is running
 
-        buildLogHandler.consumeLine("Starting python app: " + StringUtils.join(virtualenvCmd.toStrings(), " "));
+        buildLogHandler.consumeLine("Starting python app: " + StringUtils.join(command.toStrings(), " "));
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
+
+        buildLogHandler.consumeLine("Python app started.");
     }
 
     public void shutdown() {

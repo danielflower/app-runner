@@ -4,7 +4,8 @@ import platform
 import flask
 
 app = flask.Flask(__name__)
-app_name = os.getenv("APP_NAME", 'mypython3app')
+app.url_map.strict_slashes = False #Tolerate trailing slashes
+app_name = os.getenv("APP_NAME", 'python3')
 
 HTML = """
 <html>
@@ -28,4 +29,5 @@ def showForm():
 if __name__ == "__main__":
     port = int(os.getenv("APP_PORT", 5050))
     host = os.getenv("APP_HOST", '0.0.0.0')
-    app.run(host=host, port=port, debug=True)
+    #Set debug=False and threaded=True to prevent Flask forking a child process that doesn't get shut down
+    app.run(host=host, port=port, debug=False, threaded=True)
