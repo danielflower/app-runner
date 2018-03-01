@@ -3,14 +3,17 @@ package com.danielflower.apprunner;
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.problems.AppNotFoundException;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
+import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import com.danielflower.apprunner.web.ProxyMap;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -24,9 +27,9 @@ public class AppEstate {
     private final FileSandbox fileSandbox;
     private final List<AppChangedListener> appAddedListeners = new ArrayList<>();
     private final List<AppChangedListener> appDeletedListeners = new ArrayList<>();
-    private final RunnerProvider runnerProvider;
+    private final AppRunnerFactoryProvider runnerProvider;
 
-    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, RunnerProvider runnerProvider) {
+    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, AppRunnerFactoryProvider runnerProvider) {
         this.proxyMap = proxyMap;
         this.fileSandbox = fileSandbox;
         this.runnerProvider = runnerProvider;
@@ -54,8 +57,9 @@ public class AppEstate {
         }
     }
 
-    public AppDescription addApp(String gitUrl, String appName) throws Exception {
+    public AppDescription addApp(String gitUrl, String appName) throws UnsupportedProjectTypeException, IOException, GitAPIException {
         AppManager appMan = AppManager.create(gitUrl, fileSandbox, appName);
+        runnerProvider.runnerFor(appName, fileSandbox.repoDir(appName));
         appMan.addListener(proxyMap::add);
         this.add(appMan);
         return appMan;
@@ -102,7 +106,7 @@ public class AppEstate {
 
     public String allAppNames() {
         return all()
-            .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
+            .sorted(Comparator.comparing(AppDescription::name))
             .map(AppDescription::name)
             .collect(Collectors.joining(", "));
     }

@@ -1,24 +1,25 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
-import com.danielflower.apprunner.runners.RunnerProvider;
+import com.danielflower.apprunner.mgmt.SystemInfo;
+import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
+import com.danielflower.apprunner.runners.MavenRunnerFactory;
 import com.danielflower.apprunner.web.v1.AppResource;
 import org.apache.commons.io.output.NullOutputStream;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 import scaffolding.AppRepo;
 import scaffolding.MockAppDescription;
+import scaffolding.TestConfig;
 
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.PathSegment;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
+import javax.ws.rs.core.*;
+import java.io.IOException;
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
@@ -27,10 +28,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class AppResourceTest {
 
-    MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
-    MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new RunnerProvider(null, RunnerProvider.default_providers));
-    AppResource appResource = new AppResource(estate);
+    private final MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
+    private final MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
+    private final AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new AppRunnerFactoryProvider(Collections.singletonList(MavenRunnerFactory.createIfAvailable(TestConfig.config).get())));
+    private final SystemInfo systemInfo = SystemInfo.create();
+    private final AppResource appResource = new AppResource(estate, systemInfo);
 
     @Test
     public void gettingAppsReturnsJsonObjectWithAppArrayOrderedByName() throws Exception {
@@ -58,6 +60,26 @@ public class AppResourceTest {
 
         long matched = estate.all().filter(a -> a.name().equals("maven") && a.gitUrl().equals(repo.gitUrl())).count();
         assertThat(matched, is(1L));
+    }
+
+    @Test
+    public void creatingAnAppReturnsA400IfTheGitUrlIsNotAccessible() {
+        AppRepo repo = AppRepo.create("maven");
+
+        UriInfo uriInfo = new MockUriInfo("http://localhost:1234/api/v1/apps");
+        String badUrl = repo.gitUrl() + "broken";
+        Response response = appResource.create(uriInfo, badUrl, "maven");
+        assertThat(response.getStatus(), is(400));
+        JSONAssert.assertEquals("{message: 'Could not clone git repository: Invalid remote: origin', gitUrl: '" + badUrl + "'}", (String) response.getEntity(), JSONCompareMode.LENIENT);
+    }
+
+    @Test
+    public void creatingAnAppReturnsA501IfTheThereIsNoSuitableRunnerForTheRepo() throws IOException, GitAPIException {
+        AppRepo repo = AppRepo.create("nodejs"); // the resource only has a maven runner registered
+        UriInfo uriInfo = new MockUriInfo("http://localhost:1234/api/v1/apps");
+        Response response = appResource.create(uriInfo, repo.gitUrl(), null);
+        assertThat(response.getStatus(), is(501));
+        JSONAssert.assertEquals("{message: 'No suitable runner found for this app', gitUrl: '" + repo.gitUrl() + "'}", (String) response.getEntity(), JSONCompareMode.LENIENT);
     }
 
     @Test

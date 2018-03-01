@@ -5,12 +5,7 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.shared.invoker.DefaultInvocationRequest;
-import org.apache.maven.shared.invoker.DefaultInvoker;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
-import org.apache.maven.shared.invoker.InvocationRequest;
-import org.apache.maven.shared.invoker.InvocationResult;
-import org.apache.maven.shared.invoker.Invoker;
+import org.apache.maven.shared.invoker.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +14,7 @@ import java.io.FileReader;
 import java.util.List;
 import java.util.Map;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
 
 public class MavenRunner implements AppRunner {
@@ -63,18 +58,9 @@ public class MavenRunner implements AppRunner {
                 .setGoals(goals)
                 .setBaseDirectory(projectRoot);
 
-            request = javaHomeProvider.mungeMavenInvocationRequest(request);
 
-            log.info("Building maven project at " + dirPath(projectRoot));
-            Invoker invoker = new DefaultInvoker();
-            try {
-                InvocationResult result = invoker.execute(request);
-                if (result.getExitCode() != 0) {
-                    throw new ProjectCannotStartException("Build returned error", result.getExecutionException());
-                }
-            } catch (Exception e) {
-                throw new ProjectCannotStartException("Error while building " + projectRoot.getAbsolutePath(), e);
-            }
+            log.info("Building maven project at " + fullPath(projectRoot));
+            runRequest(request, javaHomeProvider);
             log.info("Build successful. Going to start app.");
         }
 
@@ -83,7 +69,7 @@ public class MavenRunner implements AppRunner {
 
         File jar = new File(new File(projectRoot, "target"), jarName);
         if (!jar.isFile()) {
-            throw new ProjectCannotStartException("Could not find the jar file at " + dirPath(jar));
+            throw new ProjectCannotStartException("Could not find the jar file at " + fullPath(jar));
         }
 
         CommandLine command = javaHomeProvider.commandLine(envVarsForApp)
@@ -92,6 +78,19 @@ public class MavenRunner implements AppRunner {
             .addArgument("target" + File.separator + jarName);
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
+    }
+
+    static void runRequest(InvocationRequest request, HomeProvider javaHomeProvider) {
+        request = javaHomeProvider.mungeMavenInvocationRequest(request);
+        Invoker invoker = new DefaultInvoker();
+        try {
+            InvocationResult result = invoker.execute(request);
+            if (result.getExitCode() != 0) {
+                throw new ProjectCannotStartException("Build returned error", result.getExecutionException());
+            }
+        } catch (Exception e) {
+            throw new ProjectCannotStartException("Error while building " + fullPath(request.getBaseDirectory()), e);
+        }
     }
 
     public void shutdown() {
@@ -105,4 +104,5 @@ public class MavenRunner implements AppRunner {
     public File getInstanceDir() {
         return projectRoot;
     }
+
 }

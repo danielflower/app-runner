@@ -9,11 +9,11 @@ import java.io.IOException;
 
 public class FileSandbox {
     public static final Logger log = LoggerFactory.getLogger(FileSandbox.class);
-    public static String dirPath(File samples) {
+    public static String fullPath(File file) {
         try {
-            return samples.getCanonicalPath();
+            return file.getCanonicalPath();
         } catch (IOException e) {
-            return samples.getAbsolutePath();
+            return file.getAbsolutePath();
         }
     }
 
@@ -26,15 +26,15 @@ public class FileSandbox {
     public File tempDir(String name) {
         return ensureExists("temp/" + name);
     }
-    public File appDir(String name) {
-        return ensureExists("apps/" + name);
+    public File repoDir(String name) {
+        return ensureExists("repos/" + name);
     }
     public File appDir(String name, String sub) {
         return ensureExists("apps/" + name + "/" + sub);
     }
 
     private File ensureExists(String relativePath) {
-        String path = FilenameUtils.concat(dirPath(root), FilenameUtils.separatorsToSystem(relativePath));
+        String path = FilenameUtils.concat(fullPath(root), FilenameUtils.separatorsToSystem(relativePath));
         File f = new File(path);
         f.mkdirs();
         return f;

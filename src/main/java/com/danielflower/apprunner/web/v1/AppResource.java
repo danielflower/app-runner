@@ -2,13 +2,13 @@ package com.danielflower.apprunner.web.v1;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
-import com.danielflower.apprunner.mgmt.AppDescription;
-import com.danielflower.apprunner.mgmt.AppManager;
-import com.danielflower.apprunner.mgmt.Availability;
+import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.problems.AppNotFoundException;
+import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.io.WriterOutputStream;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +22,7 @@ import java.io.Writer;
 import java.net.URI;
 import java.util.*;
 
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Api(value = "Application")
@@ -30,22 +31,24 @@ public class AppResource {
     public static final Logger log = LoggerFactory.getLogger(AppResource.class);
 
     private final AppEstate estate;
+    private final SystemInfo systemInfo;
 
-    public AppResource(AppEstate estate) {
+    public AppResource(AppEstate estate, SystemInfo systemInfo) {
         this.estate = estate;
+        this.systemInfo = systemInfo;
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @ApiOperation(value = "Gets all registered apps")
     public String apps(@Context UriInfo uriInfo) {
-
         JSONObject result = new JSONObject();
         List<JSONObject> apps = new ArrayList<>();
         estate.all()
-            .sorted((o1, o2) -> o1.name().compareTo(o2.name()))
+            .sorted(Comparator.comparing(AppDescription::name))
             .forEach(d -> apps.add(
                 appJson(uriInfo.getRequestUri(), d)));
+        result.put("appCount", apps.size());
         result.put("apps", apps);
         return result.toString(4);
     }
@@ -85,10 +88,12 @@ public class AppResource {
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
     }
 
-    private static JSONObject appJson(URI uri, AppDescription app) {
+    private JSONObject appJson(URI uri, AppDescription app) {
         URI restURI = uri.resolve("/api/v1/");
 
         Availability availability = app.currentAvailability();
+        BuildStatus lastBuildStatus = app.lastBuildStatus();
+        BuildStatus lastSuccessfulBuild = app.lastSuccessfulBuild();
         return new JSONObject()
             .put("name", app.name())
             .put("contributors", getContributorsList(app))
@@ -98,7 +103,10 @@ public class AppResource {
             .put("deployUrl", appUrl(app, restURI, "deploy"))
             .put("available", availability.isAvailable)
             .put("availableStatus", availability.availabilityStatus)
-            .put("gitUrl", app.gitUrl());
+            .put("lastBuild", lastBuildStatus.toJSON())
+            .put("lastSuccessfulBuild", lastSuccessfulBuild == null ? null : lastSuccessfulBuild.toJSON())
+            .put("gitUrl", app.gitUrl())
+            .put("host", systemInfo.hostName);
     }
 
     private static String getContributorsList(AppDescription app) {
@@ -119,52 +127,135 @@ public class AppResource {
     }
 
     @POST
-    @Produces(MediaType.TEXT_PLAIN)
-    @ApiOperation(value = "Registers an app or updates an existing app")
+    @Produces("*/*") // Should be application/json, but this causes problems in the swagger-ui when it runs against pre 1.4 app runners
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @ApiOperation(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
     @ApiResponses(value = {
         @ApiResponse(code = 201, message = "The new app was successfully registered"),
-        @ApiResponse(code = 200, message = "The existing app was updated"),
-        @ApiResponse(code = 400, message = "The git URL was not specified")
+        @ApiResponse(code = 400, message = "The git URL was not specified or the git repo could not be cloned, or the app name is not valid."),
+        @ApiResponse(code = 409, message = "There is already an app with that name"),
+        @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
     })
     public Response create(@Context UriInfo uriInfo,
-                           @ApiParam(required = true, example = "https://github.com/danielflower/app-runner-home.git", value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @ApiParam(required = true, value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @ApiParam(example = "app-runner-home", value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
+                           @ApiParam(value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {
-            return Response.status(400).entity("No gitUrl was specified").build();
+            return Response.status(400).entity(new JSONObject()
+                .put("message", "No git URL was specified")
+                .toString()).build();
         }
 
-        try {
-            appName = isBlank(appName) ? AppManager.nameFromUrl(gitUrl) : appName;
+        appName = isBlank(appName) ? AppManager.nameFromUrl(gitUrl) : appName;
 
-            AppDescription appDescription;
-            int status;
-            Optional<AppDescription> existing = estate.app(appName);
-            if (existing.isPresent()) {
-                appDescription = existing.get();
-                estate.remove(appDescription);
-                status = 200;
-            } else {
-                status = 201;
-            }
+        Optional<AppDescription> existing = estate.app(appName);
+        if (existing.isPresent()) {
+            return Response.status(409).entity(new JSONObject()
+                .put("message", "There is already an app with that ID")
+                .toString()).build();
+        }
+        return responseForAddingAppToEstate(uriInfo, gitUrl, appName, 201);
+
+    }
+
+    private Response responseForAddingAppToEstate(@Context UriInfo uriInfo, String gitUrl, String appName, int status) {
+        AppDescription appDescription;
+        try {
             appDescription = estate.addApp(gitUrl, appName);
             return Response.status(status)
                 .header("Location", uriInfo.getRequestUri() + "/" + appDescription.name())
+                .header("Content-Type", "application/json")
                 .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
                 .build();
+        } catch (UnsupportedProjectTypeException e) {
+            return Response.status(501)
+                .header("Content-Type", "application/json")
+                .entity(new JSONObject()
+                    .put("message", "No suitable runner found for this app")
+                    .put("gitUrl", gitUrl)
+                    .toString(4))
+                .build();
+        } catch (GitAPIException e) {
+            return Response.status(400)
+                .header("Content-Type", "application/json")
+                .entity(new JSONObject()
+                    .put("message", "Could not clone git repository: " + e.getMessage())
+                    .put("gitUrl", gitUrl)
+                    .toString(4))
+                .build();
+        } catch (ValidationException ve) {
+            return Response.status(400)
+                .header("Content-Type", "application/json")
+                .entity(new JSONObject()
+                    .put("message", ve.getMessage())
+                    .toString(4))
+                .build();
         } catch (Exception e) {
-            log.error("Error while adding app", e);
-            return Response.serverError().entity("Error while adding app: " + e.getMessage()).build();
+            String errorId = "ERR" + System.currentTimeMillis();
+            log.error("Error while adding app. ErrorID=" + errorId, e);
+            return Response.serverError()
+                .header("Content-Type", "application/json")
+                .entity(new JSONObject()
+                    .put("message", "Error while adding app")
+                    .put("errorID", errorId)
+                    .put("detailedError", e.toString())
+                    .put("gitUrl", gitUrl)
+                    .toString(4))
+                .build();
         }
+    }
+
+    @PUT
+    @Path("/{name}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @ApiOperation(value = "Updates the git URL of an existing app")
+    @ApiResponses(value = {
+        @ApiResponse(code = 200, message = "Success - call deploy after this to build and deploy from the new URL"),
+        @ApiResponse(code = 400, message = "The name or git URL was not specified or the git repo could not be cloned"),
+        @ApiResponse(code = 404, message = "The app does not exist"),
+        @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
+    })
+    public Response update(@Context UriInfo uriInfo,
+                           @ApiParam(required = true, value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @FormParam("gitUrl") String gitUrl,
+                           @ApiParam(value = "The ID of the app to update")
+                           @PathParam("name") String appName) {
+        log.info("Received request to update " + appName + " to " + gitUrl);
+        if (isBlank(gitUrl) || isBlank(appName)) {
+            return Response.status(400).entity(new JSONObject()
+                .put("message", "No git URL was specified")
+                .toString()).build();
+        }
+        Optional<AppDescription> existing = estate.app(appName);
+        if (!existing.isPresent()) {
+            return Response.status(404).entity(new JSONObject()
+                .put("message", "No application called " + appName + " exists")
+                .toString()).build();
+        }
+        try {
+            estate.remove(existing.get());
+            return responseForAddingAppToEstate(uriInfo, gitUrl, appName, 200);
+        } catch (Exception e) {
+            String errorId = "ERR" + System.currentTimeMillis();
+            log.error("Error while updating app. ErrorID=" + errorId, e);
+            return Response.serverError().entity(new JSONObject()
+                .put("message", "Error while updating app")
+                .put("errorID", errorId)
+                .put("detailedError", e.toString())
+                .put("gitUrl", gitUrl)
+                .toString(4)).build();
+        }
+
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{name}")
     @ApiOperation(value = "De-registers an application")
-    public Response delete(@Context UriInfo uriInfo, @ApiParam(required=true) @PathParam("name") String name) throws IOException {
+    public Response delete(@Context UriInfo uriInfo, @ApiParam(required = true) @PathParam("name") String name) throws IOException {
         Optional<AppDescription> existing = estate.app(name);
         if (existing.isPresent()) {
             AppDescription appDescription = existing.get();
@@ -203,19 +294,19 @@ public class AppResource {
     private class UpdateStreamer implements StreamingOutput {
         private final String name;
 
-        public UpdateStreamer(String name) {
+        UpdateStreamer(String name) {
             this.name = name;
         }
 
         public void write(OutputStream output) throws IOException, WebApplicationException {
             try (Writer writer = new OutputStreamWriter(output)) {
-                writer.write("Going to build and deploy " + name + " at " + new Date() + "\n");
+                writer.write("Going to build and deploy " + name + " at " + new Date() + LINE_SEPARATOR);
                 writer.flush();
                 log.info("Going to update " + name);
                 try {
                     estate.update(name, new OutputToWriterBridge(writer));
                     log.info("Finished updating " + name);
-                    writer.write("Success\n");
+                    writer.write("Success" + LINE_SEPARATOR);
                 } catch (AppNotFoundException e) {
                     Response r = Response.status(404).entity(e.getMessage()).build();
                     throw new WebApplicationException(r);

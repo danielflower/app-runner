@@ -9,28 +9,28 @@ import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ZipSamplesTask {
-    public static final Logger log = LoggerFactory.getLogger(ZipSamplesTask.class);
+    private static final Logger log = LoggerFactory.getLogger(ZipSamplesTask.class);
 
     @Test
     public void zipTheSamplesAndPutThemInTheResourcesDir() throws IOException {
         File outputDir = new File("src/main/resources/sample-apps");
         if (!outputDir.isDirectory()) {
-            throw new RuntimeException("Expected sample app dir at " + dirPath(outputDir));
+            throw new RuntimeException("Expected sample app dir at " + fullPath(outputDir));
         }
         for (File file : Photocopier.sampleDir().listFiles(File::isDirectory)) {
             File outputFile = new File(outputDir, file.getName() + ".zip");
             assertThat(!outputFile.exists() || outputFile.delete(), is(true));
             zipDirectory(file, outputFile);
-            log.info("Created " + dirPath(outputFile));
+            log.info("Created " + fullPath(outputFile));
         }
     }
 
-    public static void zipDirectory(File dir, File zipFile) throws IOException {
+    private static void zipDirectory(File dir, File zipFile) throws IOException {
         try (FileOutputStream fout = new FileOutputStream(zipFile);
              ZipOutputStream zout = new ZipOutputStream(fout)) {
             zipSubDirectory("", dir, zout);

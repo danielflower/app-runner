@@ -4,6 +4,7 @@ import com.danielflower.apprunner.io.WriterToOutputBridge;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.slf4j.Logger;
@@ -13,7 +14,8 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
-import static com.danielflower.apprunner.FileSandbox.dirPath;
+import static com.danielflower.apprunner.FileSandbox.fullPath;
+import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class ProcessStarter {
     public static final Logger log = LoggerFactory.getLogger(ProcessStarter.class);
@@ -31,19 +33,19 @@ public class ProcessStarter {
             startupWaiter.blockUntilReady();
 
             if (handler.hasResult()) {
-                String message = "The project at " + dirPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
+                String message = "The project at " + fullPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
                 buildLogHandler.consumeLine(message);
                 throw new ProjectCannotStartException(message);
             }
         } catch (TimeoutException te) {
-            String message = "Built successfully, but timed out waiting for startup at " + dirPath(projectRoot);
+            String message = "Built successfully, but timed out waiting for startup at " + fullPath(projectRoot);
             watchDog.destroyProcess();
             buildLogHandler.consumeLine(message);
             throw new ProjectCannotStartException(message);
         } catch (ProjectCannotStartException pcse) {
             throw pcse;
         } catch (Exception e) {
-            String message = "Built successfully, but error on start for " + dirPath(projectRoot);
+            String message = "Built successfully, but error on start for " + fullPath(projectRoot);
             buildLogHandler.consumeLine(message);
             buildLogHandler.consumeLine(e.toString());
             throw new ProjectCannotStartException(message, e);
@@ -66,7 +68,7 @@ public class ProcessStarter {
                 throw new ProjectCannotStartException(message);
             }
         } catch (Exception e) {
-            String message = "Error running: " + dirPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " ");
+            String message = "Error running: " + fullPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " ");
             outputHandler.consumeLine(message);
             outputHandler.consumeLine(e.toString());
             throw new ProjectCannotStartException(message, e);
@@ -74,8 +76,24 @@ public class ProcessStarter {
         logEndTime(command, startTime);
     }
 
+    public static Pair<Boolean, String> run(CommandLine command) {
+        ExecuteWatchdog watchDog = new ExecuteWatchdog(30000);
+        StringBuffer output = new StringBuffer();
+        Executor executor = createExecutor(output::append, command, new File("."), watchDog);
+        output.setLength(0);
+        try {
+            int exitValue = executor.execute(command);
+            if (executor.isFailure(exitValue)) {
+                return Pair.of(false, "Not available");
+            }
+        } catch (Exception e) {
+            return Pair.of(false, "Not available");
+        }
+        return Pair.of(true, output.toString().trim());
+    }
+
     public static long logStartInfo(CommandLine command, File projectRoot) {
-        log.info("Starting " + dirPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " "));
+        log.info("Starting " + fullPath(projectRoot) + "> " + StringUtils.join(command.toStrings(), " "));
         return System.currentTimeMillis();
     }
 
@@ -88,7 +106,7 @@ public class ProcessStarter {
         executor.setWorkingDirectory(projectRoot);
         executor.setWatchdog(watchDog);
         executor.setStreamHandler(new PumpStreamHandler(new WriterOutputStream(new WriterToOutputBridge(consoleLogHandler))));
-        consoleLogHandler.consumeLine(dirPath(executor.getWorkingDirectory()) + "> " + String.join(" ", command.toStrings()) + "\n");
+        consoleLogHandler.consumeLine(fullPath(executor.getWorkingDirectory()) + "> " + String.join(" ", command.toStrings()) + LINE_SEPARATOR);
         return executor;
     }
 

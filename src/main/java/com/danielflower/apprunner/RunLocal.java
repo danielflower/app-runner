@@ -6,6 +6,7 @@ package com.danielflower.apprunner;
 public class RunLocal {
 
     public static void main(String[] args) {
+        System.setProperty("logback.configurationFile", "src/test/resources/logback-test.xml");
         App.main(new String[] { "sample-config.properties" });
     }
 

@@ -1,0 +1,5 @@
+language: java
+jdk:
+  - oraclejdk8
+before_install:
+   - "export M2_HOME=/usr/local/maven"

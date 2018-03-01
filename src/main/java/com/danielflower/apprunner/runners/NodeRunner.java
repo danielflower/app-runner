@@ -36,7 +36,9 @@ public class NodeRunner implements AppRunner {
         runNPM(buildLogHandler, envVarsForApp, "install");
         runNPM(buildLogHandler, envVarsForApp, "test");
 
-        CommandLine command = new CommandLine(nodeExec).addArgument("server.js");
+        CommandLine command = new CommandLine(nodeExec)
+            .addArgument("server.js")
+            .addArgument("--app-name=" + envVarsForApp.get("APP_NAME"));
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
