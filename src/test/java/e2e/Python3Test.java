@@ -34,7 +34,7 @@ public class Python3Test {
 
     @Before
     public void start() throws Exception {
-        assumeTrue("Skipping test because neither Python 3 is not detected", PythonRunnerTest.isPythonVersionDetected(3));
+        assumeTrue("Skipping test because Python 3 is not detected", PythonRunnerTest.isPythonVersionDetected(3));
         app.start();
     }
 

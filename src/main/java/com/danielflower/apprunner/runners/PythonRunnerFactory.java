@@ -73,7 +73,7 @@ public class PythonRunnerFactory implements AppRunnerFactory {
             if (pythonProc.getLeft()) {
                 pythonVersionInfo = pythonProc.getRight();
                 if (! pythonVersionInfo.startsWith("Python " + majorVersion + ".")){
-                    log.warn("Python version info from " + pythonExecutable + " does not match requested version " + majorVersion + ": " + pythonVersionInfo);
+                    //log.warn("Python version info from " + pythonExecutable + " does not match requested version " + majorVersion + ": " + pythonVersionInfo);
                     return Optional.empty();
                 }
             }

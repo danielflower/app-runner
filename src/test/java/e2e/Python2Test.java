@@ -34,7 +34,7 @@ public class Python2Test {
 
     @Before
     public void start() throws Exception {
-        assumeTrue("Skipping test because neither Python 2 is not detected", PythonRunnerTest.isPythonVersionDetected(2));
+        assumeTrue("Skipping test because Python 2 is not detected", PythonRunnerTest.isPythonVersionDetected(2));
         app.start();
     }
 
