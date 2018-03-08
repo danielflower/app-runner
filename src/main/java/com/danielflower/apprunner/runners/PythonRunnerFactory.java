@@ -45,7 +45,10 @@ public class PythonRunnerFactory implements AppRunnerFactory {
 
         @Override
         public String[] startCommands() {
-            return NodeRunner.startCommands;
+            String[] commands = { virtualenvExecutable + " --python=" + pythonExecutable + " server",
+                                    "server/bin/pip install -r requirements.txt",
+                                     "server/bin/python server" + majorVersion + ".py" };
+            return commands;
         }
 
         @Override

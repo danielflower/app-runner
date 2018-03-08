@@ -15,7 +15,6 @@ import java.util.concurrent.TimeUnit;
 
 public class PythonRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(PythonRunner.class);
-    public static final String[] startCommands = new String[]{"virtualenv --python=<pythonexe> server", "server/bin/pip install -r requirements.txt", "server/bin/python server<2|3>.py"};
 
     private final File projectRoot;
     private final String pythonExec;
