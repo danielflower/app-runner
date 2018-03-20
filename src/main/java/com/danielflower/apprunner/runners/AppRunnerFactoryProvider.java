@@ -33,6 +33,8 @@ public class AppRunnerFactoryProvider {
         futures.add(executorService.submit(() -> SbtRunnerFactory.createIfAvailable(config)));
         futures.add(executorService.submit(() -> GoRunnerFactory.createIfAvailable(config)));
         futures.add(executorService.submit(() -> GradleRunnerFactory.createIfAvailable(config)));
+        futures.add(executorService.submit(() -> PythonRunnerFactory.createIfAvailable(config, 2)));
+        futures.add(executorService.submit(() -> PythonRunnerFactory.createIfAvailable(config, 3)));
 
         List<AppRunnerFactory> factories = new ArrayList<>();
         for (Future<Optional<? extends AppRunnerFactory>> future : futures) {
