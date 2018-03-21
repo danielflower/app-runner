@@ -114,6 +114,14 @@ public class Config {
             : CommandLineProvider.go_on_path;
     }
 
+    public String pythonVirtualEnvExecutable(int majorVersion) {
+        return get("python." + majorVersion + ".virtualenv.exec", windowsinize("virtualenv"));
+    }
+
+    public String pythonExecutable(int majorVersion) {
+        return get("python." + majorVersion + ".exec", SystemUtils.IS_OS_WINDOWS ? "python.exe" : "python" + majorVersion);
+    }
+
     public String nodeExecutable() {
         return get("node.exec", windowsinize("node"));
     }
