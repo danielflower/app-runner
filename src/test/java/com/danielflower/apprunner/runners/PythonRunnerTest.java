@@ -24,7 +24,8 @@ public class PythonRunnerTest {
 
     @BeforeClass
     public static void ignoreTestIfNotSupported() throws Exception {
-        if (runnerFactory2 == null && runnerFactory3 == null) {
+        boolean isRunningOnTravisCIWherePipIsNotWorking = System.getenv("TRAVIS") != null;
+        if (!isRunningOnTravisCIWherePipIsNotWorking && runnerFactory2 == null && runnerFactory3 == null) {
             runnerFactory2 = PythonRunnerFactory.createIfAvailable(config, 2);
             runnerFactory3 = PythonRunnerFactory.createIfAvailable(config, 3);
         }
