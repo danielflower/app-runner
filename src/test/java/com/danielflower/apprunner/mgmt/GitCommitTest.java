@@ -30,6 +30,7 @@ public class GitCommitTest {
 
     @Test
     public void returnsCurrentCommitForNonEmptyRepos() throws Exception {
+        long timeAtStartOfTest = System.currentTimeMillis() - 1000;
         Git git = emptyRepo();
         FileRepository repository = (FileRepository) git.getRepository();
         File dir = repository.getDirectory();
@@ -50,7 +51,7 @@ public class GitCommitTest {
             "author: 'Second contributor', message: 'Second commit'" +
             "}", actual, JSONCompareMode.LENIENT);
 
-        assertThat(actual.getLong("date"), Matchers.greaterThanOrEqualTo(System.currentTimeMillis() - 1000));
+        assertThat(actual.getLong("date"), Matchers.greaterThanOrEqualTo(timeAtStartOfTest));
         assertThat(actual.getString("id"), actual.getString("id").length(), is("3688d7063d2d647e3989d62d9770d0dfd0ce3c25".length()));
 
     }
