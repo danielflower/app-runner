@@ -1,5 +1,6 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
@@ -44,7 +45,7 @@ public class MavenRunner implements AppRunner {
         this.goals = goals;
     }
 
-    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
+    public void start(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         File pomFile = new File(projectRoot, "pom.xml");
 
         if (goals.isEmpty()) {
@@ -52,9 +53,10 @@ public class MavenRunner implements AppRunner {
 
         } else {
             InvocationRequest request = new DefaultInvocationRequest()
+                .setBatchMode(true)
                 .setPomFile(pomFile)
-                .setOutputHandler(buildLogHandler)
-                .setErrorHandler(buildLogHandler)
+                .setOutputHandler(buildLogHandler::consumeLine)
+                .setErrorHandler(buildLogHandler::consumeLine)
                 .setGoals(goals)
                 .setBaseDirectory(projectRoot);
 
@@ -82,6 +84,7 @@ public class MavenRunner implements AppRunner {
 
     static void runRequest(InvocationRequest request, HomeProvider javaHomeProvider) {
         request = javaHomeProvider.mungeMavenInvocationRequest(request);
+        request.setBatchMode(true);
         Invoker invoker = new DefaultInvoker();
         try {
             InvocationResult result = invoker.execute(request);

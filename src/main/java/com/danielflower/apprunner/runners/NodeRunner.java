@@ -1,10 +1,10 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +32,7 @@ public class NodeRunner implements AppRunner {
         return projectRoot;
     }
 
-    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
+    public void start(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         runNPM(buildLogHandler, envVarsForApp, "install");
         runNPM(buildLogHandler, envVarsForApp, "test");
 
@@ -50,7 +50,7 @@ public class NodeRunner implements AppRunner {
         }
     }
 
-    private void runNPM(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String argument) {
+    private void runNPM(LineConsumer buildLogHandler, Map<String, String> envVarsForApp, String argument) {
         CommandLine command = new CommandLine(npmExec).addArgument(argument);
 
         buildLogHandler.consumeLine("Running " + StringUtils.join(command.toStrings(), " "));

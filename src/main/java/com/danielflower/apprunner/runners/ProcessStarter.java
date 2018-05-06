@@ -1,11 +1,11 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.io.WriterToOutputBridge;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 public class ProcessStarter {
     public static final Logger log = LoggerFactory.getLogger(ProcessStarter.class);
 
-    public static Killer startDaemon(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, Waiter startupWaiter) {
+    public static Killer startDaemon(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, Waiter startupWaiter) {
         long startTime = logStartInfo(command, projectRoot);
         Killer watchDog = new Killer(ExecuteWatchdog.INFINITE_TIMEOUT);
         Executor executor = createExecutor(consoleLogHandler, command, projectRoot, watchDog);
@@ -55,7 +55,7 @@ public class ProcessStarter {
         return watchDog;
     }
 
-    public static void run(InvocationOutputHandler outputHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, long timeout) throws ProjectCannotStartException {
+    public static void run(LineConsumer outputHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, long timeout) throws ProjectCannotStartException {
         long startTime = logStartInfo(command, projectRoot);
         ExecuteWatchdog watchDog = new ExecuteWatchdog(timeout);
         Executor executor = createExecutor(outputHandler, command, projectRoot, watchDog);
@@ -101,7 +101,7 @@ public class ProcessStarter {
         log.info("Completed " + command.getExecutable() + " in " + (System.currentTimeMillis() - startTime) + "ms");
     }
 
-    private static Executor createExecutor(InvocationOutputHandler consoleLogHandler, CommandLine command, File projectRoot, ExecuteWatchdog watchDog) {
+    private static Executor createExecutor(LineConsumer consoleLogHandler, CommandLine command, File projectRoot, ExecuteWatchdog watchDog) {
         Executor executor = new DefaultExecutor();
         executor.setWorkingDirectory(projectRoot);
         executor.setWatchdog(watchDog);

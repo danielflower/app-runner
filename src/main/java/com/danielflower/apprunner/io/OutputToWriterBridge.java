@@ -9,7 +9,7 @@ import java.io.Writer;
 
 import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
-public class OutputToWriterBridge implements InvocationOutputHandler {
+public class OutputToWriterBridge implements InvocationOutputHandler, LineConsumer {
     public static final Logger log = LoggerFactory.getLogger(OutputToWriterBridge.class);
     private final Writer writer;
 

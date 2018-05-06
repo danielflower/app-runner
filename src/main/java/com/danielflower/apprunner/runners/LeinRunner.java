@@ -1,11 +1,11 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Model;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,7 +35,7 @@ public class LeinRunner implements AppRunner {
         return projectRoot;
     }
 
-    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
+    public void start(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
 
         runLein(buildLogHandler, envVarsForApp, "do", "test,", "uberjar,", "pom");
 
@@ -48,7 +48,7 @@ public class LeinRunner implements AppRunner {
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }
 
-    private void runLein(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp, String... arguments) {
+    private void runLein(LineConsumer buildLogHandler, Map<String, String> envVarsForApp, String... arguments) {
         CommandLine command = leinCmd.commandLine(envVarsForApp);
         for (String argument : arguments)
             command.addArgument(argument);

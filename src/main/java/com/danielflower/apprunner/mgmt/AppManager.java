@@ -1,6 +1,7 @@
 package com.danielflower.apprunner.mgmt;
 
 import com.danielflower.apprunner.FileSandbox;
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.runners.AppRunner;
 import com.danielflower.apprunner.runners.AppRunnerFactory;
@@ -24,7 +25,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -171,16 +175,19 @@ public class AppManager implements AppDescription {
         clearLogs();
         markBuildAsFetching();
 
-        InvocationOutputHandler buildLogHandler = line -> {
-            outputHandler.consumeLine(line);
+        LineConsumer buildLogHandler = line -> {
+            try {
+                outputHandler.consumeLine(line);
+            } catch (IOException ignored) {
+            }
             latestBuildLog += line + LINE_SEPARATOR;
         };
 
         // Well this is complicated.
         // Basically, we want the build log to contain a bit of the startup, and then detach itself.
-        AtomicReference<InvocationOutputHandler> buildLogHandle = new AtomicReference<>(buildLogHandler);
-        InvocationOutputHandler consoleLogHandler = line -> {
-            InvocationOutputHandler another = buildLogHandle.get();
+        AtomicReference<LineConsumer> buildLogHandle = new AtomicReference<>(buildLogHandler);
+        LineConsumer consoleLogHandler = line -> {
+            LineConsumer another = buildLogHandle.get();
             if (another != null) {
                 another.consumeLine(StringUtils.stripEnd(line, "\r\n"));
             }

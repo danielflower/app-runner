@@ -1,14 +1,12 @@
 package com.danielflower.apprunner.io;
 
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
-
 import java.io.IOException;
 import java.io.Writer;
 
 public class WriterToOutputBridge extends Writer {
-    private final InvocationOutputHandler consoleLogHandler;
+    private final LineConsumer consoleLogHandler;
 
-    public WriterToOutputBridge(InvocationOutputHandler consoleLogHandler) {
+    public WriterToOutputBridge(LineConsumer consoleLogHandler) {
         this.consoleLogHandler = consoleLogHandler;
     }
 

@@ -4,7 +4,6 @@ import com.danielflower.apprunner.Config;
 import org.apache.commons.exec.CommandLine;
 import org.apache.maven.shared.invoker.InvocationRequest;
 
-import javax.annotation.Nullable;
 import java.util.Map;
 
 public interface HomeProvider extends CommandLineProvider {

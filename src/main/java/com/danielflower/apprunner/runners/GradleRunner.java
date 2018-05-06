@@ -1,9 +1,9 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +38,7 @@ public class GradleRunner implements AppRunner {
     }
 
     @Override
-    public void start(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
+    public void start(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         gradleClean(buildLogHandler, envVarsForApp);
         gradleBuild(buildLogHandler, envVarsForApp);
         watchDog = runJar(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
@@ -52,19 +52,19 @@ public class GradleRunner implements AppRunner {
         }
     }
 
-    private void gradleClean(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp) {
+    private void gradleClean(LineConsumer buildLogHandler, Map<String, String> envVarsForApp) {
         CommandLine command = new CommandLine(gradleExec).addArgument("clean");
         buildLogHandler.consumeLine("Running gradle clean");
         ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, DEFAULT_GRADLE_CLEAN_TIMEOUT);
     }
 
-    private void gradleBuild(InvocationOutputHandler buildLogHandler, Map<String, String> envVarsForApp) {
+    private void gradleBuild(LineConsumer buildLogHandler, Map<String, String> envVarsForApp) {
         CommandLine command = new CommandLine(gradleExec).addArgument("shadowJar");
         buildLogHandler.consumeLine("Running gradle shadowJar");
         ProcessStarter.run(buildLogHandler, envVarsForApp, command, projectRoot, DEFAULT_GRADLE_CLEAN_TIMEOUT);
     }
 
-    private ExecuteWatchdog runJar(InvocationOutputHandler buildLogHandler, InvocationOutputHandler consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) {
+    private ExecuteWatchdog runJar(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) {
         Path libsPath = Paths.get(projectRoot.getPath(), "build", "libs");
         File libsFolder = libsPath.toFile();
 

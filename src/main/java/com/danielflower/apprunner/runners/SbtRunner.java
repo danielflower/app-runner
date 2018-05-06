@@ -1,11 +1,11 @@
 package com.danielflower.apprunner.runners;
 
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
 import java.io.File;
 import java.util.List;
@@ -44,8 +44,8 @@ public class SbtRunner implements AppRunner {
     }
 
     @Override
-    public void start(final InvocationOutputHandler buildLogHandler,
-                      final InvocationOutputHandler consoleLogHandler,
+    public void start(final LineConsumer buildLogHandler,
+                      final LineConsumer consoleLogHandler,
                       final Map<String, String> envVarsForApp,
                       final Waiter startupWaiter) throws ProjectCannotStartException {
 
@@ -67,7 +67,7 @@ public class SbtRunner implements AppRunner {
         }
     }
 
-    private String runSbt(final InvocationOutputHandler buildLogHandler,
+    private String runSbt(final LineConsumer  buildLogHandler,
                           final Map<String, String> envVarsForApp,
                           final List<String> arguments) {
 
@@ -80,7 +80,7 @@ public class SbtRunner implements AppRunner {
 
         final CircularFifoQueue<String> latestBuildLog = new CircularFifoQueue<>(SBT_LINE_BUFFER);
 
-        final InvocationOutputHandler capturingBuildLogHandler = line -> {
+        final LineConsumer capturingBuildLogHandler = line -> {
             buildLogHandler.consumeLine(line);
             latestBuildLog.add(line);
         };

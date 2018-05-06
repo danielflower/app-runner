@@ -16,6 +16,7 @@ import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
+import org.glassfish.jersey.ExtendedConfig;
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
@@ -78,7 +79,8 @@ public class WebServer implements AutoCloseable {
     }
 
     private Handler createRestService() {
-        ResourceConfig rc = new ResourceConfig();
+        ExtendedConfig extendedConfig = new ResourceConfig(); // Umm, without this the dependency analysis fails
+        ResourceConfig rc = (ResourceConfig) extendedConfig;
         rc.register(systemResource);
         rc.register(appResource);
         rc.register(JacksonFeature.class);

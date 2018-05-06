@@ -1,6 +1,7 @@
 package e2e;
 
 import com.danielflower.apprunner.Config;
+import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
@@ -8,7 +9,6 @@ import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
@@ -88,7 +88,7 @@ public class SystemTest {
             put(Config.DATA_DIR, fullPath(dataDir));
         }};
 
-        InvocationOutputHandler logHandler = line -> System.out.print("Uber jar output > " + line);
+        LineConsumer logHandler = line -> System.out.print("Uber jar output > " + line);
         try (Waiter startupWaiter = new Waiter("AppRunner uber jar", httpClient -> {
             try {
                 JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
