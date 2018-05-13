@@ -2,6 +2,7 @@ package com.danielflower.apprunner.web.v1;
 
 import com.danielflower.apprunner.AppEstate;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
+import com.danielflower.apprunner.io.Zippy;
 import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
@@ -15,10 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.*;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.*;
 import java.net.URI;
 import java.util.*;
 
@@ -86,6 +84,19 @@ public class AppResource {
         if (namedApp.isPresent())
             return namedApp.get().latestConsoleLog();
         throw new AppNotFoundException("No app found with name '" + name + "'. Valid names: " + estate.allAppNames());
+    }
+
+    @GET
+    @Produces("application/zip")
+    @Path("/{name}/data")
+    @ApiOperation(value = "Gets the contents of the app's data directory as a zip file")
+    public StreamingOutput getAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
+        Optional<AppDescription> namedApp = estate.app(name);
+        if (!namedApp.isPresent())
+            throw new NotFoundException("No app with name " + name);
+        AppDescription ad = namedApp.get();
+        log.info("Getting data for " + name);
+        return output -> Zippy.zipDirectory(ad.dataDir(), output);
     }
 
     private JSONObject appJson(URI uri, AppDescription app) {

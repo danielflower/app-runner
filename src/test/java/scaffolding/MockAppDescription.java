@@ -4,8 +4,10 @@ import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.mgmt.Availability;
 import com.danielflower.apprunner.mgmt.BuildStatus;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public class MockAppDescription implements AppDescription {
@@ -52,6 +54,11 @@ public class MockAppDescription implements AppDescription {
 
     public ArrayList<String> contributors() {
         return contributors;
+    }
+
+    @Override
+    public File dataDir() {
+        throw new NotImplementedException("dataDir");
     }
 
     public void stopApp() {

@@ -73,4 +73,7 @@ public class RestClient {
         return client.GET(appRunnerUrl + url);
     }
 
+    public ContentResponse getData(String appId) throws Exception {
+        return client.GET(appRunnerUrl + "/api/v1/apps/" + appId + "/data");
+    }
 }

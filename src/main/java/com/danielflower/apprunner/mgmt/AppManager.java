@@ -162,6 +162,11 @@ public class AppManager implements AppDescription {
         return contributors;
     }
 
+    @Override
+    public File dataDir() {
+        return this.dataDir;
+    }
+
     public synchronized void stopApp() throws Exception {
         if (currentRunner != null) {
             availability = Availability.unavailable("Stopping");

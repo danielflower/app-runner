@@ -3,6 +3,7 @@ package com.danielflower.apprunner.mgmt;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 
+import java.io.File;
 import java.util.ArrayList;
 
 public interface AppDescription {
@@ -21,6 +22,8 @@ public interface AppDescription {
     String latestConsoleLog();
 
     ArrayList<String> contributors();
+
+    File dataDir();
 
     void stopApp() throws Exception;
 
