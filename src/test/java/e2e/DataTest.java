@@ -3,6 +3,7 @@ package e2e;
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.hamcrest.CoreMatchers;
 import org.junit.After;
@@ -27,6 +28,7 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static scaffolding.ContentResponseMatcher.equalTo;
+import static scaffolding.Photocopier.sampleDir;
 
 public class DataTest {
 
@@ -36,7 +38,7 @@ public class DataTest {
     private final String appId = "maven";
     private final AppRepo appRepo = AppRepo.create(appId);
     private final File appRunnerDataDir = new File("target/datadirs/" + System.currentTimeMillis());
-    private final File appDataDir = new File(appRunnerDataDir, "apps/" + appId + "/data");
+    private final File mavenZip = new File("src/test/maven.zip");
 
     private final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_HTTP_PORT, String.valueOf(port));
@@ -46,6 +48,7 @@ public class DataTest {
     @Before public void start() throws Exception {
         app.start();
         assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
+        assertThat("File exists? " + mavenZip.getCanonicalPath(), mavenZip.isFile(), is(true));
     }
 
     @After public void shutdownApp() {
@@ -53,9 +56,10 @@ public class DataTest {
     }
 
     @Test
-    public void filesInTheAppsDataDirCanBeDownloadedAsAZip() throws Exception {
-        Photocopier.copySampleAppToDir("maven", appDataDir);
-        assertThat(appDataDir.isDirectory(), is(true));
+    public void filesInTheAppsDataDirCanBeUploadedAndDownloadedAsAZip() throws Exception {
+
+        ContentResponse uploadResp = restClient.postData(appId, mavenZip);
+        assertThat(uploadResp.getStatus(), is(204));
 
         ContentResponse resp = restClient.getData(appId);
         assertThat(resp.getStatus(), is(200));
@@ -73,7 +77,6 @@ public class DataTest {
         assertThat(resp.getHeaders().get("Content-Type"), CoreMatchers.equalTo("application/zip"));
 
         List<String> pathsInZip = getFilesInZip(resp);
-        System.out.println("pathsInZip = " + pathsInZip);
         assertThat(pathsInZip, hasSize(0));
     }
 

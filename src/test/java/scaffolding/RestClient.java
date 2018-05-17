@@ -3,8 +3,14 @@ package scaffolding;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
+import org.eclipse.jetty.client.util.InputStreamContentProvider;
 import org.eclipse.jetty.util.Fields;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 public class RestClient {
 
@@ -75,5 +81,12 @@ public class RestClient {
 
     public ContentResponse getData(String appId) throws Exception {
         return client.GET(appRunnerUrl + "/api/v1/apps/" + appId + "/data");
+    }
+
+    public ContentResponse postData(String appId, File zip) throws Exception {
+        return client.POST(appRunnerUrl + "/api/v1/apps/" + appId + "/data")
+            .content(new InputStreamContentProvider(new FileInputStream(zip)))
+            .header("Content-Type", "application/zip")
+            .send();
     }
 }

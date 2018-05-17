@@ -7,6 +7,7 @@ import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -19,6 +20,8 @@ import javax.ws.rs.core.*;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -97,6 +100,47 @@ public class AppResource {
         AppDescription ad = namedApp.get();
         log.info("Getting data for " + name);
         return output -> Zippy.zipDirectory(ad.dataDir(), output);
+    }
+
+    @POST
+    @Consumes("application/zip")
+    @Path("/{name}/data")
+    @ApiOperation(value = "Sets the contents of the app's data directory with the contents of the zip file")
+    public void setAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name,
+                           InputStream requestBody) throws IOException {
+        Optional<AppDescription> namedApp = estate.app(name);
+        if (!namedApp.isPresent())
+            throw new NotFoundException("No app with name " + name);
+        AppDescription ad = namedApp.get();
+        log.info("Setting data for " + name);
+        byte[] buffer = new byte[8192];
+
+        String dataDirPath = ad.dataDir().getCanonicalPath();
+        try (ZipInputStream zis = new ZipInputStream(requestBody)) {
+            ZipEntry nextEntry;
+            while ((nextEntry = zis.getNextEntry()) != null) {
+                String destPath = FilenameUtils.concat(dataDirPath, nextEntry.getName());
+                File dest = new File(destPath);
+                if (nextEntry.isDirectory()) {
+                    if (dest.mkdirs()) {
+                        log.info("Created " + destPath);
+                    } else {
+                        log.warn("Failed to create " + destPath);
+                    }
+                } else {
+                    log.info("Unzipping " + (nextEntry.getName()));
+                    if (dest.getParentFile().mkdirs()) {
+                        log.info("Created " + dest.getParentFile());
+                    }
+                    try (FileOutputStream fos = new FileOutputStream(dest, false)) {
+                        int read;
+                        while ((read = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, read);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     private JSONObject appJson(URI uri, AppDescription app) {
