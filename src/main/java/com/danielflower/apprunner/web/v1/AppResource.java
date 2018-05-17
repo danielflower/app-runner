@@ -8,6 +8,7 @@ import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.eclipse.jetty.io.WriterOutputStream;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -106,6 +107,7 @@ public class AppResource {
     @Consumes("application/zip")
     @Path("/{name}/data")
     @ApiOperation(value = "Sets the contents of the app's data directory with the contents of the zip file")
+    @ApiResponse(code=204, message="Files uploaded successfully")
     public void setAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name,
                            InputStream requestBody) throws IOException {
         Optional<AppDescription> namedApp = estate.app(name);
@@ -113,9 +115,9 @@ public class AppResource {
             throw new NotFoundException("No app with name " + name);
         AppDescription ad = namedApp.get();
         log.info("Setting data for " + name);
-        byte[] buffer = new byte[8192];
 
         String dataDirPath = ad.dataDir().getCanonicalPath();
+
         try (ZipInputStream zis = new ZipInputStream(requestBody)) {
             ZipEntry nextEntry;
             while ((nextEntry = zis.getNextEntry()) != null) {
@@ -128,15 +130,12 @@ public class AppResource {
                         log.warn("Failed to create " + destPath);
                     }
                 } else {
-                    log.info("Unzipping " + (nextEntry.getName()));
                     if (dest.getParentFile().mkdirs()) {
                         log.info("Created " + dest.getParentFile());
                     }
+                    log.info("Unzipping " + (nextEntry.getName()));
                     try (FileOutputStream fos = new FileOutputStream(dest, false)) {
-                        int read;
-                        while ((read = zis.read(buffer)) > 0) {
-                            fos.write(buffer, 0, read);
-                        }
+                        IOUtils.copy(zis, fos);
                     }
                 }
             }
