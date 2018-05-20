@@ -4,6 +4,7 @@ import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.client.util.FormContentProvider;
 import org.eclipse.jetty.client.util.InputStreamContentProvider;
+import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.util.Fields;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -87,6 +88,12 @@ public class RestClient {
         return client.POST(appRunnerUrl + "/api/v1/apps/" + appId + "/data")
             .content(new InputStreamContentProvider(new FileInputStream(zip)))
             .header("Content-Type", "application/zip")
+            .send();
+    }
+
+    public ContentResponse deleteData(String appId) throws Exception {
+        return client.newRequest(appRunnerUrl + "/api/v1/apps/" + appId + "/data")
+            .method(HttpMethod.DELETE)
             .send();
     }
 }

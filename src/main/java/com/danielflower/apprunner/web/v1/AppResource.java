@@ -7,6 +7,7 @@ import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
 import io.swagger.annotations.*;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -95,25 +96,57 @@ public class AppResource {
     @Path("/{name}/data")
     @ApiOperation(value = "Gets the contents of the app's data directory as a zip file")
     public StreamingOutput getAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
+        AppDescription ad = getAppDescription(name);
+        log.info("Getting data for " + name);
+        return output -> Zippy.zipDirectory(ad.dataDir(), output);
+    }
+
+    private AppDescription getAppDescription(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (!namedApp.isPresent())
             throw new NotFoundException("No app with name " + name);
-        AppDescription ad = namedApp.get();
-        log.info("Getting data for " + name);
-        return output -> Zippy.zipDirectory(ad.dataDir(), output);
+        return namedApp.get();
+    }
+
+    @DELETE
+    @Consumes("application/zip")
+    @Path("/{name}/data")
+    @ApiOperation(value = "Deletes all the files for an app")
+    @ApiResponses({
+        @ApiResponse(code = 204, message = "Files deleted successfully"),
+        @ApiResponse(code = 500, message = "At least one file could not be deleted")
+    })
+    public Response deleteAppData(@ApiParam(required = true) @PathParam("name") String name) throws IOException {
+        AppDescription ad = getAppDescription(name);
+        File[] children = ad.dataDir().listFiles();
+        if (children == null) {
+            return Response.serverError().entity("Could not access data dir").build();
+        }
+        for (File child : children) {
+            log.info("Deleting " + child.getCanonicalPath());
+            if (child.isFile()) {
+                if (!child.delete()) {
+                    return Response.serverError().entity("Could not delete " + child.getName()).build();
+                }
+            } else {
+                FileUtils.deleteDirectory(child);
+            }
+        }
+        return Response.noContent().build();
     }
 
     @POST
     @Consumes("application/zip")
     @Path("/{name}/data")
     @ApiOperation(value = "Sets the contents of the app's data directory with the contents of the zip file")
-    @ApiResponse(code=204, message="Files uploaded successfully")
-    public void setAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name,
-                           InputStream requestBody) throws IOException {
-        Optional<AppDescription> namedApp = estate.app(name);
-        if (!namedApp.isPresent())
-            throw new NotFoundException("No app with name " + name);
-        AppDescription ad = namedApp.get();
+    @ApiResponse(code = 204, message = "Files uploaded successfully")
+    public Response setAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name,
+                               InputStream requestBody) throws IOException {
+        AppDescription ad = getAppDescription(name);
+        if (ad.dataDir().listFiles().length > 0) {
+            return Response.status(400).entity("File uploading is only supported for apps with empty data directories.").build();
+        }
+
         log.info("Setting data for " + name);
 
         String dataDirPath = ad.dataDir().getCanonicalPath();
@@ -140,6 +173,7 @@ public class AppResource {
                 }
             }
         }
+        return Response.status(204).build();
     }
 
     private JSONObject appJson(URI uri, AppDescription app) {
@@ -181,7 +215,8 @@ public class AppResource {
     }
 
     @POST
-    @Produces("*/*") // Should be application/json, but this causes problems in the swagger-ui when it runs against pre 1.4 app runners
+    @Produces("*/*")
+    // Should be application/json, but this causes problems in the swagger-ui when it runs against pre 1.4 app runners
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @ApiOperation(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
     @ApiResponses(value = {

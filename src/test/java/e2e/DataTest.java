@@ -3,6 +3,7 @@ package e2e;
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.web.WebServer;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.hamcrest.CoreMatchers;
@@ -39,6 +40,8 @@ public class DataTest {
     private final AppRepo appRepo = AppRepo.create(appId);
     private final File appRunnerDataDir = new File("target/datadirs/" + System.currentTimeMillis());
     private final File mavenZip = new File("src/test/maven.zip");
+    private final File emptyZip = new File("src/test/empty.zip");
+    private final File pomXml = new File("pom.xml");
 
     private final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_HTTP_PORT, String.valueOf(port));
@@ -49,6 +52,7 @@ public class DataTest {
         app.start();
         assertThat(restClient.createApp(appRepo.gitUrl()).getStatus(), is(201));
         assertThat("File exists? " + mavenZip.getCanonicalPath(), mavenZip.isFile(), is(true));
+        assertThat("File exists? " + pomXml.getCanonicalPath(), pomXml.isFile(), is(true));
     }
 
     @After public void shutdownApp() {
@@ -71,14 +75,48 @@ public class DataTest {
     }
 
     @Test
+    public void filesCanBeDeleted() throws Exception {
+        ContentResponse uploadResp = restClient.postData(appId, mavenZip);
+        assertThat(uploadResp.getStatus(), is(204));
+
+        ContentResponse resp = restClient.deleteData(appId);
+        assertThat(resp.getStatus(), is(204));
+        assertThat(getFilesInZip(resp), hasSize(0));
+    }
+
+    @Test
+    public void ifAnyFilesExistThenA400IsReturned() throws Exception {
+        restClient.postData(appId, mavenZip);
+        ContentResponse uploadResp = restClient.postData(appId, mavenZip);
+        assertThat(uploadResp.getStatus(), is(400));
+        assertThat(uploadResp.getContentAsString(), CoreMatchers.equalTo("File uploading is only supported for apps with empty data directories."));
+    }
+
+    @Test
+    public void ifTheFileIsNotAZipA204IsReturnedButNothingIsSavedBecauseIDidNotSeeHowToDifferentiateBetweenAnEmptyZipAndANonZipEasily() throws Exception {
+        ContentResponse uploadResp = restClient.postData(appId, pomXml);
+        assertThat(uploadResp.getStatus(), is(204));
+        assertThat(getFilesInZip(restClient.getData(appId)), hasSize(0));
+    }
+
+    @Test
     public void ifNoFilesThenAnEmptyZipIsReturned() throws Exception {
         ContentResponse resp = restClient.getData(appId);
         assertThat(resp.getStatus(), is(200));
         assertThat(resp.getHeaders().get("Content-Type"), CoreMatchers.equalTo("application/zip"));
-
         List<String> pathsInZip = getFilesInZip(resp);
         assertThat(pathsInZip, hasSize(0));
     }
+
+    @Test
+    public void uploadingAnEmptyZipHasNoImpactAndA204IsReturned() throws Exception {
+        ContentResponse uploadResp = restClient.postData(appId, emptyZip);
+        assertThat(uploadResp.getStatus(), is(204));
+
+        ContentResponse resp = restClient.getData(appId);
+        assertThat(getFilesInZip(resp), hasSize(0));
+    }
+
 
     private static List<String> getFilesInZip(ContentResponse resp) throws IOException {
         byte[] content = resp.getContent();
