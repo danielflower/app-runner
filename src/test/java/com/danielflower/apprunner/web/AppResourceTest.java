@@ -32,7 +32,7 @@ public class AppResourceTest {
     private final MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
     private final AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new AppRunnerFactoryProvider(Collections.singletonList(MavenRunnerFactory.createIfAvailable(TestConfig.config).get())));
     private final SystemInfo systemInfo = SystemInfo.create();
-    private final AppResource appResource = new AppResource(estate, systemInfo);
+    private final AppResource appResource = new AppResource(estate, systemInfo, fileSandbox());
 
     @Test
     public void gettingAppsReturnsJsonObjectWithAppArrayOrderedByName() throws Exception {

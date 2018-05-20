@@ -118,7 +118,7 @@ public class App {
 
 
         webServer = new WebServer(jettyServer, proxyMap, defaultAppName,
-            new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService), new AppResource(estate, systemInfo),
+            new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService), new AppResource(estate, systemInfo, fileSandbox),
             config.getInt("apprunner.proxy.idle.timeout", 30000), config.getInt("apprunner.proxy.total.timeout", 60000));
 
 

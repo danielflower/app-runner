@@ -1,6 +1,7 @@
 package com.danielflower.apprunner.web.v1;
 
 import com.danielflower.apprunner.AppEstate;
+import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.io.Zippy;
 import com.danielflower.apprunner.mgmt.*;
@@ -35,10 +36,12 @@ public class AppResource {
 
     private final AppEstate estate;
     private final SystemInfo systemInfo;
+    private final FileSandbox fileSandbox;
 
-    public AppResource(AppEstate estate, SystemInfo systemInfo) {
+    public AppResource(AppEstate estate, SystemInfo systemInfo, FileSandbox fileSandbox) {
         this.estate = estate;
         this.systemInfo = systemInfo;
+        this.fileSandbox = fileSandbox;
     }
 
     @GET

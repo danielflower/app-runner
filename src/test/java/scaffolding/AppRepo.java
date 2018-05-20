@@ -11,8 +11,12 @@ import static scaffolding.Photocopier.copySampleAppToTempDir;
 public class AppRepo {
 
     public static AppRepo create(String name) {
+        return create(name, name);
+    }
+
+    public static AppRepo create(String name, String sampleAppName) {
         try {
-            File originDir = copySampleAppToTempDir(name);
+            File originDir = copySampleAppToTempDir(sampleAppName);
 
             InitCommand initCommand = Git.init();
             initCommand.setDirectory(originDir);
