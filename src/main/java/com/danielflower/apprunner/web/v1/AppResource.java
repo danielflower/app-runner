@@ -153,11 +153,16 @@ public class AppResource {
         log.info("Setting data for " + name);
 
         String dataDirPath = ad.dataDir().getCanonicalPath();
+        File unzipTo = fileSandbox.tempDir(name);
+        String unzipToPath = unzipTo.getCanonicalPath();
+        log.info("Going to unzip files to temp dir " + unzipToPath);
 
+        int filesUnzipped = 0;
         try (ZipInputStream zis = new ZipInputStream(requestBody)) {
             ZipEntry nextEntry;
             while ((nextEntry = zis.getNextEntry()) != null) {
-                String destPath = FilenameUtils.concat(dataDirPath, nextEntry.getName());
+                filesUnzipped++;
+                String destPath = FilenameUtils.concat(unzipToPath, nextEntry.getName());
                 File dest = new File(destPath);
                 if (nextEntry.isDirectory()) {
                     if (dest.mkdirs()) {
@@ -175,6 +180,14 @@ public class AppResource {
                     }
                 }
             }
+        }
+
+        if (filesUnzipped > 0) {
+            log.info("Going to move temp dir to app data path");
+            if ( !ad.dataDir().delete()) {
+                log.warn("Could not delete old data dir");
+            }
+            FileUtils.moveDirectory(unzipTo, new File(dataDirPath));
         }
         return Response.status(204).build();
     }
