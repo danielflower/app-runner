@@ -1,14 +1,15 @@
 App Runner
 ----------
 
-The little web app runner that hosts java, clojure, scala, golang and nodejs apps. This allows
-you to easily deploy a self-hosted Platform As A Service where you can very easily add
-new apps and have App Runner build and run them by cloning the code from a Git repo.
+A self-hosted platform-as-a-service that hosts web apps written in Java, Clojure, NodeJS, Python, golang and Scala.
+Designed to be simple to deploy behind a firewall, on corporate intranets or at home. 
+Once running, tell App Runner the Git URL of a web app and it will automatically build and host it for you, with
+support to auto-deploy on every git push.
 
 ### Features
 
 * Host your own Platform as a Service: you just need Java 8, plus optional build tools
-(Maven, Leinigen, Scala/SBT, go compiler, NodeJS/NPM).
+(Maven, Leinigen, Scala/SBT, go compiler, NodeJS/NPM, Gradle, Python 2 or 3).
 * Deploy web apps with no build servers or deploy scripts needed: tell AppRunner the Git
 URL and it will automatically build and host it.
 * Auto deploy on source control change when using post-commit hooks
@@ -27,6 +28,7 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
+* **1.6.0** Added `GET`/`POST`/`DELETE` `/api/v1/apps/{name}/data` endpoints to manipulate an app's data directory.
 * **1.5.6** Added backup info to the apps API and added app name validation
 * **1.5.4** Added optional config for handling proxy timeouts: `apprunner.proxy.idle.timeout` (default 30000ms) `apprunner.proxy.total.timeout` (default 60000ms).
 * **1.5.1** Fixed bug where sometimes creating a new app it would say there are no suitable runners, even though there are.
@@ -57,15 +59,8 @@ sample app.
 Deploying
 ---------
 
-You need to have a Windows or Linux server available with Java and one or more build tools
-installed:
-
-* Java 8 or later
-* Maven (if you wish to support Maven builds)
-* Lein (if you wish to support Clojure builds)
-* NodeJS and NPM (if you wish to support Nodejs builds)
-* Scala and SBT (if you wish to support Scala builds)
-* GoLang (if you wish to support go builds)
+You need to have a Windows or Linux server available with Java 8 or later and one or more build tools
+installed. One or more of Maven, Gradle, Leiningen, NodeJS with NPM, Scala with SBT, GoLang, Python 2 or 3.
 
 It's easiest if each tool is available to run from the path, but you can point to specific
 paths by setting paths in your config file.
