@@ -13,7 +13,7 @@ import java.net.InetSocketAddress;
 import java.util.Map;
 
 public class App {
-    public static final Logger log = LoggerFactory.getLogger(App.class);
+    private static final Logger log = LoggerFactory.getLogger(App.class);
     public static void main(String[] args) throws Exception {
         Map<String, String> settings = System.getenv();
 
