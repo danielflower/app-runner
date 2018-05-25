@@ -26,6 +26,7 @@ import java.util.zip.ZipInputStream;
 import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -72,6 +73,7 @@ public class DataTest {
         assertThat(resp.getHeaders().get("Content-Type"), CoreMatchers.equalTo("application/zip"));
 
         List<String> pathsInZip = getFilesInZip(resp);
+        assertThat(pathsInZip, not(hasItem("instances/")));
         assertThat(pathsInZip, hasItem("pom.xml"));
         assertThat(pathsInZip, hasItem("src/main/java/samples/App.java"));
     }
@@ -122,7 +124,6 @@ public class DataTest {
 
     private static List<String> getFilesInZip(ContentResponse resp) throws IOException {
         byte[] content = resp.getContent();
-        Files.write(new File("target/blah.zip").toPath(), content);
         List<String> pathsInZip = new ArrayList<>();
         try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content))) {
             ZipEntry nextEntry;

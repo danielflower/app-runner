@@ -153,7 +153,7 @@ public class AppResource {
         log.info("Setting data for " + name);
 
         String dataDirPath = ad.dataDir().getCanonicalPath();
-        File unzipTo = fileSandbox.tempDir(name);
+        File unzipTo = fileSandbox.tempDir("post-data-" + UUID.randomUUID().toString());
         String unzipToPath = unzipTo.getCanonicalPath();
         log.info("Going to unzip files to temp dir " + unzipToPath);
 
@@ -183,7 +183,7 @@ public class AppResource {
         }
 
         if (filesUnzipped > 0) {
-            log.info("Going to move temp dir to app data path");
+            log.info("Going to move temp dir to app data path " + ad.dataDir().getCanonicalPath());
             if ( !ad.dataDir().delete()) {
                 log.warn("Could not delete old data dir");
             }
