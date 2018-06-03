@@ -22,8 +22,9 @@ public class ProcessStarter {
 
     public static Killer startDaemon(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, CommandLine command, File projectRoot, Waiter startupWaiter) {
         long startTime = logStartInfo(command, projectRoot);
-        Killer watchDog = new Killer(ExecuteWatchdog.INFINITE_TIMEOUT);
+        Killer watchDog = new Killer(ExecuteWatchdog.INFINITE_TIMEOUT, command);
         Executor executor = createExecutor(consoleLogHandler, command, projectRoot, watchDog);
+        boolean started = false;
 
         try {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
@@ -36,10 +37,11 @@ public class ProcessStarter {
                 String message = "The project at " + fullPath(projectRoot) + " started but exited all too soon. Check the console log for information.";
                 buildLogHandler.consumeLine(message);
                 throw new ProjectCannotStartException(message);
+            } else {
+                started = true;
             }
         } catch (TimeoutException te) {
             String message = "Built successfully, but timed out waiting for startup at " + fullPath(projectRoot);
-            watchDog.destroyProcess();
             buildLogHandler.consumeLine(message);
             throw new ProjectCannotStartException(message);
         } catch (ProjectCannotStartException pcse) {
@@ -49,8 +51,11 @@ public class ProcessStarter {
             buildLogHandler.consumeLine(message);
             buildLogHandler.consumeLine(e.toString());
             throw new ProjectCannotStartException(message, e);
+        } finally {
+            if (!started) {
+                watchDog.destroyProcess();
+            }
         }
-
         logEndTime(command, startTime);
         return watchDog;
     }
