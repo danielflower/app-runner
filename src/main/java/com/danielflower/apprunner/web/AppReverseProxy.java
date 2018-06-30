@@ -1,7 +1,6 @@
 package com.danielflower.apprunner.web;
 
 import io.muserver.*;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.DeferredContentProvider;
@@ -30,7 +29,7 @@ public class AppReverseProxy implements RouteHandler {
     private final ProxyMap proxyMap;
     private final long totalTimeoutInMillis;
 
-    public AppReverseProxy(HttpClient httpClient, ProxyMap proxyMap, long totalTimeoutInMillis) {
+    AppReverseProxy(HttpClient httpClient, ProxyMap proxyMap, long totalTimeoutInMillis) {
         this.httpClient = httpClient;
         this.proxyMap = proxyMap;
         this.totalTimeoutInMillis = totalTimeoutInMillis;
@@ -132,7 +131,7 @@ public class AppReverseProxy implements RouteHandler {
 
     private static boolean setHeaders(MuRequest clientReq, Request targetReq) {
         List<String> customHopByHop = new ArrayList<>();
-        String connection = clientReq.headers().get(HttpHeaderNames.CONNECTION);
+        String connection = clientReq.headers().get(HeaderNames.CONNECTION);
         if (connection != null) {
             String[] split = connection.split(" *, *");
             for (String s : split) {

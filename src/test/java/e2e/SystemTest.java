@@ -327,7 +327,7 @@ public class SystemTest {
     public void theSystemApiReturnsOsInfoAndZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
 
-        assertThat(sysInfo.getString("appRunnerVersion"), startsWith("1."));
+        assertThat(sysInfo.getString("appRunnerVersion"), startsWith("2."));
         assertThat(sysInfo.get("host"), is(notNullValue()));
         assertThat(sysInfo.get("user"), is(notNullValue()));
         assertThat(sysInfo.get("os"), is(notNullValue()));

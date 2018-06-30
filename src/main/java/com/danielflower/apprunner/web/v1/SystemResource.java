@@ -3,9 +3,8 @@ package com.danielflower.apprunner.web.v1;
 import com.danielflower.apprunner.mgmt.BackupService;
 import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactory;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.muserver.rest.Description;
+import io.muserver.rest.Required;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.json.JSONArray;
@@ -27,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-@Api(value = "System")
+@Description(value = "System")
 @Path("/system")
 public class SystemResource {
     public static final Logger log = LoggerFactory.getLogger(SystemResource.class);
@@ -47,8 +46,8 @@ public class SystemResource {
 
     @GET
     @Produces("application/json")
-    @ApiOperation(value = "Returns information about AppRunner, including information about sample apps")
-    public Response systemInfo(@Context UriInfo uri) throws IOException {
+    @Description(value = "Returns information about AppRunner, including information about sample apps")
+    public Response systemInfo(@Context UriInfo uri) {
         JSONObject result = new JSONObject();
         result.put("appRunnerStarted", startupComplete.get());
         result.put("appRunnerVersion", appRunnerVersion);
@@ -97,8 +96,8 @@ public class SystemResource {
     @GET
     @Path("/samples/{name}")
     @Produces("application/zip")
-    @ApiOperation("Returns a ZIP file containing a sample app")
-    public Response samples(@ApiParam(required = true, allowableValues = "maven.zip, lein.zip, nodejs.zip, sbt.zip") @PathParam("name") String name) throws IOException {
+    @Description("Returns a ZIP file containing a sample app")
+    public Response samples(@Required @PathParam("name") String name) throws IOException {
         List<String> names = factories.stream().map(AppRunnerFactory::sampleProjectName).collect(Collectors.toList());
         if (!names.contains(name)) {
             return Response.status(404).entity("Invalid sample app name. Valid names: " + names).build();
