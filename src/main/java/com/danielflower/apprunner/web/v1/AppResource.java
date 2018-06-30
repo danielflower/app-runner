@@ -112,7 +112,6 @@ public class AppResource {
     }
 
     @DELETE
-    @Consumes("application/zip")
     @Path("/{name}/data")
     @ApiOperation(value = "Deletes all the files for an app")
     @ApiResponses({

@@ -5,9 +5,11 @@ import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.MavenRunnerFactory;
 import com.danielflower.apprunner.web.v1.AppResource;
+import io.muserver.rest.MuRuntimeDelegate;
 import org.apache.commons.io.output.NullOutputStream;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
@@ -33,6 +35,11 @@ public class AppResourceTest {
     private final AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new AppRunnerFactoryProvider(Collections.singletonList(MavenRunnerFactory.createIfAvailable(TestConfig.config).get())));
     private final SystemInfo systemInfo = SystemInfo.create();
     private final AppResource appResource = new AppResource(estate, systemInfo, fileSandbox());
+
+    @BeforeClass
+    public static void setup() {
+        MuRuntimeDelegate.ensureSet();
+    }
 
     @Test
     public void gettingAppsReturnsJsonObjectWithAppArrayOrderedByName() throws Exception {

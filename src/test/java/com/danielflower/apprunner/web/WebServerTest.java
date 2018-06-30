@@ -6,20 +6,16 @@ import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
+import io.muserver.Method;
+import io.muserver.MuServer;
+import io.muserver.MuServerBuilder;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -50,7 +46,7 @@ public class WebServerTest {
         int port = WebServer.getAFreePort();
         webServerUrl = "http://localhost:" + port;
         SystemInfo systemInfo = SystemInfo.create();
-        webServer = new WebServer(new Server(port), proxyMap, "test-app",
+        webServer = new WebServer(port, -1, null, proxyMap, "test-app",
             new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>(), null), new AppResource(estate, systemInfo, fileSandbox()), PROXY_TIMEOUT, PROXY_TIMEOUT);
         webServer.start();
         appServer = new TestServer();
@@ -112,39 +108,34 @@ public class WebServerTest {
 
 
     private static class TestServer implements AutoCloseable {
-        private final Server jettyServer;
+        private final MuServer server;
         final URL url;
 
         TestServer() throws Exception {
-            jettyServer = new Server(0);
-            jettyServer.setHandler(new AbstractHandler() {
-                public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-                    if (target.equals("/test-app")) {
-                        response.sendRedirect("/test-app/");
-                    } else if (target.equalsIgnoreCase("/test-app/slow")) {
-                        try {
-                            Thread.sleep(Long.parseLong(request.getParameter("millis")));
-                        } catch (InterruptedException e) {
-                            Thread.interrupted();
-                        }
-                        response.getWriter().append("This was slow");
-                    } else {
-                        response.setHeader("Server", "Test-Server");
-                        response.getWriter().append("Hello from test server").close();
+            server = MuServerBuilder.httpServer()
+                .addHandler(Method.GET, "/test-app", (request, response, pathParams) -> {
+                    response.redirect("/test-app/");
+                })
+                .addHandler(Method.GET, "/test-app/slow", (request, response, pathParams) -> {
+                    try {
+                        Thread.sleep(Long.parseLong(request.query().get("millis")));
+                    } catch (InterruptedException e) {
+                        Thread.interrupted();
                     }
-                    baseRequest.setHandled(true);
-                }
-            });
+                    response.write("This was slow");
+                })
+                .addHandler((request, response) -> {
+                    response.headers().set("Server", "Test-Server");
+                    response.write("Hello from test server");
+                    return true;
+                })
+                .start();
 
-            jettyServer.start();
-
-            int port = ((ServerConnector) jettyServer.getConnectors()[0]).getLocalPort();
-            url = new URL("http://localhost:" + port + "/test-app");
+            url = server.uri().resolve("/test-app").toURL();
         }
 
-        public void close() throws Exception {
-            jettyServer.stop();
-            jettyServer.join();
+        public void close() {
+            server.stop();
         }
     }
 }

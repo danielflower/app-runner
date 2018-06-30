@@ -4,48 +4,45 @@ import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
+import io.muserver.ContentTypes;
+import io.muserver.Method;
+import io.muserver.MuServer;
+import io.muserver.MuServerBuilder;
+import io.muserver.openapi.OpenAPIObjectBuilder;
+import io.muserver.rest.RestHandlerBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.proxy.AsyncProxyServlet;
-import org.eclipse.jetty.server.Connector;
-import org.eclipse.jetty.server.Handler;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.HandlerList;
-import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
-import org.glassfish.jersey.ExtendedConfig;
-import org.glassfish.jersey.jackson.JacksonFeature;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.ServerProperties;
-import org.glassfish.jersey.servlet.ServletContainer;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
+import org.eclipse.jetty.util.HttpCookieStore;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerResponseContext;
-import javax.ws.rs.container.ContainerResponseFilter;
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.HashMap;
+
+import static io.muserver.ContextHandlerBuilder.context;
+import static io.muserver.openapi.InfoObjectBuilder.infoObject;
 
 public class WebServer implements AutoCloseable {
     public static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private final ProxyMap proxyMap;
-    private Server jettyServer;
+    private final int httpPort;
+    private final int httpsPort;
+    private final SSLContext sslContext;
+    private MuServer muServer;
     private final String defaultAppName;
     private final SystemResource systemResource;
     private final AppResource appResource;
     private final int idleTimeout;
     private final int totalTimeout;
+    private HttpClient rpClient;
 
-    public WebServer(Server jettyServer, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout) {
-        this.jettyServer = jettyServer;
+    public WebServer(int httpPort, int httpsPort, SSLContext sslContext, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout) {
+        this.httpPort = httpPort;
+        this.httpsPort = httpsPort;
+        this.sslContext = sslContext;
         this.proxyMap = proxyMap;
         this.defaultAppName = defaultAppName;
         this.systemResource = systemResource;
@@ -65,85 +62,79 @@ public class WebServer implements AutoCloseable {
     }
 
     public void start() throws Exception {
+        rpClient = createClient();
 
-        HandlerList handlers = new HandlerList();
-        handlers.addHandler(createHomeRedirect());
-        handlers.addHandler(createRestService());
-        handlers.addHandler(createReverseProxy(proxyMap));
-        jettyServer.setHandler(handlers);
-        jettyServer.start();
-        for (Connector connector : jettyServer.getConnectors()) {
-            log.info("Endpoint: " + StringUtils.join(connector.toString().split("[{}]+"), " ", 1, 3));
-        }
-        log.info("Started web server");
-    }
-
-    private Handler createRestService() {
-        ExtendedConfig extendedConfig = new ResourceConfig(); // Umm, without this the dependency analysis fails
-        ResourceConfig rc = (ResourceConfig) extendedConfig;
-        rc.register(systemResource);
-        rc.register(appResource);
-        rc.register(JacksonFeature.class);
-        rc.register(CORSFilter.class);
-        SwaggerDocs.registerSwaggerJsonResource(rc);
-        rc.addProperties(new HashMap<String,Object>() {{
-            // Turn off buffering so results can be streamed
-            put(ServerProperties.OUTBOUND_CONTENT_LENGTH_BUFFER, 0);
-        }});
-
-        ServletHolder holder = new ServletHolder(new ServletContainer(rc));
-
-        ServletContextHandler sch = new ServletContextHandler();
-        sch.setContextPath("/api/v1");
-        sch.addServlet(holder, "/*");
-
-        GzipHandler gzipHandler = new GzipHandler();
-        gzipHandler.setHandler(sch);
-        return gzipHandler;
-    }
-
-    private static class CORSFilter implements ContainerResponseFilter {
-        public void filter(ContainerRequestContext request,
-                           ContainerResponseContext response) throws IOException {
-            response.getHeaders().add("Access-Control-Allow-Origin", "*");
-            response.getHeaders().add("Access-Control-Allow-Headers",
-                "origin, content-type, accept, authorization");
-            response.getHeaders().add("Access-Control-Allow-Credentials", "true");
-            response.getHeaders().add("Access-Control-Allow-Methods",
-                "GET, POST, PUT, DELETE, OPTIONS, HEAD");
-        }
-    }
-
-    private Handler createHomeRedirect() {
-        return new AbstractHandler() {
-            public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-                if ("/".equals(target)) {
-                    if (StringUtils.isNotEmpty(defaultAppName)) {
-                        response.sendRedirect("/" + defaultAppName);
-                    } else {
-                        response.sendError(400, "You can set a default app by setting the " + Config.DEFAULT_APP_NAME + " property.");
-                    }
-                    baseRequest.setHandled(true);
+        muServer = MuServerBuilder.muServer()
+            .withHttpPort(httpPort)
+            .withHttpsPort(httpsPort)
+            .withHttpsConfig(sslContext)
+            .addHandler(Method.GET, "/", (request, response, pathParams) -> {
+                if (StringUtils.isNotEmpty(defaultAppName)) {
+                    response.redirect("/" + defaultAppName);
+                } else {
+                    response.status(400);
+                    response.contentType(ContentTypes.TEXT_PLAIN);
+                    response.write("You can set a default app by setting the " + Config.DEFAULT_APP_NAME + " property.");
                 }
-            }
-        };
+            })
+            .addHandler(context("api")
+                .addHandler((request, response) -> {
+                    response.headers().set("Access-Control-Allow-Origin", "*");
+                    response.headers().set("Access-Control-Allow-Headers",
+                        "origin, content-type, accept, authorization");
+                    response.headers().set("Access-Control-Allow-Credentials", "true");
+                    response.headers().set("Access-Control-Allow-Methods",
+                        "GET, POST, PUT, DELETE, OPTIONS, HEAD");
+                    return false;
+                })
+                .addHandler(context("v1")
+                    .addHandler(
+                        RestHandlerBuilder.restHandler(systemResource, appResource)
+                            .withOpenApiJsonUrl("swagger.json")
+                            .withOpenApiHtmlUrl("api.html")
+                            .withOpenApiDocument(OpenAPIObjectBuilder.openAPIObject()
+                                .withInfo(infoObject()
+                                    .withTitle("App Runner")
+                                    .withDescription("The REST API for App Runner which is used for registering apps, deploying apps, viewing logs etc.")
+                                    .withVersion("1.0")
+                                    .build())
+                            )
+                    )
+                ))
+            .addHandler(null, "/{appName : [^/?]+}{ignored:(.*)}", new AppReverseProxy(rpClient, proxyMap, totalTimeout))
+            .start();
+
+        log.info("Started web server at " + muServer.httpsUri() + " / " + muServer.httpUri());
     }
 
-    private ServletHandler createReverseProxy(ProxyMap proxyMap) {
-        AsyncProxyServlet servlet = new ReverseProxy(proxyMap);
-        ServletHolder proxyServletHolder = new ServletHolder(servlet);
-        proxyServletHolder.setAsyncSupported(true);
-        proxyServletHolder.setInitParameter("maxThreads", "256");
-        proxyServletHolder.setInitParameter("idleTimeout", String.valueOf(idleTimeout));
-        proxyServletHolder.setInitParameter("timeout", String.valueOf(totalTimeout));
-        ServletHandler proxyHandler = new ServletHandler();
-        proxyHandler.addServletWithMapping(proxyServletHolder, "/*");
-        return proxyHandler;
+    private HttpClient createClient() throws Exception {
+
+        int selectors = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
+
+        HttpClient client = new HttpClient(new HttpClientTransportOverHTTP(selectors), new SslContextFactory(true));
+        client.setFollowRedirects(false);
+        client.setCookieStore(new HttpCookieStore.Empty());
+        client.setMaxConnectionsPerDestination(256);
+        client.setAddressResolutionTimeout(15000);
+        client.setConnectTimeout(15000);
+        client.setIdleTimeout(idleTimeout);
+        client.setUserAgentField(null);
+        client.start();
+
+        client.getContentDecoderFactories().clear();
+
+        return client;
     }
+
 
     public void close() throws Exception {
-        jettyServer.stop();
-        jettyServer.join();
-        jettyServer.destroy();
+        if (muServer != null) {
+            muServer.stop();
+            muServer = null;
+        }
+        if (rpClient != null) {
+            rpClient.stop();
+            rpClient = null;
+        }
     }
 }

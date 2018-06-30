@@ -356,7 +356,7 @@ public class SystemTest {
         ContentResponse swagger = restClient.get("/api/v1/swagger.json");
         assertThat(swagger.getStatus(), is(200));
         System.out.println("swagger.getContentAsString() = " + swagger.getContentAsString());
-        JSONAssert.assertEquals("{ basePath: '/api/v1'," +
+        JSONAssert.assertEquals("{ " +
             "paths: {" +
             "'/apps': {}," +
             "'/system': {}" +
