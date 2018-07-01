@@ -3,6 +3,8 @@ package com.danielflower.apprunner.web.v1;
 import com.danielflower.apprunner.mgmt.BackupService;
 import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactory;
+import io.muserver.MuRequest;
+import io.muserver.MuStats;
 import io.muserver.rest.Description;
 import io.muserver.rest.Required;
 import org.apache.commons.io.IOUtils;
@@ -47,12 +49,22 @@ public class SystemResource {
     @GET
     @Produces("application/json")
     @Description(value = "Returns information about AppRunner, including information about sample apps")
-    public Response systemInfo(@Context UriInfo uri) {
+    public Response systemInfo(@Context UriInfo uri, @Context MuRequest muRequest) {
         JSONObject result = new JSONObject();
         result.put("appRunnerStarted", startupComplete.get());
         result.put("appRunnerVersion", appRunnerVersion);
         result.put("host", systemInfo.hostName);
         result.put("user", systemInfo.user);
+
+        MuStats stats = muRequest.server().stats();
+        result.put("serverStats",
+            new JSONObject()
+                .put("completedRequests", stats.completedRequests())
+                .put("activeConnections", stats.activeConnections())
+                .put("invalidHttpRequests", stats.invalidHttpRequests())
+                .put("bytesRead", stats.bytesRead())
+                .put("bytesSent", stats.bytesSent())
+        );
 
         if (backupService != null) {
             JSONObject backupJson = new JSONObject()
@@ -83,7 +95,7 @@ public class SystemResource {
         result.put("os", os);
         os.put("osName", systemInfo.osName);
         os.put("numCpus", systemInfo.numCpus);
-        os.put("uptimeInSeconds", systemInfo.uptimeInMillis()  / 1000L);
+        os.put("uptimeInSeconds", systemInfo.uptimeInMillis() / 1000L);
         os.put("appRunnerPid", systemInfo.pid);
 
         JSONArray keys = new JSONArray();

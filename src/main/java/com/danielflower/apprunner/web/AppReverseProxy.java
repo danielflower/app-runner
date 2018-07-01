@@ -9,6 +9,7 @@ import org.eclipse.jetty.http.HttpFields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -28,6 +29,18 @@ public class AppReverseProxy implements RouteHandler {
     private final HttpClient httpClient;
     private final ProxyMap proxyMap;
     private final long totalTimeoutInMillis;
+
+    private static final String ipAddress;
+    static {
+        String ip;
+        try {
+            ip = InetAddress.getLocalHost().getHostAddress();
+        } catch (Exception e) {
+            ip = "127.0.0.1";
+            log.info("Could not fine local address so using " + ip);
+        }
+        ipAddress = ip;
+    }
 
     AppReverseProxy(HttpClient httpClient, ProxyMap proxyMap, long totalTimeoutInMillis) {
         this.httpClient = httpClient;
@@ -159,7 +172,7 @@ public class AppReverseProxy implements RouteHandler {
         targetReq.header("X-Forwarded-Host", originHost);
         targetReq.header("X-Forwarded-Server", null);
 
-        String murpForwarded = "host=" + originHost + "; proto=" + proto;
+        String murpForwarded = "by=" + ipAddress + "; for=" + clientReq.remoteAddress() + "; host=" + originHost + "; proto=" + proto;
         String curFowarded = clientReq.headers().get("Forwarded", null);
         if (curFowarded != null) {
             murpForwarded = curFowarded + ", " + murpForwarded;

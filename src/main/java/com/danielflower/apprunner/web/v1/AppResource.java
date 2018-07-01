@@ -230,8 +230,7 @@ public class AppResource {
     }
 
     @POST
-    @Produces("*/*")
-    // Should be application/json, but this causes problems in the swagger-ui when it runs against pre 1.4 app runners
+    @Produces(MediaType.APPLICATION_JSON)
     @Consumes({MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON})
     @Description(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
     @ApiResponse(code = "201", message = "The new app was successfully registered")
