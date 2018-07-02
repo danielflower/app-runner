@@ -1,7 +1,6 @@
 package com.danielflower.apprunner.web;
 
 import io.muserver.*;
-import io.netty.handler.codec.http.HttpHeaderNames;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.Request;
 import org.eclipse.jetty.client.util.DeferredContentProvider;
@@ -147,7 +146,7 @@ public class AppReverseProxy implements RouteHandler {
 
     private static boolean setHeaders(MuRequest clientReq, Request targetReq) {
         Headers reqHeaders = clientReq.headers();
-        List<String> customHopByHop = getCustomHopByHopHeaders(reqHeaders.get(HttpHeaderNames.CONNECTION));
+        List<String> customHopByHop = getCustomHopByHopHeaders(reqHeaders.get(HeaderNames.CONNECTION));
 
         boolean hasContentLengthOrTransferEncoding = false;
         for (Map.Entry<String, String> clientHeader : reqHeaders) {
