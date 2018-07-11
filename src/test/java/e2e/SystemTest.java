@@ -160,7 +160,7 @@ public class SystemTest {
             is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
         assertThat(
             client.GET(appInfo.getString("consoleLogUrl")),
-            is(equalTo(200, containsString("Starting changes-app in prod"))));
+            is(equalTo(200, containsString("Starting changes-app on port"))));
 
         restClient.deleteApp("changes-app");
     }
