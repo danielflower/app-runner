@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -40,8 +41,10 @@ import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
@@ -134,6 +137,16 @@ public class SystemTest {
             is(equalTo(200, containsString("Hello from nodejs!"))));
         assertThat(restClient.deleteApp(nodeApp.name), equalTo(200, containsString("{")));
         assertThat(getAllApps().getJSONArray("apps").length(), is(1));
+    }
+
+    @Test
+    public void theReverseProxyBehavesItself() throws Exception {
+        ContentResponse resp = restClient.homepage(mavenApp.name);
+        assertThat(resp, is(equalTo(200, containsString("My Maven App"))));
+        HttpFields headers = resp.getHeaders();
+        assertThat(headers.getValuesList("Date"), hasSize(1));
+        assertThat(headers.getValuesList("Via"), Matchers.equalTo(singletonList("HTTP/1.1 apprunner")));
+        assertThat(restClient.deleteApp(mavenApp.name), equalTo(200, containsString("{")));
     }
 
     @Test

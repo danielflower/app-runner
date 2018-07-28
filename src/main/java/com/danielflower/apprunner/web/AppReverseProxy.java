@@ -62,6 +62,8 @@ public class AppReverseProxy implements RouteHandler {
         URI target = targetURL.toURI();
         final long start = System.currentTimeMillis();
 
+        clientResp.headers().remove(HeaderNames.DATE); // so that the target's date can be used
+
         URI newTarget = new URI(target.getScheme(), target.getUserInfo(), target.getHost(), target.getPort(), clientReq.uri().getPath(), clientReq.uri().getQuery(), clientReq.uri().getFragment());
         final AsyncHandle asyncHandle = clientReq.handleAsync();
         final long id = counter.incrementAndGet();
@@ -96,13 +98,19 @@ public class AppReverseProxy implements RouteHandler {
             clientResp.status(response.getStatus());
             HttpFields targetRespHeaders = response.getHeaders();
             List<String> customHopByHopHeaders = getCustomHopByHopHeaders(targetRespHeaders.get(HttpHeader.CONNECTION));
+            String via = null;
             for (HttpField targetRespHeader : targetRespHeaders) {
                 String lowerName = targetRespHeader.getName().toLowerCase();
                 if (HOP_BY_HOP_HEADERS.contains(lowerName) || customHopByHopHeaders.contains(lowerName)) {
                     continue;
                 }
-                clientResp.headers().add(targetRespHeader.getName(), targetRespHeader.getValue());
+                String value = targetRespHeader.getValue();
+                if (lowerName.equals("via")) {
+                    via = value;
+                }
+                clientResp.headers().add(targetRespHeader.getName(), value);
             }
+            clientResp.headers().set(HeaderNames.VIA, appRunnerVia(via));
         });
         targetReq.onResponseContentAsync((response, content, callback) -> asyncHandle.write(content,
             new WriteCallback() {
@@ -161,7 +169,8 @@ public class AppReverseProxy implements RouteHandler {
         String proto = clientReq.uri().getScheme();
         String originHost = clientReq.uri().getAuthority();
 
-        targetReq.header("Via", "HTTP/1.1 apprunner");
+        String curVia = clientReq.headers().get(HeaderNames.VIA, null);
+        targetReq.header("Via", appRunnerVia(curVia));
         targetReq.header("X-Forwarded-Proto", null);
         targetReq.header("X-Forwarded-Proto", proto);
         targetReq.header("X-Forwarded-Host", null);
@@ -177,6 +186,10 @@ public class AppReverseProxy implements RouteHandler {
         targetReq.header("Forwarded", murpForwarded);
 
         return hasContentLengthOrTransferEncoding;
+    }
+
+    private static String appRunnerVia(String curVia) {
+        return (curVia == null ? "" : curVia + ", ") + "HTTP/1.1 apprunner";
     }
 
     private static List<String> getCustomHopByHopHeaders(String connectionHeaderValue) {
