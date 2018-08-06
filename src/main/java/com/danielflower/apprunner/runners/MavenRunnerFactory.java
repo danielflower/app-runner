@@ -67,8 +67,8 @@ public class MavenRunnerFactory implements AppRunnerFactory {
             .setShowVersion(true)
             .setGoals(Collections.singletonList("--version"))
             .setBaseDirectory(new File("."));
-        MavenRunner.runRequest(request, homeProvider);
         try {
+            MavenRunner.runRequest(request, homeProvider);
             String versionInfo = StringUtils.removeEndIgnoreCase(out.toString(), " - ");
             return Optional.of(new MavenRunnerFactory(homeProvider, versionInfo));
         } catch (ProjectCannotStartException e) {
