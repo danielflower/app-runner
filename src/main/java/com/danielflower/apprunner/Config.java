@@ -8,6 +8,8 @@ import com.danielflower.apprunner.runners.HomeProvider;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -35,6 +37,8 @@ public class Config {
 
     public static final String GOROOT = "goroot";
 
+    public static final Logger log = LoggerFactory.getLogger(Config.class);
+
     public static Config load(String[] commandLineArgs) throws IOException {
         Map<String, String> systemEnv = System.getenv();
         Map<String, String> env = new HashMap<>(systemEnv);
@@ -48,6 +52,7 @@ public class Config {
         for (String commandLineArg : commandLineArgs) {
             File file = new File(commandLineArg);
             if (file.isFile()) {
+                log.info("Using config file: " + file.getAbsolutePath());
                 Properties props = new Properties();
                 try (FileInputStream inStream = new FileInputStream(file)) {
                     props.load(inStream);
@@ -138,6 +143,10 @@ public class Config {
 
     public static String goExecutableName() {
         return windowsinize("go");
+    }
+
+    public static String dotnetExecutableName() {
+        return windowsinize("dotnet");
     }
 
     public static String javaExecutableName() {
