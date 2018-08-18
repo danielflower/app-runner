@@ -26,7 +26,7 @@ public class DotnetRunnerFactory implements AppRunnerFactory {
 
         String executable = config.dotnetExecutableName();
 
-        Pair<Boolean, String> proc = ProcessStarter.run(new CommandLine(executable).addArgument("--version"));
+        Pair<Boolean, String> proc = ProcessStarter.run(new CommandLine(executable).addArgument("--info"));
         if (proc.getLeft()) {
             String versionInfo = proc.getRight();
             return Optional.of(new DotnetRunnerFactory(executable, versionInfo));
