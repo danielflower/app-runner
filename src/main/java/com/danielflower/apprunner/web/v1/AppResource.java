@@ -7,7 +7,9 @@ import com.danielflower.apprunner.io.Zippy;
 import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
-import io.swagger.annotations.*;
+import io.muserver.rest.ApiResponse;
+import io.muserver.rest.Description;
+import io.muserver.rest.Required;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
@@ -29,7 +31,7 @@ import java.util.zip.ZipInputStream;
 import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
-@Api(value = "Application")
+@Description(value = "Application")
 @Path("/apps")
 public class AppResource {
     public static final Logger log = LoggerFactory.getLogger(AppResource.class);
@@ -46,7 +48,7 @@ public class AppResource {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Gets all registered apps")
+    @Description(value = "Gets all registered apps")
     public String apps(@Context UriInfo uriInfo) {
         JSONObject result = new JSONObject();
         List<JSONObject> apps = new ArrayList<>();
@@ -62,8 +64,8 @@ public class AppResource {
     @GET
     @Path("/{name}")
     @Produces(MediaType.APPLICATION_JSON)
-    @ApiOperation(value = "Gets a single app")
-    public Response app(@Context UriInfo uriInfo, @ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
+    @Description(value = "Gets a single app")
+    public Response app(@Context UriInfo uriInfo, @Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> app = estate.app(name);
         if (app.isPresent()) {
             return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString(4)).build();
@@ -75,8 +77,8 @@ public class AppResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{name}/build.log")
-    @ApiOperation(value = "Gets the latest build log as plain text for the given app")
-    public String buildLogs(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
+    @Description(value = "Gets the latest build log as plain text for the given app")
+    public String buildLogs(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
             return namedApp.get().latestBuildLog();
@@ -86,8 +88,8 @@ public class AppResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     @Path("/{name}/console.log")
-    @ApiOperation(value = "Gets the latest console log as plain text for the given app")
-    public String consoleLogs(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
+    @Description(value = "Gets the latest console log as plain text for the given app")
+    public String consoleLogs(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
             return namedApp.get().latestConsoleLog();
@@ -97,14 +99,14 @@ public class AppResource {
     @GET
     @Produces("application/zip")
     @Path("/{name}/data")
-    @ApiOperation(value = "Gets the contents of the app's data directory as a zip file")
-    public StreamingOutput getAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
+    @Description(value = "Gets the contents of the app's data directory as a zip file")
+    public StreamingOutput getAppData(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         AppDescription ad = getAppDescription(name);
         log.info("Getting data for " + name);
         return output -> Zippy.zipDirectory(ad.dataDir(), output);
     }
 
-    private AppDescription getAppDescription(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) {
+    private AppDescription getAppDescription(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (!namedApp.isPresent())
             throw new NotFoundException("No app with name " + name);
@@ -112,14 +114,11 @@ public class AppResource {
     }
 
     @DELETE
-    @Consumes("application/zip")
     @Path("/{name}/data")
-    @ApiOperation(value = "Deletes all the files for an app")
-    @ApiResponses({
-        @ApiResponse(code = 204, message = "Files deleted successfully"),
-        @ApiResponse(code = 500, message = "At least one file could not be deleted")
-    })
-    public Response deleteAppData(@ApiParam(required = true) @PathParam("name") String name) throws IOException {
+    @Description(value = "Deletes all the files for an app")
+    @ApiResponse(code = "204", message = "Files deleted successfully")
+    @ApiResponse(code = "500", message = "At least one file could not be deleted")
+    public Response deleteAppData(@Required @Description(value="The name of the app") @PathParam("name") String name) throws IOException {
         AppDescription ad = getAppDescription(name);
         File[] children = ad.dataDir().listFiles();
         if (children == null) {
@@ -141,9 +140,9 @@ public class AppResource {
     @POST
     @Consumes("application/zip")
     @Path("/{name}/data")
-    @ApiOperation(value = "Sets the contents of the app's data directory with the contents of the zip file")
-    @ApiResponse(code = 204, message = "Files uploaded successfully")
-    public Response setAppData(@ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name,
+    @Description(value = "Sets the contents of the app's data directory with the contents of the zip file")
+    @ApiResponse(code = "204", message = "Files uploaded successfully")
+    public Response setAppData(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name,
                                InputStream requestBody) throws IOException {
         AppDescription ad = getAppDescription(name);
         if (ad.dataDir().listFiles().length > 0) {
@@ -184,7 +183,7 @@ public class AppResource {
 
         if (filesUnzipped > 0) {
             log.info("Going to move temp dir to app data path " + ad.dataDir().getCanonicalPath());
-            if ( !ad.dataDir().delete()) {
+            if (!ad.dataDir().delete()) {
                 log.warn("Could not delete old data dir");
             }
             FileUtils.moveDirectory(unzipTo, new File(dataDirPath));
@@ -231,20 +230,17 @@ public class AppResource {
     }
 
     @POST
-    @Produces("*/*")
-    // Should be application/json, but this causes problems in the swagger-ui when it runs against pre 1.4 app runners
-    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @ApiOperation(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
-    @ApiResponses(value = {
-        @ApiResponse(code = 201, message = "The new app was successfully registered"),
-        @ApiResponse(code = 400, message = "The git URL was not specified or the git repo could not be cloned, or the app name is not valid."),
-        @ApiResponse(code = 409, message = "There is already an app with that name"),
-        @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
-    })
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes({MediaType.APPLICATION_FORM_URLENCODED, MediaType.APPLICATION_JSON})
+    @Description(value = "Registers a new app with AppRunner. Note that it does not deploy it.")
+    @ApiResponse(code = "201", message = "The new app was successfully registered")
+    @ApiResponse(code = "400", message = "The git URL was not specified or the git repo could not be cloned, or the app name is not valid.")
+    @ApiResponse(code = "409", message = "There is already an app with that name")
+    @ApiResponse(code = "501", message = "The app type is not supported by this apprunner")
     public Response create(@Context UriInfo uriInfo,
-                           @ApiParam(required = true, value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @Required @Description(value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @ApiParam(value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
+                           @Description(value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {
@@ -316,17 +312,15 @@ public class AppResource {
     @Path("/{name}")
     @Produces(MediaType.APPLICATION_JSON)
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
-    @ApiOperation(value = "Updates the git URL of an existing app")
-    @ApiResponses(value = {
-        @ApiResponse(code = 200, message = "Success - call deploy after this to build and deploy from the new URL"),
-        @ApiResponse(code = 400, message = "The name or git URL was not specified or the git repo could not be cloned"),
-        @ApiResponse(code = 404, message = "The app does not exist"),
-        @ApiResponse(code = 501, message = "The app type is not supported by this apprunner")
-    })
+    @Description(value = "Updates the git URL of an existing app")
+    @ApiResponse(code = "200", message = "Success - call deploy after this to build and deploy from the new URL")
+    @ApiResponse(code = "400", message = "The name or git URL was not specified or the git repo could not be cloned")
+    @ApiResponse(code = "404", message = "The app does not exist")
+    @ApiResponse(code = "501", message = "The app type is not supported by this apprunner")
     public Response update(@Context UriInfo uriInfo,
-                           @ApiParam(required = true, value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @Required @Description(value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @ApiParam(value = "The ID of the app to update")
+                           @Description(value = "The ID of the app to update")
                            @PathParam("name") String appName) {
         log.info("Received request to update " + appName + " to " + gitUrl);
         if (isBlank(gitUrl) || isBlank(appName)) {
@@ -359,8 +353,8 @@ public class AppResource {
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{name}")
-    @ApiOperation(value = "De-registers an application")
-    public Response delete(@Context UriInfo uriInfo, @ApiParam(required = true) @PathParam("name") String name) throws IOException {
+    @Description(value = "De-registers an application")
+    public Response delete(@Context UriInfo uriInfo, @Description(value="The name of the app") @PathParam("name") String name) throws IOException {
         Optional<AppDescription> existing = estate.app(name);
         if (existing.isPresent()) {
             AppDescription appDescription = existing.get();
@@ -375,15 +369,15 @@ public class AppResource {
     @POST /* Maybe should be PUT, but too many hooks only use POST */
     @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Path("/{name}/deploy")
-    @ApiOperation(value = "Deploys an app", notes = "Deploys the app by fetching the latest changes from git, building it, " +
+    @Description(value = "Deploys an app", details = "Deploys the app by fetching the latest changes from git, building it, " +
         "starting it, polling for successful startup by making GET requests to /{name}/, and if it returns any HTTP response " +
         "it shuts down the old version of the app. If any steps before that fail, the old version of the app will continue serving " +
         "requests.")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "Returns 200 if the command was received successfully. Whether the build " +
+    @ApiResponse(code = "200", message = "Returns 200 if the command was received successfully. Whether the build " +
         "actually succeeds or fails is ignored. Returns streamed plain text of the build log and console startup, unless the Accept" +
-        " header includes 'application/json'.")})
-    public Response deploy(@Context UriInfo uriInfo, @ApiParam(example = "application/json") @HeaderParam("Accept") String accept,
-                           @ApiParam(required = true, example = "app-runner-home") @PathParam("name") String name) throws IOException {
+        " header includes 'application/json'.")
+    public Response deploy(@Context UriInfo uriInfo, @Description(value = "The type of response desired, e.g. application/json or text/plain", example = "application/json") @HeaderParam("Accept") String accept,
+                           @Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) throws IOException {
         StreamingOutput stream = new UpdateStreamer(name);
         if (MediaType.APPLICATION_JSON.equals(accept)) {
             StringBuilderWriter output = new StringBuilderWriter();
@@ -428,8 +422,8 @@ public class AppResource {
 
     @PUT
     @Path("/{name}/stop")
-    @ApiOperation(value = "Stop an app from running, but does not de-register it. Call the deploy action to restart it.")
-    public Response stop(@ApiParam(required = true) @PathParam("name") String name) {
+    @Description(value = "Stop an app from running, but does not de-register it. Call the deploy action to restart it.")
+    public Response stop(@Description(value = "The app to stop") @PathParam("name") String name) {
         Optional<AppDescription> app = estate.app(name);
         if (app.isPresent()) {
             try {

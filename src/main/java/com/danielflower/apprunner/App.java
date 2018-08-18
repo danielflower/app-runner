@@ -8,22 +8,19 @@ import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
+import io.muserver.SSLContextBuilder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.server.*;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.transport.URIish;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
+import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,33 +79,17 @@ public class App {
 
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
 
-
-        Server jettyServer = new Server();
-        HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.setOutputBufferSize(128);
-        httpConfig.addCustomizer(new SecureRequestCustomizer());
-        httpConfig.addCustomizer(new ForwardedRequestCustomizer()); // must come last so the protocol doesn't get overwritten
-
-        List<ServerConnector> serverConnectorList = new ArrayList<>();
         int httpPort = config.getInt(Config.SERVER_HTTP_PORT, -1);
-        if (httpPort > -1) {
-            ServerConnector httpConnector = new ServerConnector(jettyServer, new HttpConnectionFactory(new HttpConfiguration(httpConfig)));
-            httpConnector.setPort(httpPort);
-            serverConnectorList.add(httpConnector);
-        }
         int httpsPort = config.getInt(Config.SERVER_HTTPS_PORT, -1);
-        SslContextFactory sslContextFactory = null;
+        SSLContext sslContext = null;
         if (httpsPort > -1) {
-            sslContextFactory = new SslContextFactory();
-            sslContextFactory.setKeyStorePath(fullPath(config.getFile("apprunner.keystore.path")));
-            sslContextFactory.setKeyStorePassword(config.get("apprunner.keystore.password"));
-            sslContextFactory.setKeyManagerPassword(config.get("apprunner.keymanager.password"));
-
-            ServerConnector httpConnector = new ServerConnector(jettyServer, sslContextFactory, new HttpConnectionFactory(new HttpConfiguration(httpConfig)));
-            httpConnector.setPort(httpsPort);
-            serverConnectorList.add(httpConnector);
+            sslContext = SSLContextBuilder.sslContext()
+                .withKeystore(config.getFile("apprunner.keystore.path"))
+                .withKeystorePassword(config.get("apprunner.keystore.password"))
+                .withKeyPassword(config.get("apprunner.keymanager.password"))
+                .withKeystoreType(config.get("apprunner.keystore.type", "JKS"))
+                .build();
         }
-        jettyServer.setConnectors(serverConnectorList.toArray(new Connector[0]));
 
         String backupUrl = config.get(Config.BACKUP_URL, "");
         if (StringUtils.isNotBlank(backupUrl)) {
@@ -117,17 +98,14 @@ public class App {
         }
 
 
-        webServer = new WebServer(jettyServer, proxyMap, defaultAppName,
+        webServer = new WebServer(httpPort, httpsPort, sslContext, proxyMap, defaultAppName,
             new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService), new AppResource(estate, systemInfo, fileSandbox),
             config.getInt("apprunner.proxy.idle.timeout", 30000), config.getInt("apprunner.proxy.total.timeout", 60000));
 
 
         webServer.start();
 
-        if (sslContextFactory != null) {
-            log.info("Supported SSL protocols: " + Arrays.toString(sslContextFactory.getSelectedProtocols()));
-            log.info("Supported Cipher suites: " + Arrays.toString(sslContextFactory.getSelectedCipherSuites()));
-
+        if (httpsPort >= -0) {
             int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
             if (maxKeyLen < 8192) {
                 log.warn("The current java version (" + System.getProperty("java.home") + ") limits key length to " + maxKeyLen + " bits so modern browsers may have issues connecting. Install the JCE Unlimited Strength Jurisdiction Policy to allow high strength SSL connections.");

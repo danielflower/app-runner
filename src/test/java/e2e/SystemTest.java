@@ -12,6 +12,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.shared.invoker.InvocationRequest;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.api.ContentResponse;
+import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -40,8 +41,10 @@ import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
@@ -137,6 +140,16 @@ public class SystemTest {
     }
 
     @Test
+    public void theReverseProxyBehavesItself() throws Exception {
+        ContentResponse resp = restClient.homepage(mavenApp.name);
+        assertThat(resp, is(equalTo(200, containsString("My Maven App"))));
+        HttpFields headers = resp.getHeaders();
+        assertThat(headers.getValuesList("Date"), hasSize(1));
+        assertThat(headers.getValuesList("Via"), Matchers.equalTo(singletonList("HTTP/1.1 apprunner")));
+        assertThat(restClient.deleteApp(mavenApp.name), equalTo(200, containsString("{")));
+    }
+
+    @Test
     public void canUpdateAppsByDeployingThem() throws Exception {
         AppRepo changesApp = AppRepo.create("maven");
         restClient.createApp(changesApp.gitUrl(), "changes-app");
@@ -160,7 +173,7 @@ public class SystemTest {
             is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
         assertThat(
             client.GET(appInfo.getString("consoleLogUrl")),
-            is(equalTo(200, containsString("Starting changes-app in prod"))));
+            is(equalTo(200, containsString("Starting changes-app on port"))));
 
         restClient.deleteApp("changes-app");
     }
@@ -327,7 +340,7 @@ public class SystemTest {
     public void theSystemApiReturnsOsInfoAndZipsOfSampleProjects() throws IOException, InterruptedException, ExecutionException, TimeoutException {
         JSONObject sysInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/system").getContentAsString());
 
-        assertThat(sysInfo.getString("appRunnerVersion"), startsWith("1."));
+        assertThat(sysInfo.getString("appRunnerVersion"), startsWith("2."));
         assertThat(sysInfo.get("host"), is(notNullValue()));
         assertThat(sysInfo.get("user"), is(notNullValue()));
         assertThat(sysInfo.get("os"), is(notNullValue()));
@@ -356,7 +369,7 @@ public class SystemTest {
         ContentResponse swagger = restClient.get("/api/v1/swagger.json");
         assertThat(swagger.getStatus(), is(200));
         System.out.println("swagger.getContentAsString() = " + swagger.getContentAsString());
-        JSONAssert.assertEquals("{ basePath: '/api/v1'," +
+        JSONAssert.assertEquals("{ " +
             "paths: {" +
             "'/apps': {}," +
             "'/system': {}" +

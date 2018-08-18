@@ -1,0 +1,447 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "The REST API for App Runner which is used for registering apps, deploying apps, viewing logs etc.",
+    "version": "1.0",
+    "title": "App Runner"
+  },
+  "basePath": "/api/v1",
+  "tags": [
+    {
+      "name": "Application"
+    },
+    {
+      "name": "System"
+    }
+  ],
+  "paths": {
+    "/apps/{name}": {
+      "get": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Gets a single app",
+        "description": "",
+        "operationId": "app",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "x-example": "app-runner-home"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Updates the git URL of an existing app",
+        "description": "",
+        "operationId": "update",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "gitUrl",
+            "in": "formData",
+            "description": "An SSH or HTTP git URL that points to an app-runner compatible app",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "description": "The ID of the app to update",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success - call deploy after this to build and deploy from the new URL"
+          },
+          "400": {
+            "description": "The name or git URL was not specified or the git repo could not be cloned"
+          },
+          "404": {
+            "description": "The app does not exist"
+          },
+          "501": {
+            "description": "The app type is not supported by this apprunner"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "De-registers an application",
+        "description": "",
+        "operationId": "delete",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/apps": {
+      "get": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Gets all registered apps",
+        "description": "",
+        "operationId": "apps",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Registers a new app with AppRunner. Note that it does not deploy it.",
+        "description": "",
+        "operationId": "create",
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "produces": [
+          "*/*"
+        ],
+        "parameters": [
+          {
+            "name": "gitUrl",
+            "in": "formData",
+            "description": "An SSH or HTTP git URL that points to an app-runner compatible app",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "appName",
+            "in": "formData",
+            "description": "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The new app was successfully registered"
+          },
+          "400": {
+            "description": "The git URL was not specified or the git repo could not be cloned, or the app name is not valid."
+          },
+          "409": {
+            "description": "There is already an app with that name"
+          },
+          "501": {
+            "description": "The app type is not supported by this apprunner"
+          }
+        }
+      }
+    },
+    "/apps/{name}/stop": {
+      "put": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Stop an app from running, but does not de-register it. Call the deploy action to restart it.",
+        "description": "",
+        "operationId": "stop",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/apps/{name}/data": {
+      "get": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Gets the contents of the app's data directory as a zip file",
+        "description": "",
+        "operationId": "getAppData",
+        "produces": [
+          "application/zip"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "x-example": "app-runner-home"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/StreamingOutput"
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Sets the contents of the app's data directory with the contents of the zip file",
+        "description": "",
+        "operationId": "setAppData",
+        "consumes": [
+          "application/zip"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "x-example": "app-runner-home"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/InputStream"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Deletes all the files for an app",
+        "description": "",
+        "operationId": "deleteAppData",
+        "consumes": [
+          "application/zip"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Files deleted successfully"
+          },
+          "500": {
+            "description": "At least one file could not be deleted"
+          }
+        }
+      }
+    },
+    "/apps/{name}/build.log": {
+      "get": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Gets the latest build log as plain text for the given app",
+        "description": "",
+        "operationId": "buildLogs",
+        "produces": [
+          "text/plain"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "x-example": "app-runner-home"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/apps/{name}/console.log": {
+      "get": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Gets the latest console log as plain text for the given app",
+        "description": "",
+        "operationId": "consoleLogs",
+        "produces": [
+          "text/plain"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "x-example": "app-runner-home"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/apps/{name}/deploy": {
+      "post": {
+        "tags": [
+          "Application"
+        ],
+        "summary": "Deploys an app",
+        "description": "Deploys the app by fetching the latest changes from git, building it, starting it, polling for successful startup by making GET requests to /{name}/, and if it returns any HTTP response it shuts down the old version of the app. If any steps before that fail, the old version of the app will continue serving requests.",
+        "operationId": "deploy",
+        "produces": [
+          "text/plain",
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "Accept",
+            "in": "header",
+            "required": false,
+            "type": "string",
+            "x-example": "application/json"
+          },
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "x-example": "app-runner-home"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns 200 if the command was received successfully. Whether the build actually succeeds or fails is ignored. Returns streamed plain text of the build log and console startup, unless the Accept header includes 'application/json'."
+          }
+        }
+      }
+    },
+    "/system": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Returns information about AppRunner, including information about sample apps",
+        "description": "",
+        "operationId": "systemInfo",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/system/samples/{name}": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Returns a ZIP file containing a sample app",
+        "description": "",
+        "operationId": "samples",
+        "produces": [
+          "application/zip"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "maven.zip",
+              "lein.zip",
+              "nodejs.zip",
+              "sbt.zip"
+            ]
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "successful operation"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "StreamingOutput": {
+      "type": "object"
+    },
+    "InputStream": {
+      "type": "object"
+    }
+  }
+}
