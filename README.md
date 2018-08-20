@@ -1,7 +1,7 @@
 App Runner
 ----------
 
-A self-hosted platform-as-a-service that hosts web apps written in Java, Clojure, NodeJS, Python, golang and Scala.
+A self-hosted platform-as-a-service that hosts web apps written in Java, Clojure, NodeJS, Python, golang, Scala and .NET Core.
 Designed to be simple to deploy behind a firewall, on corporate intranets or at home. 
 Once running, tell App Runner the Git URL of a web app and it will automatically build and host it for you, with
 support to auto-deploy on every git push.
@@ -9,7 +9,7 @@ support to auto-deploy on every git push.
 ### Features
 
 * Host your own Platform as a Service: you just need Java 8, plus optional build tools
-(Maven, Leinigen, Scala/SBT, go compiler, NodeJS/NPM, Gradle, Python 2 or 3).
+(Maven, Leinigen, Scala/SBT, go compiler, NodeJS/NPM, Gradle, Python 2 or 3, .NET Core SDK).
 * Deploy web apps with no build servers or deploy scripts needed: tell AppRunner the Git
 URL and it will automatically build and host it.
 * Auto deploy on source control change when using post-commit hooks

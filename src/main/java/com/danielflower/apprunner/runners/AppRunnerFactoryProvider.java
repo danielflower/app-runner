@@ -35,6 +35,7 @@ public class AppRunnerFactoryProvider {
         futures.add(executorService.submit(() -> GradleRunnerFactory.createIfAvailable(config)));
         futures.add(executorService.submit(() -> PythonRunnerFactory.createIfAvailable(config, 2)));
         futures.add(executorService.submit(() -> PythonRunnerFactory.createIfAvailable(config, 3)));
+        futures.add(executorService.submit(() -> DotnetRunnerFactory.createIfAvailable(config)));
 
         List<AppRunnerFactory> factories = new ArrayList<>();
         for (Future<Optional<? extends AppRunnerFactory>> future : futures) {

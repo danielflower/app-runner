@@ -58,6 +58,7 @@ public class AppEstate {
     }
 
     public AppDescription addApp(String gitUrl, String appName) throws UnsupportedProjectTypeException, IOException, GitAPIException {
+        log.info("Loading app [" + appName + "] (git:" + gitUrl + ")");
         AppManager appMan = AppManager.create(gitUrl, fileSandbox, appName);
         runnerProvider.runnerFor(appName, fileSandbox.repoDir(appName));
         appMan.addListener(proxyMap::add);

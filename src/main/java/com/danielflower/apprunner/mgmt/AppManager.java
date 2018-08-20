@@ -57,6 +57,7 @@ public class AppManager implements AppDescription {
             git = Git.open(gitDir);
             isNew = true;
         } catch (RepositoryNotFoundException e) {
+            log.info("Clone app " + name + " from " + gitUrl);
             git = Git.cloneRepository()
                 .setURI(gitUrl)
                 .setBare(false)
