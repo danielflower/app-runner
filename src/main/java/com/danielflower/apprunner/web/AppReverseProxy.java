@@ -98,19 +98,15 @@ public class AppReverseProxy implements RouteHandler {
             clientResp.status(response.getStatus());
             HttpFields targetRespHeaders = response.getHeaders();
             List<String> customHopByHopHeaders = getCustomHopByHopHeaders(targetRespHeaders.get(HttpHeader.CONNECTION));
-            String via = null;
             for (HttpField targetRespHeader : targetRespHeaders) {
                 String lowerName = targetRespHeader.getName().toLowerCase();
                 if (HOP_BY_HOP_HEADERS.contains(lowerName) || customHopByHopHeaders.contains(lowerName)) {
                     continue;
                 }
                 String value = targetRespHeader.getValue();
-                if (lowerName.equals("via")) {
-                    via = value;
-                }
                 clientResp.headers().add(targetRespHeader.getName(), value);
             }
-            clientResp.headers().set(HeaderNames.VIA, appRunnerVia(via));
+            clientResp.headers().set(HeaderNames.VIA, "HTTP/1.1 apprunner");
         });
         targetReq.onResponseContentAsync((response, content, callback) -> asyncHandle.write(content,
             new WriteCallback() {
@@ -169,27 +165,15 @@ public class AppReverseProxy implements RouteHandler {
         String proto = clientReq.uri().getScheme();
         String originHost = clientReq.uri().getAuthority();
 
-        String curVia = clientReq.headers().get(HeaderNames.VIA, null);
-        targetReq.header("Via", appRunnerVia(curVia));
-        targetReq.header("X-Forwarded-Proto", null);
-        targetReq.header("X-Forwarded-Proto", proto);
-        targetReq.header("X-Forwarded-Host", null);
-        targetReq.header("X-Forwarded-Host", originHost);
-        targetReq.header("X-Forwarded-Server", null);
-
-        String murpForwarded = "by=" + ipAddress + "; for=" + clientReq.remoteAddress() + "; host=" + originHost + "; proto=" + proto;
-        String curFowarded = reqHeaders.get("Forwarded", null);
-        if (curFowarded != null) {
-            murpForwarded = curFowarded + ", " + murpForwarded;
-        }
-        targetReq.header("Forwarded", null);
-        targetReq.header("Forwarded", murpForwarded);
+        targetReq.header(HttpHeader.VIA, "HTTP/1.1 apprunner");
+        targetReq.header(HttpHeader.X_FORWARDED_PROTO, proto);
+        targetReq.header(HttpHeader.X_FORWARDED_HOST, originHost);
+        targetReq.header(HttpHeader.X_FORWARDED_SERVER, ipAddress);
+        String forwardedFor = clientReq.remoteAddress();
+        targetReq.header(HttpHeader.X_FORWARDED_FOR, forwardedFor);
+//        targetReq.header(HttpHeader.FORWARDED, "by=" + ipAddress + "; for=" + forwardedFor + "; host=" + originHost + "; proto=" + proto);
 
         return hasContentLengthOrTransferEncoding;
-    }
-
-    private static String appRunnerVia(String curVia) {
-        return (curVia == null ? "" : curVia + ", ") + "HTTP/1.1 apprunner";
     }
 
     private static List<String> getCustomHopByHopHeaders(String connectionHeaderValue) {
