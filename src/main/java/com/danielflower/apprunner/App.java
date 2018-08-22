@@ -93,7 +93,7 @@ public class App {
 
         String backupUrl = config.get(Config.BACKUP_URL, "");
         if (StringUtils.isNotBlank(backupUrl)) {
-            backupService = BackupService.prepare(dataDir, new URIish(backupUrl));
+            backupService = BackupService.prepare(dataDir, new URIish(backupUrl), config.getInt(Config.BACKUP_MINUTES, 60));
             backupService.start();
         }
 

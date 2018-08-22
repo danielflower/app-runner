@@ -27,6 +27,7 @@ public class Config {
     public static final String DEFAULT_APP_NAME = "appserver.default.app.name";
     public static final String INITIAL_APP_URL = "appserver.initial.app.url";
     public static final String BACKUP_URL = "appserver.backup.url";
+    public static final String BACKUP_MINUTES = "appserver.backup.schedule.minutes";
 
     public static final String JAVA_HOME = "java.home";
     public static final String LEIN_JAR = "lein.jar";

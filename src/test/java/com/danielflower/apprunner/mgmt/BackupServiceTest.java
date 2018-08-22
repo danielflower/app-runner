@@ -35,7 +35,7 @@ public class BackupServiceTest {
 
     @Test
     public void backsUpFilesButNotReposOrTempDirs() throws Exception {
-        BackupService backupService = BackupService.prepare(localDir, remoteUri);
+        BackupService backupService = BackupService.prepare(localDir, remoteUri, 60);
         backupService.backup();
 
         write(localDir, "repos.properties", "app=url");
@@ -87,7 +87,7 @@ public class BackupServiceTest {
         createStartBackupStop(localDir, remoteUri);
     }
     private static void createStartBackupStop(File localDir, URIish remoteUri) throws Exception {
-        BackupService service = BackupService.prepare(localDir, remoteUri);
+        BackupService service = BackupService.prepare(localDir, remoteUri, 60);
         service.start();
         Thread.sleep(100);
         service.stop();
@@ -96,7 +96,7 @@ public class BackupServiceTest {
 
     @Test
     public void backupsWorkEvenWhenFilesAreBeingWrittenTo() throws Exception {
-        BackupService backupService = BackupService.prepare(localDir, remoteUri);
+        BackupService backupService = BackupService.prepare(localDir, remoteUri, 60);
 
         AtomicBoolean running = new AtomicBoolean(true);
         File file = new File(localDir, "something.txt");

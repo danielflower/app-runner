@@ -32,10 +32,12 @@ public class BackupService {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private volatile Exception lastError = null;
     public volatile Instant lastSuccessfulBackupTime;
+    private final int backupTimeInMinutes;
 
-    public BackupService(Git dataDirRepo, String remoteUri) {
+    public BackupService(Git dataDirRepo, String remoteUri, int backupTimeInMinutes) {
         this.repo = dataDirRepo;
         this.remoteUri = remoteUri;
+        this.backupTimeInMinutes = backupTimeInMinutes;
     }
 
     public void start() {
@@ -49,7 +51,7 @@ public class BackupService {
                 lastError = e;
                 log.error("Unable to back up AppRunner data dir", e);
             }
-        }, 0, 60, TimeUnit.MINUTES);
+        }, 0, backupTimeInMinutes, TimeUnit.MINUTES);
     }
 
     public Optional<Exception> lastRunError() {
@@ -88,7 +90,7 @@ public class BackupService {
         }
     }
 
-    public static BackupService prepare(File localDir, URIish remoteUri) throws GitAPIException, IOException {
+    public static BackupService prepare(File localDir, URIish remoteUri, int backupTimeInMinutes) throws GitAPIException, IOException {
         Git local;
         try {
             local = Git.open(localDir);
@@ -112,6 +114,6 @@ public class BackupService {
         URL inputUrl = BackupService.class.getResource("/dataDirGitIgnore.txt");
         FileUtils.copyURLToFile(inputUrl, new File(localDir, ".gitignore"));
 
-        return new BackupService(local, remoteUri.toString());
+        return new BackupService(local, remoteUri.toString(), backupTimeInMinutes);
     }
 }

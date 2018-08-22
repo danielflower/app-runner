@@ -171,7 +171,7 @@ public class AppReverseProxy implements RouteHandler {
         targetReq.header(HttpHeader.X_FORWARDED_SERVER, ipAddress);
         String forwardedFor = clientReq.remoteAddress();
         targetReq.header(HttpHeader.X_FORWARDED_FOR, forwardedFor);
-//        targetReq.header(HttpHeader.FORWARDED, "by=" + ipAddress + "; for=" + forwardedFor + "; host=" + originHost + "; proto=" + proto);
+        targetReq.header(HttpHeader.FORWARDED, "by=" + ipAddress + "; for=" + forwardedFor + "; host=" + originHost + "; proto=" + proto);
 
         return hasContentLengthOrTransferEncoding;
     }
