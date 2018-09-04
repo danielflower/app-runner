@@ -64,7 +64,8 @@ public class AppReverseProxy implements RouteHandler {
 
         clientResp.headers().remove(HeaderNames.DATE); // so that the target's date can be used
 
-        URI newTarget = new URI(target.getScheme(), target.getRawUserInfo(), target.getHost(), target.getPort(), clientReq.uri().getRawPath(), clientReq.uri().getRawQuery(), clientReq.uri().getRawFragment());
+        String qs = clientReq.uri().getRawQuery() == null ? "" : "?" + clientReq.uri().getRawQuery();
+        URI newTarget = target.resolve(clientReq.uri().getRawPath() + qs);
         final AsyncHandle asyncHandle = clientReq.handleAsync();
         final long id = counter.incrementAndGet();
         log.info("[" + id + "] Proxying from " + clientReq.uri() + " to " + newTarget);
