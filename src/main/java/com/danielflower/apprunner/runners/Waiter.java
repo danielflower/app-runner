@@ -31,6 +31,7 @@ public class Waiter implements AutoCloseable {
     }
 
     public void blockUntilReady() throws Exception {
+        client.setFollowRedirects(false);
         client.start();
         long start = System.currentTimeMillis();
         while ((System.currentTimeMillis() - start) < unit.toMillis(timeout)) {
