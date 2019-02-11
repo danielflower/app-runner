@@ -1,7 +1,6 @@
 package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.Config;
-import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.InvocationRequest;
@@ -71,7 +70,7 @@ public class MavenRunnerFactory implements AppRunnerFactory {
             MavenRunner.runRequest(request, homeProvider);
             String versionInfo = StringUtils.removeEndIgnoreCase(out.toString(), " - ");
             return Optional.of(new MavenRunnerFactory(homeProvider, versionInfo));
-        } catch (ProjectCannotStartException e) {
+        } catch (Exception e) {
             return Optional.empty();
         }
     }
