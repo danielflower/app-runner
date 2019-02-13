@@ -9,7 +9,6 @@ import com.danielflower.apprunner.web.WebServer;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
 import io.muserver.SSLContextBuilder;
-import io.muserver.Toggles;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
@@ -32,9 +31,6 @@ import static com.danielflower.apprunner.FileSandbox.fullPath;
 import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class App {
-    static {
-        Toggles.fixedLengthResponsesEnabled = true;
-    }
     public static final Logger log = LoggerFactory.getLogger(App.class);
 
     private final Config config;
