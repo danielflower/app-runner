@@ -10,6 +10,7 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.NotFoundException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URL;
@@ -25,6 +26,9 @@ public class AppReverseProxy implements RouteHandler {
     private static final Logger log = LoggerFactory.getLogger(AppReverseProxy.class);
     private static final Set<String> HOP_BY_HOP_HEADERS = Collections.unmodifiableSet(new HashSet<>(asList(
         "keep-alive", "transfer-encoding", "te", "connection", "trailer", "upgrade", "proxy-authorization", "proxy-authenticate")));
+    private static final Set<String> FORWARDED_HEADERS = Collections.unmodifiableSet(new HashSet<>(asList(
+        "forwarded", "x-forwarded-by", "x-forwarded-for", "x-forwarded-host", "x-forwarded-proto", "x-forwarded-port", "x-forwarded-server"
+    )));
 
     private final AtomicLong counter = new AtomicLong();
     private final HttpClient httpClient;
@@ -37,7 +41,7 @@ public class AppReverseProxy implements RouteHandler {
         try {
             ip = InetAddress.getLocalHost().getHostAddress();
         } catch (Exception e) {
-            ip = "127.0.0.1";
+            ip = "unknown";
             log.info("Could not fine local address so using " + ip);
         }
         ipAddress = ip;
@@ -54,10 +58,7 @@ public class AppReverseProxy implements RouteHandler {
         String name = pathParams.get("appName");
         URL targetURL = proxyMap.get(name);
         if (targetURL == null) {
-            clientResp.status(404);
-            clientResp.contentType(ContentTypes.TEXT_HTML);
-            clientResp.write("<h1>404 Not Found</h1>");
-            return;
+            throw new NotFoundException("There is no app named " + name);
         }
         URI target = targetURL.toURI();
         final long start = System.currentTimeMillis();
@@ -72,7 +73,7 @@ public class AppReverseProxy implements RouteHandler {
 
         Request targetReq = httpClient.newRequest(newTarget);
         targetReq.method(clientReq.method().name());
-        boolean hasRequestBody = setHeaders(clientReq, targetReq);
+        boolean hasRequestBody = setRequestHeaders(clientReq, targetReq);
 
         if (hasRequestBody) {
             DeferredContentProvider targetReqBody = new DeferredContentProvider();
@@ -149,7 +150,7 @@ public class AppReverseProxy implements RouteHandler {
 
     }
 
-    private static boolean setHeaders(MuRequest clientReq, Request targetReq) {
+    private static boolean setRequestHeaders(MuRequest clientReq, Request targetReq) {
         Headers reqHeaders = clientReq.headers();
         List<String> customHopByHop = getCustomHopByHopHeaders(reqHeaders.get(HeaderNames.CONNECTION));
 
@@ -157,7 +158,7 @@ public class AppReverseProxy implements RouteHandler {
         for (Map.Entry<String, String> clientHeader : reqHeaders) {
             String key = clientHeader.getKey();
             String lowKey = key.toLowerCase();
-            if (HOP_BY_HOP_HEADERS.contains(lowKey) || customHopByHop.contains(lowKey)) {
+            if (HOP_BY_HOP_HEADERS.contains(lowKey) || FORWARDED_HEADERS.contains(lowKey) || customHopByHop.contains(lowKey)) {
                 continue;
             }
             hasContentLengthOrTransferEncoding |= lowKey.equals("content-length") || lowKey.equals("transfer-encoding");
@@ -167,12 +168,19 @@ public class AppReverseProxy implements RouteHandler {
         String originHost = clientReq.uri().getAuthority();
 
         targetReq.header(HttpHeader.VIA, "HTTP/1.1 apprunner");
-        targetReq.header(HttpHeader.X_FORWARDED_PROTO, proto);
-        targetReq.header(HttpHeader.X_FORWARDED_HOST, originHost);
-        targetReq.header(HttpHeader.X_FORWARDED_SERVER, ipAddress);
         String forwardedFor = clientReq.remoteAddress();
-        targetReq.header(HttpHeader.X_FORWARDED_FOR, forwardedFor);
-        targetReq.header(HttpHeader.FORWARDED, "by=" + ipAddress + "; for=" + forwardedFor + "; host=" + originHost + "; proto=" + proto);
+
+        List<ForwardedHeader> forwardHeaders = clientReq.headers().forwarded();
+        for (ForwardedHeader existing : forwardHeaders) {
+            targetReq.header(HttpHeader.FORWARDED, existing.toString());
+        }
+        ForwardedHeader newForwarded = new ForwardedHeader(ipAddress, forwardedFor, originHost, proto, null);
+        targetReq.header(HttpHeader.FORWARDED, newForwarded.toString());
+
+        ForwardedHeader first = forwardHeaders.isEmpty() ? newForwarded : forwardHeaders.get(0);
+        targetReq.header(HttpHeader.X_FORWARDED_PROTO, first.proto());
+        targetReq.header(HttpHeader.X_FORWARDED_HOST, first.host());
+        targetReq.header(HttpHeader.X_FORWARDED_FOR, first.forValue());
 
         return hasContentLengthOrTransferEncoding;
     }
@@ -182,7 +190,7 @@ public class AppReverseProxy implements RouteHandler {
             return Collections.emptyList();
         }
         List<String> customHopByHop = new ArrayList<>();
-        String[] split = connectionHeaderValue.split(" *, *");
+        String[] split = connectionHeaderValue.split("\\s*,\\s*");
         for (String s : split) {
             customHopByHop.add(s.toLowerCase());
         }
