@@ -45,13 +45,17 @@ public class ReverseProxy implements MuHandler {
         ipAddress = ip;
     }
 
-    private final String viaName;
+    private final String viaValue;
+    private final boolean discardClientForwardedHeaders;
+    private final boolean sendLegacyForwardedHeaders;
 
-    public ReverseProxy(HttpClient httpClient, UriMapper uriMapper, long totalTimeoutInMillis, String viaName) {
+    ReverseProxy(HttpClient httpClient, UriMapper uriMapper, long totalTimeoutInMillis, String viaName, boolean discardClientForwardedHeaders, boolean sendLegacyForwardedHeaders) {
         this.httpClient = httpClient;
         this.uriMapper = uriMapper;
         this.totalTimeoutInMillis = totalTimeoutInMillis;
-        this.viaName = viaName;
+        this.viaValue = viaName == null ? null : "HTTP/1.1 " + viaName;
+        this.discardClientForwardedHeaders = discardClientForwardedHeaders;
+        this.sendLegacyForwardedHeaders = sendLegacyForwardedHeaders;
     }
 
     @Override
@@ -106,8 +110,8 @@ public class ReverseProxy implements MuHandler {
                 String value = targetRespHeader.getValue();
                 clientResp.headers().add(targetRespHeader.getName(), value);
             }
-            if (viaName != null) {
-                clientResp.headers().set(HeaderNames.VIA, "HTTP/1.1 " + viaName);
+            if (viaValue != null) {
+                clientResp.headers().set(HeaderNames.VIA, viaValue);
             }
         });
         targetReq.onResponseContentAsync((response, content, callback) -> asyncHandle.write(content,
@@ -150,7 +154,7 @@ public class ReverseProxy implements MuHandler {
         return true;
     }
 
-    private static boolean setRequestHeaders(MuRequest clientReq, Request targetReq) {
+    private boolean setRequestHeaders(MuRequest clientReq, Request targetReq) {
         Headers reqHeaders = clientReq.headers();
         List<String> customHopByHop = getCustomHopByHopHeaders(reqHeaders.get(HeaderNames.CONNECTION));
 
@@ -167,20 +171,30 @@ public class ReverseProxy implements MuHandler {
         String proto = clientReq.uri().getScheme();
         String originHost = clientReq.uri().getAuthority();
 
-        targetReq.header(HttpHeader.VIA, "HTTP/1.1 apprunner");
-        String forwardedFor = clientReq.remoteAddress();
-
-        List<ForwardedHeader> forwardHeaders = clientReq.headers().forwarded();
-        for (ForwardedHeader existing : forwardHeaders) {
-            targetReq.header(HttpHeader.FORWARDED, existing.toString());
+        if (viaValue != null) {
+            targetReq.header(HttpHeader.VIA, viaValue);
         }
+
+        List<ForwardedHeader> forwardHeaders;
+        if (discardClientForwardedHeaders) {
+            forwardHeaders = Collections.emptyList();
+        } else {
+            forwardHeaders = clientReq.headers().forwarded();
+            for (ForwardedHeader existing : forwardHeaders) {
+                targetReq.header(HttpHeader.FORWARDED, existing.toString());
+            }
+        }
+
+        String forwardedFor = clientReq.remoteAddress();
         ForwardedHeader newForwarded = new ForwardedHeader(ipAddress, forwardedFor, originHost, proto, null);
         targetReq.header(HttpHeader.FORWARDED, newForwarded.toString());
 
-        ForwardedHeader first = forwardHeaders.isEmpty() ? newForwarded : forwardHeaders.get(0);
-        targetReq.header(HttpHeader.X_FORWARDED_PROTO, first.proto());
-        targetReq.header(HttpHeader.X_FORWARDED_HOST, first.host());
-        targetReq.header(HttpHeader.X_FORWARDED_FOR, first.forValue());
+        if (sendLegacyForwardedHeaders) {
+            ForwardedHeader first = forwardHeaders.isEmpty() ? newForwarded : forwardHeaders.get(0);
+            targetReq.header(HttpHeader.X_FORWARDED_PROTO, first.proto());
+            targetReq.header(HttpHeader.X_FORWARDED_HOST, first.host());
+            targetReq.header(HttpHeader.X_FORWARDED_FOR, first.forValue());
+        }
 
         return hasContentLengthOrTransferEncoding;
     }

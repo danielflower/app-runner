@@ -81,14 +81,13 @@ public class App {
 
         int httpPort = config.getInt(Config.SERVER_HTTP_PORT, -1);
         int httpsPort = config.getInt(Config.SERVER_HTTPS_PORT, -1);
-        SSLContext sslContext = null;
+        SSLContextBuilder sslContext = null;
         if (httpsPort > -1) {
             sslContext = SSLContextBuilder.sslContext()
                 .withKeystore(config.getFile("apprunner.keystore.path"))
                 .withKeystorePassword(config.get("apprunner.keystore.password"))
                 .withKeyPassword(config.get("apprunner.keymanager.password"))
-                .withKeystoreType(config.get("apprunner.keystore.type", "JKS"))
-                .build();
+                .withKeystoreType(config.get("apprunner.keystore.type", "JKS"));
         }
 
         String backupUrl = config.get(Config.BACKUP_URL, "");

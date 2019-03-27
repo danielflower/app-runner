@@ -4,34 +4,29 @@ import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
-import io.muserver.ContentTypes;
-import io.muserver.Method;
-import io.muserver.MuServer;
-import io.muserver.MuServerBuilder;
-import io.muserver.murp.ReverseProxy;
+import io.muserver.*;
 import io.muserver.openapi.OpenAPIObjectBuilder;
 import io.muserver.rest.RestHandlerBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.HttpClient;
-import org.eclipse.jetty.client.http.HttpClientTransportOverHTTP;
-import org.eclipse.jetty.util.HttpCookieStore;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.ServerSocket;
 
 import static io.muserver.ContextHandlerBuilder.context;
+import static io.muserver.murp.HttpClientBuilder.httpClient;
+import static io.muserver.murp.ReverseProxyBuilder.reverseProxy;
 import static io.muserver.openapi.InfoObjectBuilder.infoObject;
+import static io.muserver.rest.CORSConfigBuilder.corsConfig;
 
 public class WebServer implements AutoCloseable {
     public static final Logger log = LoggerFactory.getLogger(WebServer.class);
     private final ProxyMap proxyMap;
     private final int httpPort;
     private final int httpsPort;
-    private final SSLContext sslContext;
+    private final SSLContextBuilder sslContext;
     private MuServer muServer;
     private final String defaultAppName;
     private final SystemResource systemResource;
@@ -40,7 +35,7 @@ public class WebServer implements AutoCloseable {
     private final int totalTimeout;
     private HttpClient rpClient;
 
-    public WebServer(int httpPort, int httpsPort, SSLContext sslContext, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout) {
+    public WebServer(int httpPort, int httpsPort, SSLContextBuilder sslContext, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout) {
         this.httpPort = httpPort;
         this.httpsPort = httpsPort;
         this.sslContext = sslContext;
@@ -63,7 +58,10 @@ public class WebServer implements AutoCloseable {
     }
 
     public void start() throws Exception {
-        rpClient = createClient();
+
+        rpClient = httpClient()
+            .withIdleTimeoutMillis(idleTimeout)
+            .build();
 
         muServer = MuServerBuilder.muServer()
             .withHttpPort(httpPort)
@@ -79,18 +77,14 @@ public class WebServer implements AutoCloseable {
                 }
             })
             .addHandler(context("api")
-                .addHandler((request, response) -> {
-                    response.headers().set("Access-Control-Allow-Origin", "*");
-                    response.headers().set("Access-Control-Allow-Headers",
-                        "origin, content-type, accept, authorization");
-                    response.headers().set("Access-Control-Allow-Credentials", "true");
-                    response.headers().set("Access-Control-Allow-Methods",
-                        "GET, POST, PUT, DELETE, OPTIONS, HEAD");
-                    return false;
-                })
                 .addHandler(context("v1")
                     .addHandler(
                         RestHandlerBuilder.restHandler(systemResource, appResource)
+                            .withCORS(corsConfig()
+                                .withAllowedOriginRegex(".*")
+                                .withAllowCredentials(true)
+                                .withExposedHeaders("content-type", "accept", "authorization")
+                            )
                             .withOpenApiJsonUrl("swagger.json")
                             .withOpenApiHtmlUrl("api.html")
                             .withOpenApiDocument(OpenAPIObjectBuilder.openAPIObject()
@@ -102,29 +96,17 @@ public class WebServer implements AutoCloseable {
                             )
                     )
                 ))
-            .addHandler(new ReverseProxy(rpClient, new AppUriMapper(proxyMap), totalTimeout, "apprunner"))
+            .addHandler(reverseProxy()
+                .withUriMapper(new AppUriMapper(proxyMap))
+                .withTotalTimeout(totalTimeout)
+                .withViaName("apprunner")
+                .sendLegacyForwardedHeaders(true)
+                .discardClientForwardedHeaders(false)
+                .withHttpClient(rpClient)
+            )
             .start();
 
         log.info("Started web server at " + muServer.httpsUri() + " / " + muServer.httpUri());
-    }
-
-    private HttpClient createClient() throws Exception {
-
-        int selectors = Math.max(1, Runtime.getRuntime().availableProcessors() / 2);
-
-        HttpClient client = new HttpClient(new HttpClientTransportOverHTTP(selectors), new SslContextFactory(true));
-        client.setFollowRedirects(false);
-        client.setCookieStore(new HttpCookieStore.Empty());
-        client.setMaxConnectionsPerDestination(256);
-        client.setAddressResolutionTimeout(15000);
-        client.setConnectTimeout(15000);
-        client.setIdleTimeout(idleTimeout);
-        client.setUserAgentField(null);
-        client.start();
-
-        client.getContentDecoderFactories().clear();
-
-        return client;
     }
 
 
