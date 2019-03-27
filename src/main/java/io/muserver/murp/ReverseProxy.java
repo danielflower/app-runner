@@ -1,4 +1,4 @@
-package com.danielflower.apprunner.web;
+package io.muserver.murp;
 
 import io.muserver.*;
 import org.eclipse.jetty.client.HttpClient;
@@ -10,10 +10,8 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.NotFoundException;
 import java.net.InetAddress;
 import java.net.URI;
-import java.net.URL;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -22,8 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import static java.util.Arrays.asList;
 
-public class AppReverseProxy implements RouteHandler {
-    private static final Logger log = LoggerFactory.getLogger(AppReverseProxy.class);
+public class ReverseProxy implements MuHandler {
+    private static final Logger log = LoggerFactory.getLogger(ReverseProxy.class);
     private static final Set<String> HOP_BY_HOP_HEADERS = Collections.unmodifiableSet(new HashSet<>(asList(
         "keep-alive", "transfer-encoding", "te", "connection", "trailer", "upgrade", "proxy-authorization", "proxy-authenticate")));
     private static final Set<String> FORWARDED_HEADERS = Collections.unmodifiableSet(new HashSet<>(asList(
@@ -32,7 +30,7 @@ public class AppReverseProxy implements RouteHandler {
 
     private final AtomicLong counter = new AtomicLong();
     private final HttpClient httpClient;
-    private final ProxyMap proxyMap;
+    private final UriMapper uriMapper;
     private final long totalTimeoutInMillis;
 
     private static final String ipAddress;
@@ -47,31 +45,31 @@ public class AppReverseProxy implements RouteHandler {
         ipAddress = ip;
     }
 
-    AppReverseProxy(HttpClient httpClient, ProxyMap proxyMap, long totalTimeoutInMillis) {
+    private final String viaName;
+
+    public ReverseProxy(HttpClient httpClient, UriMapper uriMapper, long totalTimeoutInMillis, String viaName) {
         this.httpClient = httpClient;
-        this.proxyMap = proxyMap;
+        this.uriMapper = uriMapper;
         this.totalTimeoutInMillis = totalTimeoutInMillis;
+        this.viaName = viaName;
     }
 
     @Override
-    public void handle(MuRequest clientReq, MuResponse clientResp, Map<String, String> pathParams) throws Exception {
-        String name = pathParams.get("appName");
-        URL targetURL = proxyMap.get(name);
-        if (targetURL == null) {
-            throw new NotFoundException("There is no app named " + name);
+    public boolean handle(MuRequest clientReq, MuResponse clientResp) throws Exception {
+        URI target = uriMapper.mapFrom(clientReq);
+        if (target == null) {
+            return false;
         }
-        URI target = targetURL.toURI();
+
         final long start = System.currentTimeMillis();
 
         clientResp.headers().remove(HeaderNames.DATE); // so that the target's date can be used
 
-        String qs = clientReq.uri().getRawQuery() == null ? "" : "?" + clientReq.uri().getRawQuery();
-        URI newTarget = target.resolve(clientReq.uri().getRawPath() + qs);
         final AsyncHandle asyncHandle = clientReq.handleAsync();
         final long id = counter.incrementAndGet();
-        log.info("[" + id + "] Proxying from " + clientReq.uri() + " to " + newTarget);
+        log.info("[" + id + "] Proxying from " + clientReq.uri() + " to " + target);
 
-        Request targetReq = httpClient.newRequest(newTarget);
+        Request targetReq = httpClient.newRequest(target);
         targetReq.method(clientReq.method().name());
         boolean hasRequestBody = setRequestHeaders(clientReq, targetReq);
 
@@ -108,7 +106,9 @@ public class AppReverseProxy implements RouteHandler {
                 String value = targetRespHeader.getValue();
                 clientResp.headers().add(targetRespHeader.getName(), value);
             }
-            clientResp.headers().set(HeaderNames.VIA, "HTTP/1.1 apprunner");
+            if (viaName != null) {
+                clientResp.headers().set(HeaderNames.VIA, "HTTP/1.1 " + viaName);
+            }
         });
         targetReq.onResponseContentAsync((response, content, callback) -> asyncHandle.write(content,
             new WriteCallback() {
@@ -147,7 +147,7 @@ public class AppReverseProxy implements RouteHandler {
             }
         });
 
-
+        return true;
     }
 
     private static boolean setRequestHeaders(MuRequest clientReq, Request targetReq) {

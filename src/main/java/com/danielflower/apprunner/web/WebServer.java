@@ -8,6 +8,7 @@ import io.muserver.ContentTypes;
 import io.muserver.Method;
 import io.muserver.MuServer;
 import io.muserver.MuServerBuilder;
+import io.muserver.murp.ReverseProxy;
 import io.muserver.openapi.OpenAPIObjectBuilder;
 import io.muserver.rest.RestHandlerBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -101,7 +102,7 @@ public class WebServer implements AutoCloseable {
                             )
                     )
                 ))
-            .addHandler(null, "/{appName : [^/?]+}{ignored:(.*)}", new AppReverseProxy(rpClient, proxyMap, totalTimeout))
+            .addHandler(new ReverseProxy(rpClient, new AppUriMapper(proxyMap), totalTimeout, "apprunner"))
             .start();
 
         log.info("Started web server at " + muServer.httpsUri() + " / " + muServer.httpUri());
