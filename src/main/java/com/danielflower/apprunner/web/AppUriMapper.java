@@ -5,7 +5,6 @@ import io.muserver.murp.UriMapper;
 
 import java.net.URI;
 import java.net.URL;
-import java.util.Arrays;
 
 public class AppUriMapper implements UriMapper {
 
@@ -18,7 +17,6 @@ public class AppUriMapper implements UriMapper {
     @Override
     public URI mapFrom(MuRequest request) throws Exception {
         String[] segments = request.uri().getPath().split("/", 3);
-        System.out.println("segments = " + Arrays.toString(segments));
         if (segments.length > 1 && !segments[1].isEmpty()) {
             URL url = proxyMap.get(segments[1]);
             if (url == null) {
