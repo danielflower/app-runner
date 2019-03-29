@@ -238,9 +238,9 @@ public class AppResource {
     @ApiResponse(code = "409", message = "There is already an app with that name")
     @ApiResponse(code = "501", message = "The app type is not supported by this apprunner")
     public Response create(@Context UriInfo uriInfo,
-                           @Required @Description(value = "An SSH or HTTP git URL that points to an app-runner compatible app")
+                           @Required @Description("An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
-                           @Description(value = "The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
+                           @Description("The ID that the app will be referenced which should just be letters, numbers, and hyphens. Leave blank to infer it from the git URL")
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {
