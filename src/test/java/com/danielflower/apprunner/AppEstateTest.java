@@ -2,7 +2,6 @@ package com.danielflower.apprunner;
 
 import com.danielflower.apprunner.mgmt.AppDescription;
 import com.danielflower.apprunner.web.ProxyMap;
-import com.danielflower.apprunner.web.WebServerTest;
 import org.junit.Before;
 import org.junit.Test;
 import scaffolding.MockAppDescription;
@@ -13,6 +12,7 @@ import java.net.URLEncoder;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
 import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -22,7 +22,7 @@ public class AppEstateTest {
 
     @Before
     public void populate() throws IOException {
-        estate = new AppEstate(new ProxyMap(), WebServerTest.fileSandbox(), null);
+        estate = new AppEstate(new ProxyMap(), fileSandbox(), null);
         estate.add(app("Y app"));
         estate.add(app("z app"));
         estate.add(app("c app"));

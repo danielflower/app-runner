@@ -2,7 +2,7 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
-import com.danielflower.apprunner.web.WebServer;
+import com.danielflower.apprunner.mgmt.AppManager;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.transport.URIish;
 import org.junit.After;
@@ -21,7 +21,7 @@ import static scaffolding.FileExistsMatcher.fileExists;
 
 public class BackupTest {
 
-    private final String port = String.valueOf(WebServer.getAFreePort());
+    private final String port = String.valueOf(AppManager.getAFreePort());
     private final String appRunnerUrl = "http://localhost:" + port;
     private final RestClient restClient = RestClient.create(appRunnerUrl);
     private final String appId = "maven";

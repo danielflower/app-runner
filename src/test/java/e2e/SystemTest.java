@@ -2,10 +2,10 @@ package e2e;
 
 import com.danielflower.apprunner.Config;
 import com.danielflower.apprunner.io.LineConsumer;
+import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
-import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -49,7 +49,7 @@ import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class SystemTest {
 
-    private static final int httpsPort = WebServer.getAFreePort();
+    private static final int httpsPort = AppManager.getAFreePort();
     private static final String appRunnerUrl = "https://localhost:" + httpsPort;
     private static final RestClient restClient = RestClient.create(appRunnerUrl);
     private static final AppRepo leinApp = AppRepo.create("lein");

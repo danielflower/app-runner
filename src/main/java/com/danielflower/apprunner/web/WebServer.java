@@ -33,9 +33,10 @@ public class WebServer implements AutoCloseable {
     private final AppResource appResource;
     private final int idleTimeout;
     private final int totalTimeout;
+    private final String viaName;
     private HttpClient rpClient;
 
-    public WebServer(int httpPort, int httpsPort, SSLContextBuilder sslContext, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout) {
+    public WebServer(int httpPort, int httpsPort, SSLContextBuilder sslContext, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout, String viaName) {
         this.httpPort = httpPort;
         this.httpsPort = httpsPort;
         this.sslContext = sslContext;
@@ -45,6 +46,7 @@ public class WebServer implements AutoCloseable {
         this.appResource = appResource;
         this.idleTimeout = idleTimeout;
         this.totalTimeout = totalTimeout;
+        this.viaName = viaName;
     }
 
     public static int getAFreePort() {
@@ -99,7 +101,7 @@ public class WebServer implements AutoCloseable {
             .addHandler(reverseProxy()
                 .withUriMapper(new AppUriMapper(proxyMap))
                 .withTotalTimeout(totalTimeout)
-                .withViaName("apprunner")
+                .withViaName(viaName)
                 .sendLegacyForwardedHeaders(true)
                 .discardClientForwardedHeaders(false)
                 .withHttpClient(rpClient)

@@ -7,7 +7,7 @@ import scaffolding.Photocopier;
 
 import java.util.Optional;
 
-import static com.danielflower.apprunner.web.WebServer.getAFreePort;
+import static com.danielflower.apprunner.mgmt.AppManager.getAFreePort;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assume.assumeTrue;

@@ -7,7 +7,6 @@ import com.danielflower.apprunner.runners.AppRunner;
 import com.danielflower.apprunner.runners.AppRunnerFactory;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.Waiter;
-import com.danielflower.apprunner.web.WebServer;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -79,6 +79,16 @@ public class AppManager implements AppDescription {
             appManager.gitUpdateFromOrigin();
         }
         return appManager;
+    }
+
+    public static int getAFreePort() {
+        try {
+            try (ServerSocket serverSocket = new ServerSocket(0)) {
+                return serverSocket.getLocalPort();
+            }
+        } catch (IOException e) {
+            throw new AppRunnerException("Unable to get a port", e);
+        }
     }
 
     private GitCommit getCurrentHead() {
@@ -213,7 +223,7 @@ public class AppManager implements AppDescription {
         markBuildAsStarting(runnerId);
         currentRunner = appRunnerFactory.appRunner(instanceDir);
         log.info("Using " + appRunnerFactory.id() + " for " + name);
-        int port = WebServer.getAFreePort();
+        int port = getAFreePort();
 
         Map<String, String> envVarsForApp = createAppEnvVars(port, name, dataDir, tempDir);
 

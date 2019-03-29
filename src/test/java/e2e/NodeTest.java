@@ -2,8 +2,8 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
+import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.runners.NodeRunnerTest;
-import com.danielflower.apprunner.web.WebServer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,7 +21,7 @@ import static scaffolding.ContentResponseMatcher.equalTo;
 
 public class NodeTest {
 
-    private final String port = String.valueOf(WebServer.getAFreePort());
+    private final String port = String.valueOf(AppManager.getAFreePort());
     private final String appRunnerUrl = "http://localhost:" + port;
     private final RestClient restClient = RestClient.create(appRunnerUrl);
     private final String appId = "nodejs";

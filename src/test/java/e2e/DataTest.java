@@ -2,7 +2,7 @@ package e2e;
 
 import com.danielflower.apprunner.App;
 import com.danielflower.apprunner.Config;
-import com.danielflower.apprunner.web.WebServer;
+import com.danielflower.apprunner.mgmt.AppManager;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
@@ -15,7 +15,6 @@ import scaffolding.RestClient;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,16 +23,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
-import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
 public class DataTest {
 
     private final static AtomicInteger appCount = new AtomicInteger();
-    private final static int port = WebServer.getAFreePort();
+    private final static int port = AppManager.getAFreePort();
     private final static RestClient restClient = RestClient.create("http://localhost:" + port);
     private final String appId = "maven-app-" + appCount.incrementAndGet();
     private static final File mavenZip = new File("src/test/maven.zip");

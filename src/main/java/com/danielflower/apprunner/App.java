@@ -18,7 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.crypto.Cipher;
-import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -96,21 +95,27 @@ public class App {
             backupService.start();
         }
 
+        String viaName = config.get("apprunner.proxy.via.name", "apprunner");
+
+
+        int idleTimeout = config.getInt("apprunner.proxy.idle.timeout", 30000);
+        int totalTimeout = config.getInt("apprunner.proxy.total.timeout", 60000);
+
+
+        AppResource appResource = new AppResource(estate, systemInfo, fileSandbox);
+        SystemResource systemResource = new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService);
 
         webServer = new WebServer(httpPort, httpsPort, sslContext, proxyMap, defaultAppName,
-            new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService), new AppResource(estate, systemInfo, fileSandbox),
-            config.getInt("apprunner.proxy.idle.timeout", 30000), config.getInt("apprunner.proxy.total.timeout", 60000));
-
+            systemResource, appResource, idleTimeout, totalTimeout, viaName);
 
         webServer.start();
 
         if (httpsPort >= -0) {
             int maxKeyLen = Cipher.getMaxAllowedKeyLength("AES");
             if (maxKeyLen < 8192) {
-                log.warn("The current java version (" + System.getProperty("java.home") + ") limits key length to " + maxKeyLen + " bits so modern browsers may have issues connecting. Install the JCE Unlimited Strength Jurisdiction Policy to allow high strength SSL connections.");
+                log.warn("The current java version (" + System.getProperty("java.home") + ") limits key length to " + maxKeyLen + " bits so modern browsers may have issues connecting. Upgrade to the latest JDK to allow high strength SSL connections.");
             }
         }
-
         deployAllAppsAsyncronously(estate, defaultAppName);
     }
 
