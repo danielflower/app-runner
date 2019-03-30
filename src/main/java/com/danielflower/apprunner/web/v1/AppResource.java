@@ -68,14 +68,14 @@ public class AppResource {
     public Response app(@Context UriInfo uriInfo, @Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> app = estate.app(name);
         if (app.isPresent()) {
-            return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString(4)).build();
+            return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString(4)).type(MediaType.APPLICATION_JSON).build();
         } else {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
     }
 
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces("text/plain;charset=utf-8")
     @Path("/{name}/build.log")
     @Description(value = "Gets the latest build log as plain text for the given app")
     public String buildLogs(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
@@ -86,7 +86,7 @@ public class AppResource {
     }
 
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces("text/plain;charset=utf-8")
     @Path("/{name}/console.log")
     @Description(value = "Gets the latest console log as plain text for the given app")
     public String consoleLogs(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
@@ -386,7 +386,7 @@ public class AppResource {
                 return app(uriInfo, name);
             }
         } else {
-            return Response.ok(stream).build();
+            return Response.ok(stream).type("text/plain;charset=utf-8").build();
         }
     }
 
