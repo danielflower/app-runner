@@ -40,6 +40,7 @@ import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
     private static final Executor deletionQueue = Executors.newSingleThreadExecutor();
+    public static final int REMOTE_GIT_TIMEOUT = 300;
 
     public static AppManager create(String gitUrl, FileSandbox fileSandbox, String name) throws IOException, GitAPIException {
         if (!name.matches("^[A-Za-z0-9_-]+$")) {
@@ -62,6 +63,7 @@ public class AppManager implements AppDescription {
                 .setURI(gitUrl)
                 .setBare(false)
                 .setDirectory(gitDir)
+                .setTimeout(REMOTE_GIT_TIMEOUT)
                 .call();
         }
 
@@ -105,7 +107,7 @@ public class AppManager implements AppDescription {
     }
 
     private void gitUpdateFromOrigin() throws GitAPIException {
-        git.fetch().setRemote("origin").call();
+        git.fetch().setRemote("origin").setTimeout(REMOTE_GIT_TIMEOUT).call();
         git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
         this.contributors = getContributorsFromRepo();
     }
