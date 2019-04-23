@@ -69,6 +69,7 @@ public class WebServer implements AutoCloseable {
             .withHttpPort(httpPort)
             .withHttpsPort(httpsPort)
             .withHttpsConfig(sslContext)
+            .withMaxHeadersSize(16 * 1024)
             .addHandler(Method.GET, "/", (request, response, pathParams) -> {
                 if (StringUtils.isNotEmpty(defaultAppName)) {
                     response.redirect("/" + defaultAppName);
