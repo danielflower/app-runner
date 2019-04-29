@@ -179,6 +179,11 @@ public class AppUriMapperTest {
             public boolean isAsync() {
                 return false;
             }
+
+            @Override
+            public String protocol() {
+                return null;
+            }
         };
     }
 }

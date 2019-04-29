@@ -61,15 +61,18 @@ public class WebServer implements AutoCloseable {
 
     public void start() throws Exception {
 
+        int maxRequestHeadersSize = 24 * 1024;
+
         rpClient = httpClient()
             .withIdleTimeoutMillis(idleTimeout)
+            .withMaxRequestHeadersSize(maxRequestHeadersSize)
             .build();
 
         muServer = MuServerBuilder.muServer()
             .withHttpPort(httpPort)
             .withHttpsPort(httpsPort)
             .withHttpsConfig(sslContext)
-            .withMaxHeadersSize(16 * 1024)
+            .withMaxHeadersSize(maxRequestHeadersSize)
             .addHandler(Method.GET, "/", (request, response, pathParams) -> {
                 if (StringUtils.isNotEmpty(defaultAppName)) {
                     response.redirect("/" + defaultAppName);
