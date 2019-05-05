@@ -5,6 +5,8 @@ import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
 import io.muserver.*;
+import io.muserver.acme.AcmeCertManager;
+import io.muserver.handlers.HttpsRedirectorBuilder;
 import io.muserver.openapi.OpenAPIObjectBuilder;
 import io.muserver.rest.RestHandlerBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +25,8 @@ import static io.muserver.rest.CORSConfigBuilder.corsConfig;
 
 public class WebServer implements AutoCloseable {
     public static final Logger log = LoggerFactory.getLogger(WebServer.class);
+    private final AcmeCertManager acmeCertManager;
+    private final int redirectToHttps;
     private final ProxyMap proxyMap;
     private final int httpPort;
     private final int httpsPort;
@@ -36,10 +40,12 @@ public class WebServer implements AutoCloseable {
     private final String viaName;
     private HttpClient rpClient;
 
-    public WebServer(int httpPort, int httpsPort, SSLContextBuilder sslContext, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout, String viaName) {
+    public WebServer(int httpPort, int httpsPort, SSLContextBuilder sslContext, AcmeCertManager acmeCertManager, int redirectToHttps, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout, String viaName) {
         this.httpPort = httpPort;
         this.httpsPort = httpsPort;
         this.sslContext = sslContext;
+        this.acmeCertManager = acmeCertManager;
+        this.redirectToHttps = redirectToHttps;
         this.proxyMap = proxyMap;
         this.defaultAppName = defaultAppName;
         this.systemResource = systemResource;
@@ -71,8 +77,10 @@ public class WebServer implements AutoCloseable {
         muServer = MuServerBuilder.muServer()
             .withHttpPort(httpPort)
             .withHttpsPort(httpsPort)
-            .withHttpsConfig(sslContext)
+            .withHttpsConfig(acmeCertManager != null ? acmeCertManager.createSSLContext() : sslContext)
             .withMaxHeadersSize(maxRequestHeadersSize)
+            .addHandler(acmeCertManager == null ? null : acmeCertManager.createHandler())
+            .addHandler(redirectToHttps < 1 ? null : HttpsRedirectorBuilder.toHttpsPort(redirectToHttps))
             .addHandler(Method.GET, "/", (request, response, pathParams) -> {
                 if (StringUtils.isNotEmpty(defaultAppName)) {
                     response.redirect("/" + defaultAppName);
@@ -112,11 +120,18 @@ public class WebServer implements AutoCloseable {
             )
             .start();
 
+        if (acmeCertManager != null) {
+            acmeCertManager.start(muServer);
+        }
+
         log.info("Started web server at " + muServer.httpsUri() + " / " + muServer.httpUri());
     }
 
 
     public void close() throws Exception {
+        if (acmeCertManager != null) {
+            acmeCertManager.stop();
+        }
         if (muServer != null) {
             muServer.stop();
             muServer = null;

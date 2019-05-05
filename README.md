@@ -28,6 +28,7 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
+* **2.1.0** Added [let's encrypt](https://letsencrypt.org) (and other ACME server) support for free HTTPS certs (see `sample-config.properties` for instructions)
 * **1.6.0** Added `GET`/`POST`/`DELETE` `/api/v1/apps/{name}/data` endpoints to manipulate an app's data directory.
 * **1.5.6** Added backup info to the apps API and added app name validation
 * **1.5.4** Added optional config for handling proxy timeouts: `apprunner.proxy.idle.timeout` (default 30000ms) `apprunner.proxy.total.timeout` (default 60000ms).

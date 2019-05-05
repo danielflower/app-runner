@@ -9,6 +9,8 @@ import com.danielflower.apprunner.web.WebServer;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
 import io.muserver.SSLContextBuilder;
+import io.muserver.acme.AcmeCertManager;
+import io.muserver.acme.AcmeCertManagerBuilder;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.lang3.StringUtils;
@@ -20,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import javax.crypto.Cipher;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -76,17 +79,32 @@ public class App {
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
         estate.addAppDeletedListener(app -> gitRepoLoader.delete(app.name()));
 
+        int redirectToHttps = Integer.parseInt(config.get("apprunner.redirecttohttps.port", "-1"));
+
         String defaultAppName = config.get(Config.DEFAULT_APP_NAME, null);
 
         int httpPort = config.getInt(Config.SERVER_HTTP_PORT, -1);
         int httpsPort = config.getInt(Config.SERVER_HTTPS_PORT, -1);
         SSLContextBuilder sslContext = null;
+        AcmeCertManager acmeCertManager = null;
         if (httpsPort > -1) {
-            sslContext = SSLContextBuilder.sslContext()
-                .withKeystore(config.getFile("apprunner.keystore.path"))
-                .withKeystorePassword(config.get("apprunner.keystore.password"))
-                .withKeyPassword(config.get("apprunner.keymanager.password"))
-                .withKeystoreType(config.get("apprunner.keystore.type", "JKS"));
+            String acmeUri = config.get("apprunner.acme.serverUri", null);
+            if (acmeUri != null) {
+                String[] domains = config.get("apprunner.acme.domain").split(",");
+                AcmeCertManagerBuilder builder = AcmeCertManagerBuilder.acmeCertManager()
+                    .withAcmeServerURI(URI.create(acmeUri))
+                    .withConfigDir(config.get("apprunner.acme.configDir"));
+                for (String domain : domains) {
+                    builder.withDomain(domain.trim());
+                }
+                acmeCertManager = builder.build();
+            } else {
+                sslContext = SSLContextBuilder.sslContext()
+                    .withKeystore(config.getFile("apprunner.keystore.path"))
+                    .withKeystorePassword(config.get("apprunner.keystore.password"))
+                    .withKeyPassword(config.get("apprunner.keymanager.password"))
+                    .withKeystoreType(config.get("apprunner.keystore.type", "JKS"));
+            }
         }
 
         String backupUrl = config.get(Config.BACKUP_URL, "");
@@ -105,7 +123,7 @@ public class App {
         AppResource appResource = new AppResource(estate, systemInfo, fileSandbox);
         SystemResource systemResource = new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService);
 
-        webServer = new WebServer(httpPort, httpsPort, sslContext, proxyMap, defaultAppName,
+        webServer = new WebServer(httpPort, httpsPort, sslContext, acmeCertManager, redirectToHttps, proxyMap, defaultAppName,
             systemResource, appResource, idleTimeout, totalTimeout, viaName);
 
         webServer.start();
