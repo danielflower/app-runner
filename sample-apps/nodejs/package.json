@@ -7,7 +7,7 @@
     "test": "echo \"No test specified\""
   },
   "dependencies": {
-    "express": "4.14.0"
+    "express": "4.16.4"
   },
   "private": true
 }
