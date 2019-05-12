@@ -10,11 +10,10 @@ import org.junit.Test;
 import scaffolding.TestConfig;
 
 import static com.danielflower.apprunner.Config.javaExecutableName;
+import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.*;
 import static scaffolding.RestClient.httpClient;
 
 public class ProcessStarterTest {
@@ -54,7 +53,7 @@ public class ProcessStarterTest {
     public void canTellTheVersionOfStuff() throws Exception {
         Pair<Boolean, String> result = ProcessStarter.run(new CommandLine(javaExecutableName()).addArgument("-version"));
         assertThat(result.getLeft(), equalTo(true));
-        assertThat(result.getRight(), containsString("java"));
+        assertThat(result.getRight(), anyOf(containsString("java"), containsString("jdk")));
         assertThat(result.getRight(), not(containsString("-version")));
     }
 
