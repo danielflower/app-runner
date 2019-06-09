@@ -28,7 +28,7 @@
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>mu-server</artifactId>
-            <version>0.30.0</version>
+            <version>0.31.1</version>
         </dependency>
 
     </dependencies>

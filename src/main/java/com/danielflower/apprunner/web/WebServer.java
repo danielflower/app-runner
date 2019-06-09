@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.concurrent.TimeUnit;
 
 import static io.muserver.ContextHandlerBuilder.context;
 import static io.muserver.murp.HttpClientBuilder.httpClient;
@@ -77,6 +78,7 @@ public class WebServer implements AutoCloseable {
         muServer = MuServerBuilder.muServer()
             .withHttpPort(httpPort)
             .withHttpsPort(httpsPort)
+            .withIdleTimeout(idleTimeout, TimeUnit.MILLISECONDS)
             .withHttpsConfig(acmeCertManager != null ? acmeCertManager.createSSLContext() : sslContext)
             .withMaxHeadersSize(maxRequestHeadersSize)
             .addHandler(acmeCertManager == null ? null : acmeCertManager.createHandler())
