@@ -78,7 +78,7 @@ public class WebServer implements AutoCloseable {
         muServer = MuServerBuilder.muServer()
             .withHttpPort(httpPort)
             .withHttpsPort(httpsPort)
-            .withIdleTimeout(idleTimeout, TimeUnit.MILLISECONDS)
+            .withIdleTimeout(idleTimeout + 5000 /* let the proxy timeout first */, TimeUnit.MILLISECONDS)
             .withHttpsConfig(acmeCertManager != null ? acmeCertManager.createSSLContext() : sslContext)
             .withMaxHeadersSize(maxRequestHeadersSize)
             .addHandler(acmeCertManager == null ? null : acmeCertManager.createHandler())
