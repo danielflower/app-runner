@@ -76,12 +76,12 @@
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>mu-server</artifactId>
-            <version>0.34.0</version>
+            <version>0.35.0</version>
         </dependency>
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>murp</artifactId>
-            <version>0.4.4</version>
+            <version>0.5.0</version>
         </dependency>
         <dependency>
             <groupId>io.muserver</groupId>

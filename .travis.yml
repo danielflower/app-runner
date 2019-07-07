@@ -2,6 +2,6 @@ language: java
 dist: trusty
 jdk:
   - oraclejdk8
-  - openjdk11
+  - openjdk12
 before_install:
    - "export M2_HOME=/usr/local/maven"
