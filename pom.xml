@@ -76,17 +76,17 @@
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>mu-server</artifactId>
-            <version>0.35.0</version>
+            <version>0.35.1</version>
         </dependency>
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>murp</artifactId>
-            <version>0.5.0</version>
+            <version>0.5.1</version>
         </dependency>
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>mu-acme</artifactId>
-            <version>0.2.2</version>
+            <version>0.2.5</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
