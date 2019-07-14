@@ -40,8 +40,9 @@ public class WebServer implements AutoCloseable {
     private final int totalTimeout;
     private final String viaName;
     private HttpClient rpClient;
+    private final long maxRequestSize;
 
-    public WebServer(int httpPort, int httpsPort, SSLContextBuilder sslContext, AcmeCertManager acmeCertManager, int redirectToHttps, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout, String viaName) {
+    public WebServer(int httpPort, int httpsPort, SSLContextBuilder sslContext, AcmeCertManager acmeCertManager, int redirectToHttps, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout, String viaName, long maxRequestSize) {
         this.httpPort = httpPort;
         this.httpsPort = httpsPort;
         this.sslContext = sslContext;
@@ -54,6 +55,7 @@ public class WebServer implements AutoCloseable {
         this.idleTimeout = idleTimeout;
         this.totalTimeout = totalTimeout;
         this.viaName = viaName;
+        this.maxRequestSize = maxRequestSize;
     }
 
     public static int getAFreePort() {
@@ -78,6 +80,7 @@ public class WebServer implements AutoCloseable {
         muServer = MuServerBuilder.muServer()
             .withHttpPort(httpPort)
             .withHttpsPort(httpsPort)
+            .withMaxRequestSize(maxRequestSize)
             .withIdleTimeout(idleTimeout + 5000 /* let the proxy timeout first */, TimeUnit.MILLISECONDS)
             .withHttpsConfig(acmeCertManager != null ? acmeCertManager.createSSLContext() : sslContext)
             .withMaxHeadersSize(maxRequestHeadersSize)

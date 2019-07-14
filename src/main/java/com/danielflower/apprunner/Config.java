@@ -177,7 +177,16 @@ public class Config {
     public int getInt(String name, int defaultValue) {
         String s = get(name, String.valueOf(defaultValue));
         try {
-            return Integer.parseInt(s);
+            return Integer.parseInt(s, 10);
+        } catch (NumberFormatException e) {
+            throw new InvalidConfigException("Could not convert " + name + "=" + s + " to an integer");
+        }
+    }
+
+    public long getLong(String name, long defaultValue) {
+        String s = get(name, String.valueOf(defaultValue));
+        try {
+            return Long.parseLong(s, 10);
         } catch (NumberFormatException e) {
             throw new InvalidConfigException("Could not convert " + name + "=" + s + " to an integer");
         }

@@ -123,8 +123,9 @@ public class App {
         AppResource appResource = new AppResource(estate, systemInfo, fileSandbox);
         SystemResource systemResource = new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService);
 
+        long maxRequestSize = config.getLong("apprunner.request.max.size.bytes", 500 * 1024 * 1024L);
         webServer = new WebServer(httpPort, httpsPort, sslContext, acmeCertManager, redirectToHttps, proxyMap, defaultAppName,
-            systemResource, appResource, idleTimeout, totalTimeout, viaName);
+            systemResource, appResource, idleTimeout, totalTimeout, viaName, maxRequestSize);
 
         webServer.start();
 
