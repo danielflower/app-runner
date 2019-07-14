@@ -101,8 +101,8 @@ public class BackupService {
         log.info("Setting backup URL to " + remoteUri);
         if (local.remoteList().call().stream().anyMatch(remoteConfig -> remoteConfig.getName().equals("origin"))) {
             RemoteSetUrlCommand remoteSetUrlCommand = local.remoteSetUrl();
-            remoteSetUrlCommand.setName("origin");
-            remoteSetUrlCommand.setUri(remoteUri);
+            remoteSetUrlCommand.setRemoteName("origin");
+            remoteSetUrlCommand.setRemoteUri(remoteUri);
             remoteSetUrlCommand.call();
         } else {
             RemoteAddCommand remoteAddCommand = local.remoteAdd();
