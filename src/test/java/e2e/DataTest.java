@@ -37,9 +37,10 @@ public class DataTest {
     private static final File emptyZip = new File("src/test/empty.zip");
     private static final File pomXml = new File("pom.xml");
 
+    private static final String dataDir = fullPath(new File("target/datadirs/" + System.currentTimeMillis()));
     private static final App app = new App(new Config(new HashMap<String,String>() {{
         put(Config.SERVER_HTTP_PORT, String.valueOf(port));
-        put(Config.DATA_DIR, fullPath(new File("target/datadirs/" + System.currentTimeMillis())));
+        put(Config.DATA_DIR, dataDir);
     }}));
 
     @BeforeClass
@@ -83,6 +84,18 @@ public class DataTest {
         ContentResponse resp = restClient.deleteData(appId);
         assertThat(resp.getStatus(), is(204));
         assertThat(getFilesInZip(resp), hasSize(0));
+    }
+
+    @Test
+    public void whenTheAppIsDeletedTheFilesAreDeletedToo() throws Exception {
+        ContentResponse uploadResp = restClient.postData(appId, mavenZip);
+        assertThat(uploadResp.getStatus(), is(204));
+
+        ContentResponse resp = restClient.deleteApp(appId);
+        assertThat(resp.getStatus(), is(200));
+
+        File appDataDir = new File(dataDir, "apps/" + appId);
+        assertThat(appDataDir.exists(), is(false));
     }
 
     @Test

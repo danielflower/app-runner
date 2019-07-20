@@ -3,7 +3,6 @@ package com.danielflower.apprunner.runners;
 import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +16,7 @@ public class DotnetRunner implements AppRunner {
     private final File projectRoot;
     private final File projectFile;
     private final String executable;
-    private ExecuteWatchdog watchDog;
+    private Killer watchDog;
     public static final String[] startCommands = new String[] { "dotnet run" };
 
     public DotnetRunner(File projectRoot, File projectFile, String executable) {

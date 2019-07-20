@@ -98,6 +98,7 @@ public class AppEstate {
         for (AppChangedListener appDeletedListener : appDeletedListeners) {
             appDeletedListener.onAppChanged(appDescription);
         }
+        appDescription.delete();
         return managers.remove(appDescription);
     }
 

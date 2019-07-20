@@ -67,4 +67,9 @@ public class MockAppDescription implements AppDescription {
     public void update(AppRunnerFactoryProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception {
         ++updateCount;
     }
+
+    @Override
+    public void delete() {
+
+    }
 }

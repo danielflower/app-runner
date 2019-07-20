@@ -28,4 +28,6 @@ public interface AppDescription {
     void stopApp() throws Exception;
 
     void update(AppRunnerFactoryProvider runnerProvider, InvocationOutputHandler outputHandler) throws Exception;
+
+    void delete();
 }

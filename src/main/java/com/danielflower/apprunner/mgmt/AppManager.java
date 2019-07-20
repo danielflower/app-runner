@@ -7,6 +7,7 @@ import com.danielflower.apprunner.runners.AppRunner;
 import com.danielflower.apprunner.runners.AppRunnerFactory;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.Waiter;
+import io.muserver.Mutils;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -248,6 +249,21 @@ public class AppManager implements AppDescription {
             buildLogHandler.consumeLine("Deployment complete.");
             File oldInstanceDir = oldRunner.getInstanceDir();
             quietlyDeleteTheOldInstanceDirInTheBackground(oldInstanceDir);
+        }
+    }
+
+    @Override
+    public void delete() {
+        File gitDir = git.getRepository().getDirectory();
+        git.close();
+        File[] dirs = { tempDir, dataDir.getParentFile(), gitDir };
+        for (File dir : dirs) {
+            try {
+                log.info("Deleting " + Mutils.fullPath(dir));
+                FileUtils.deleteDirectory(dir);
+            } catch (IOException e) {
+                log.warn("Failed to delete " + Mutils.fullPath(dir) + " - message was " + e.getMessage());
+            }
         }
     }
 

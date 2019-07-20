@@ -3,7 +3,6 @@ package com.danielflower.apprunner.runners;
 import com.danielflower.apprunner.io.LineConsumer;
 import com.danielflower.apprunner.problems.ProjectCannotStartException;
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.model.Model;
 import org.slf4j.Logger;
@@ -22,7 +21,7 @@ public class LeinRunner implements AppRunner {
     private final File projectRoot;
     private final CommandLineProvider javaCmd;
     private final CommandLineProvider leinCmd;
-    private ExecuteWatchdog watchDog;
+    private Killer watchDog;
 
     public LeinRunner(File projectRoot, CommandLineProvider javaCmd, CommandLineProvider leinCmd) {
         this.projectRoot = projectRoot;
