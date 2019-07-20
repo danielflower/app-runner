@@ -52,6 +52,7 @@ public class AppManager implements AppDescription {
         File instanceDir = fileSandbox.tempDir(name + File.separator + "instances");
         File dataDir = fileSandbox.appDir(name, "data");
         File tempDir = fileSandbox.tempDir(name);
+        File[] dirsToDelete = { gitDir, tempDir, fileSandbox.appDir(name) };
 
         Git git;
         boolean isNew = false;
@@ -77,7 +78,7 @@ public class AppManager implements AppDescription {
         }
         log.info("Created app manager for " + name + " in dir " + dataDir);
         GitCommit gitCommit = getCurrentHead(name, git);
-        AppManager appManager = new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir, gitCommit);
+        AppManager appManager = new AppManager(name, gitUrl, git, instanceDir, dataDir, tempDir, gitCommit, dirsToDelete);
         if (isNew) {
             appManager.gitUpdateFromOrigin();
         }
@@ -119,6 +120,7 @@ public class AppManager implements AppDescription {
     private final File instanceDir;
     private final File dataDir;
     private final File tempDir;
+    private final File[] dirsToDelete;
     private ArrayList<String> contributors;
     private final List<AppChangeListener> listeners = new ArrayList<>();
     private AppRunner currentRunner;
@@ -128,13 +130,14 @@ public class AppManager implements AppDescription {
     private volatile BuildStatus lastBuildStatus;
     private volatile BuildStatus lastSuccessfulBuildStatus;
 
-    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir, GitCommit gitCommit) {
+    private AppManager(String name, String gitUrl, Git git, File instanceDir, File dataDir, File tempDir, GitCommit gitCommit, File[] dirsToDelete) {
         this.gitUrl = gitUrl;
         this.name = name;
         this.git = git;
         this.instanceDir = instanceDir;
         this.dataDir = dataDir;
         this.tempDir = tempDir;
+        this.dirsToDelete = dirsToDelete;
         this.contributors = new ArrayList<>();
         this.lastBuildStatus = BuildStatus.notStarted(gitCommit);
     }
@@ -254,10 +257,8 @@ public class AppManager implements AppDescription {
 
     @Override
     public void delete() {
-        File gitDir = git.getRepository().getDirectory();
         git.close();
-        File[] dirs = { tempDir, dataDir.getParentFile(), gitDir };
-        for (File dir : dirs) {
+        for (File dir : dirsToDelete) {
             try {
                 log.info("Deleting " + Mutils.fullPath(dir));
                 FileUtils.deleteDirectory(dir);

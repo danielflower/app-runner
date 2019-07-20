@@ -32,6 +32,9 @@ public class FileSandbox {
     public File appDir(String name, String sub) {
         return ensureExists("apps/" + name + "/" + sub);
     }
+    public File appDir(String name) {
+        return ensureExists("apps/" + name);
+    }
 
     private File ensureExists(String relativePath) {
         String path = FilenameUtils.concat(fullPath(root), FilenameUtils.separatorsToSystem(relativePath));
