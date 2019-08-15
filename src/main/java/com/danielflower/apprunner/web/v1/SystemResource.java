@@ -59,9 +59,13 @@ public class SystemResource {
         MuStats stats = muRequest.server().stats();
         result.put("serverStats",
             new JSONObject()
+                .put("activeRequests", stats.activeRequests().size())
                 .put("completedRequests", stats.completedRequests())
                 .put("activeConnections", stats.activeConnections())
+                .put("completedConnections", stats.completedConnections())
                 .put("invalidHttpRequests", stats.invalidHttpRequests())
+                .put("failedToConnect", stats.failedToConnect())
+                .put("rejectedDueToOverload", stats.rejectedDueToOverload())
                 .put("bytesRead", stats.bytesRead())
                 .put("bytesSent", stats.bytesSent())
         );
