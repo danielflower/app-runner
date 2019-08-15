@@ -13,7 +13,7 @@ import java.util.Set;
 
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
 
 public class AppUriMapperTest {
 
@@ -48,6 +48,11 @@ public class AppUriMapperTest {
             @Override
             public String contentType() {
                 return null;
+            }
+
+            @Override
+            public long startTime() {
+                return 0;
             }
 
             @Override
