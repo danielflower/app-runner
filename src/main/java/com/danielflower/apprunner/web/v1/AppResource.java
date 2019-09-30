@@ -138,12 +138,13 @@ public class AppResource {
     }
 
     @POST
-    @Consumes("application/zip")
+    @Consumes({"application/octet-stream", "application/zip"})
     @Path("/{name}/data")
     @Description(value = "Sets the contents of the app's data directory with the contents of the zip file")
     @ApiResponse(code = "204", message = "Files uploaded successfully")
-    public Response setAppData(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name,
-                               InputStream requestBody) throws IOException {
+    public Response setAppData(@Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name,
+                               @Description("A zip file containing files that will be unzipped")
+                               @Required InputStream requestBody) throws IOException {
         AppDescription ad = getAppDescription(name);
         if (ad.dataDir().listFiles().length > 0) {
             return Response.status(400).entity("File uploading is only supported for apps with empty data directories.").build();

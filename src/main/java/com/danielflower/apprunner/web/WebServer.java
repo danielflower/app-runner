@@ -98,7 +98,7 @@ public class WebServer implements AutoCloseable {
             .addHandler(context("api")
                 .addHandler(context("v1")
                     .addHandler(
-                        RestHandlerBuilder.restHandler(systemResource, appResource)
+                        RestHandlerBuilder.restHandler(appResource, systemResource)
                             .withCORS(corsConfig()
                                 .withAllowedOriginRegex(".*")
                                 .withAllowCredentials(true)
