@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.net.URI;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -126,7 +127,7 @@ public class AppUriMapperTest {
             }
 
             @Override
-            public Set<Cookie> cookies() {
+            public List<Cookie> cookies() {
                 return null;
             }
 
@@ -166,6 +167,11 @@ public class AppUriMapperTest {
             }
 
             @Override
+            public Map<String, Object> attributes() {
+                return null;
+            }
+
+            @Override
             public AsyncHandle handleAsync() {
                 return null;
             }
@@ -187,6 +193,11 @@ public class AppUriMapperTest {
 
             @Override
             public String protocol() {
+                return null;
+            }
+
+            @Override
+            public HttpConnection connection() {
                 return null;
             }
         };
