@@ -53,16 +53,13 @@ class RustRunnerFactory implements AppRunnerFactory {
 
     public static Optional<RustRunnerFactory> createIfAvailable(Config config) {
         String cargoExecutable = config.cargoExecutable();
-        System.out.println("CARGO EXE: " + cargoExecutable);
 
         Pair<Boolean, String> cargoVersion = ProcessStarter.run(new CommandLine(cargoExecutable).addArgument("--version"));
 
         if (cargoVersion.getLeft()) {
-            System.out.println(cargoVersion.getRight());
             return Optional.of(new RustRunnerFactory(cargoExecutable, cargoVersion.getRight()));
         }
 
-        System.out.println("NO CARGO FOUND");
         return Optional.empty();
     }
 }

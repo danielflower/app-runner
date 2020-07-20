@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import com.moandjiezana.toml.Toml;
 
 public class RustRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(RustRunner.class);
@@ -32,12 +33,13 @@ public class RustRunner implements AppRunner {
     }
 
     public void start(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
+        Toml toml = new Toml().read(new File(projectRoot, "Cargo.toml"));
+        String rustPackageName = toml.getString("package.name");
+
         runCargo(buildLogHandler, envVarsForApp, "build");
         runCargo(buildLogHandler, envVarsForApp, "test");
 
-        //TODO: Should we extract the exe name from the Cargo.toml file?
-        //TODO: Should we support release builds?
-        final String COMPILED_EXE = "target/debug/app-runner-rust";
+        final String COMPILED_EXE = "target/debug/" + rustPackageName; //Stick to debug builds until someone has a performance issue
         CommandLine command = new CommandLine(SystemUtils.IS_OS_WINDOWS ? COMPILED_EXE + ".exe" : COMPILED_EXE);
 
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);

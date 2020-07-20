@@ -8,7 +8,6 @@ async fn index() -> impl Responder {
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
 
-    //
     let app_name = env::var("APP_NAME").unwrap_or(String::from("rust-sample"));
     let app_port = env::var("APP_PORT").unwrap_or(String::from("8088"));
     let app_data = env::var("APP_DATA").unwrap_or(String::from(""));
@@ -25,4 +24,4 @@ async fn main() -> std::io::Result<()> {
     .bind(format!("127.0.0.1:{}",app_port))?
     .run()
     .await
-}                   
+}
