@@ -1,5 +1,4 @@
 [package]
-#This name should always be set to app-runner-rust for rust projects until we can extract the project name from here
 name = "app-runner-rust-sample"
 version = "0.1.0"
 edition = "2018"
