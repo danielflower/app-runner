@@ -128,6 +128,8 @@ public class Config {
         return get("python." + majorVersion + ".exec", SystemUtils.IS_OS_WINDOWS ? "python.exe" : "python" + majorVersion);
     }
 
+    public String cargoExecutable() { return get("cargo.exec", windowsinize("cargo")); }
+
     public String nodeExecutable() {
         return get("node.exec", windowsinize("node"));
     }
