@@ -116,8 +116,8 @@ public class App {
         String viaName = config.get("apprunner.proxy.via.name", "apprunner");
 
 
-        int idleTimeout = config.getInt("apprunner.proxy.idle.timeout", 30000);
-        int totalTimeout = config.getInt("apprunner.proxy.total.timeout", 60000);
+        int idleTimeout = config.getInt("apprunner.proxy.idle.timeout", 10 * 60 * 1000);
+        int totalTimeout = config.getInt("apprunner.proxy.total.timeout", 10 * 60 * 1000);
 
 
         AppResource appResource = new AppResource(estate, systemInfo, fileSandbox);
