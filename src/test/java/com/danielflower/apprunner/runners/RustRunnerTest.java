@@ -41,6 +41,6 @@ public class RustRunnerTest {
     private void run(int attempt) throws Exception {
         String appName = "rust";
         AppRunner runner = runnerFactory.appRunner(Photocopier.copySampleAppToTempDir(appName));
-        startAndStop(attempt, appName, runner, 45688, buildLog, consoleLog, containsString("Rust sample app is running"), containsString("test result: ok"));
+        startAndStop(attempt, appName, runner, 45688, buildLog, consoleLog, containsString("Rust sample app is running"), containsString(" 0 failed"));
     }
 }

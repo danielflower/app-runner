@@ -28,6 +28,8 @@ public class RustTest {
     private final AppRepo appRepo = AppRepo.create(appId);
 
     private final App app = new App(new Config(new HashMap<String,String>() {{
+        put("apprunner.proxy.idle.timeout", "600000");
+        put("apprunner.proxy.total.timeout", "600000");
         put(Config.SERVER_HTTP_PORT, port);
         put(Config.DATA_DIR, fullPath(new File("target/datadirs/" + System.currentTimeMillis())));
     }}));
