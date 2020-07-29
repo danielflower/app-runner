@@ -10,12 +10,10 @@ import java.util.Optional;
 class RustRunnerFactory implements AppRunnerFactory {
     private final String versionInfo;
     private final String cargoExecutable;
-    private final boolean removeBuildFiles;
 
-    RustRunnerFactory(String cargoExecutable, String versionInfo, boolean removeBuildFiles) {
+    RustRunnerFactory(String cargoExecutable, String versionInfo) {
         this.cargoExecutable = cargoExecutable;
         this.versionInfo = versionInfo;
-        this.removeBuildFiles = removeBuildFiles;
     }
 
     @Override
@@ -40,7 +38,7 @@ class RustRunnerFactory implements AppRunnerFactory {
 
     @Override
     public AppRunner appRunner(File folder) {
-        return new RustRunner(folder, cargoExecutable, removeBuildFiles);
+        return new RustRunner(folder, cargoExecutable);
     }
 
     @Override
@@ -55,12 +53,11 @@ class RustRunnerFactory implements AppRunnerFactory {
 
     public static Optional<RustRunnerFactory> createIfAvailable(Config config) {
         String cargoExecutable = config.cargoExecutable();
-        boolean removeBuildFiles = config.cargoRemoveBuildFiles();
 
         Pair<Boolean, String> cargoVersion = ProcessStarter.run(new CommandLine(cargoExecutable).addArgument("--version"));
 
         if (cargoVersion.getLeft()) {
-            return Optional.of(new RustRunnerFactory(cargoExecutable, cargoVersion.getRight(), removeBuildFiles));
+            return Optional.of(new RustRunnerFactory(cargoExecutable, cargoVersion.getRight()));
         }
 
         return Optional.empty();

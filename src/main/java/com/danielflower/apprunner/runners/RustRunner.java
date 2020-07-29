@@ -20,17 +20,15 @@ import com.moandjiezana.toml.Toml;
 
 public class RustRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(RustRunner.class);
-    public static final String[] startCommands = new String[]{"cargo build", "cargo test", "./target/debug/<app_name>"};
+    public static final String[] startCommands = new String[]{"cargo build", "cargo test", "mv ./target/debug/<app_name> ./<app_name>", "cargo clean", "./<app_name>"};
 
     private final File projectRoot;
     private final String cargoExec;
     private ExecuteWatchdog watchDog;
-    private boolean removeBuildFiles;
 
-    public RustRunner(File projectRoot, String cargoExec, boolean removeBuildFiles) {
+    public RustRunner(File projectRoot, String cargoExec) {
         this.projectRoot = projectRoot;
         this.cargoExec = cargoExec;
-        this.removeBuildFiles = removeBuildFiles;
     }
 
     @Override
@@ -45,22 +43,22 @@ public class RustRunner implements AppRunner {
         runCargo(buildLogHandler, envVarsForApp, "build");
         runCargo(buildLogHandler, envVarsForApp, "test");
 
-        final String COMPILED_EXE = "target/debug/" + rustPackageName + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""); //Stick to debug builds until someone has a performance issue
-        String exeToRun = COMPILED_EXE;
+        //Move built executable so that we can clean up the rest of the build files
+        final String compiledExe = "target/debug/" + rustPackageName + (SystemUtils.IS_OS_WINDOWS ? ".exe" : ""); //Stick to debug builds until someone has a performance issue
+        final String exeToRun = "./" + rustPackageName + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
 
-        if (removeBuildFiles){
-            exeToRun = "./" + rustPackageName + (SystemUtils.IS_OS_WINDOWS ? ".exe" : "");
-            Path sourcePath = Paths.get(projectRoot + "/" + COMPILED_EXE).toAbsolutePath();
-            Path targetPath = Paths.get(projectRoot + "/" + exeToRun).toAbsolutePath();
-            try {
-                Files.move(sourcePath, targetPath);
-            }
-            catch(IOException ioe){
-                throw new ProjectCannotStartException("Couldn't move compiled binary from " + sourcePath.toString() + " to " + targetPath.toString(), ioe);
-            }
-            runCargo(buildLogHandler, envVarsForApp, "clean");
+        Path sourcePath = Paths.get(projectRoot + "/" + compiledExe).toAbsolutePath();
+        Path targetPath = Paths.get(projectRoot + "/" + exeToRun).toAbsolutePath();
+
+        try {
+            Files.move(sourcePath, targetPath);
         }
+        catch(IOException ioe){
+            throw new ProjectCannotStartException("Couldn't move compiled binary from " + sourcePath.toString() + " to " + targetPath.toString(), ioe);
+        }
+        runCargo(buildLogHandler, envVarsForApp, "clean");
 
+        //Run the app
         CommandLine command = new CommandLine(exeToRun);
         watchDog = ProcessStarter.startDaemon(buildLogHandler, consoleLogHandler, envVarsForApp, command, projectRoot, startupWaiter);
     }

@@ -130,8 +130,6 @@ public class Config {
 
     public String cargoExecutable() { return get("cargo.exec", windowsinize("cargo")); }
 
-    public boolean cargoRemoveBuildFiles() { return get("cargo.remove.build.files", "N").equals("Y");}
-
     public String nodeExecutable() {
         return get("node.exec", windowsinize("node"));
     }
