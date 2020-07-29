@@ -28,6 +28,7 @@ public class RustTest {
     private final AppRepo appRepo = AppRepo.create(appId);
 
     private final App app = new App(new Config(new HashMap<String,String>() {{
+        //The rust build can be slow - give it extra time
         put("apprunner.proxy.idle.timeout", "600000");
         put("apprunner.proxy.total.timeout", "600000");
         put(Config.SERVER_HTTP_PORT, port);
