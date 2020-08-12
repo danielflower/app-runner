@@ -11,7 +11,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class MockAppDescription implements AppDescription {
-    private final String gitUrl;
+    private volatile String gitUrl;
     private final  String name;
     public int updateCount = 0;
     private ArrayList<String> contributors;
@@ -28,6 +28,11 @@ public class MockAppDescription implements AppDescription {
 
     public String gitUrl() {
         return gitUrl;
+    }
+
+    @Override
+    public void gitUrl(String url) {
+        this.gitUrl = url;
     }
 
     public Availability currentAvailability() {

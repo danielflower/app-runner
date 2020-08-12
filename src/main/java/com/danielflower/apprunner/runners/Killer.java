@@ -27,17 +27,23 @@ public class Killer extends ExecuteWatchdog {
     public synchronized void destroyProcess() {
         long start = System.currentTimeMillis();
         log.info("Killing " + command);
-        process.destroyForcibly();
-        super.destroyProcess();
-        try {
-            boolean stopped = process.waitFor(5, TimeUnit.SECONDS);
-            if (stopped) {
-                log.info("Killed in " + ((System.currentTimeMillis() - start) + "ms"));
-            } else {
-                log.warn("Could not kill " + command);
+        if (process != null && process.isAlive()) {
+            process.destroy();
+            try {
+                if (!process.waitFor(5, TimeUnit.SECONDS)) {
+                    log.info("Killing forcibly " + command);
+                    process.destroyForcibly();
+                }
+                super.destroyProcess();
+                boolean stopped = process.waitFor(5, TimeUnit.SECONDS);
+                if (stopped) {
+                    log.info("Killed in " + ((System.currentTimeMillis() - start) + "ms"));
+                } else {
+                    log.warn("Could not kill " + command);
+                }
+            } catch (InterruptedException e) {
+                log.info("Interrupted while waiting to kill " + command);
             }
-        } catch (InterruptedException e) {
-            log.info("Interrupted while waiting to kill " + command);
         }
     }
 }

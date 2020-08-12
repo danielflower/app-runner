@@ -11,6 +11,8 @@ public interface AppDescription {
 
     String gitUrl();
 
+    void gitUrl(String url);
+
     Availability currentAvailability();
 
     BuildStatus lastBuildStatus();

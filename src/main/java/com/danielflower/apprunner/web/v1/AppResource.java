@@ -65,7 +65,7 @@ public class AppResource {
     @Path("/{name}")
     @Produces(MediaType.APPLICATION_JSON)
     @Description(value = "Gets a single app")
-    public Response app(@Context UriInfo uriInfo, @Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
+    public Response app(@Context UriInfo uriInfo, @Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> app = estate.app(name);
         if (app.isPresent()) {
             return Response.ok(appJson(uriInfo.getRequestUri(), app.get()).toString(4)).type(MediaType.APPLICATION_JSON).build();
@@ -78,7 +78,7 @@ public class AppResource {
     @Produces("text/plain;charset=utf-8")
     @Path("/{name}/build.log")
     @Description(value = "Gets the latest build log as plain text for the given app")
-    public String buildLogs(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
+    public String buildLogs(@Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
             return namedApp.get().latestBuildLog();
@@ -89,7 +89,7 @@ public class AppResource {
     @Produces("text/plain;charset=utf-8")
     @Path("/{name}/console.log")
     @Description(value = "Gets the latest console log as plain text for the given app")
-    public String consoleLogs(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
+    public String consoleLogs(@Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (namedApp.isPresent())
             return namedApp.get().latestConsoleLog();
@@ -100,13 +100,13 @@ public class AppResource {
     @Produces("application/zip")
     @Path("/{name}/data")
     @Description(value = "Gets the contents of the app's data directory as a zip file")
-    public StreamingOutput getAppData(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
+    public StreamingOutput getAppData(@Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         AppDescription ad = getAppDescription(name);
         log.info("Getting data for " + name);
         return output -> Zippy.zipDirectory(ad.dataDir(), output);
     }
 
-    private AppDescription getAppDescription(@Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) {
+    private AppDescription getAppDescription(@Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name) {
         Optional<AppDescription> namedApp = estate.app(name);
         if (!namedApp.isPresent())
             throw new NotFoundException("No app with name " + name);
@@ -118,7 +118,7 @@ public class AppResource {
     @Description(value = "Deletes all the files for an app")
     @ApiResponse(code = "204", message = "Files deleted successfully")
     @ApiResponse(code = "500", message = "At least one file could not be deleted")
-    public Response deleteAppData(@Required @Description(value="The name of the app") @PathParam("name") String name) throws IOException {
+    public Response deleteAppData(@Required @Description(value = "The name of the app") @PathParam("name") String name) throws IOException {
         AppDescription ad = getAppDescription(name);
         File[] children = ad.dataDir().listFiles();
         if (children == null) {
@@ -262,7 +262,7 @@ public class AppResource {
 
     }
 
-    private Response responseForAddingAppToEstate(@Context UriInfo uriInfo, String gitUrl, String appName, int status) {
+    private Response responseForAddingAppToEstate(UriInfo uriInfo, String gitUrl, String appName, int status) {
         AppDescription appDescription;
         try {
             appDescription = estate.addApp(gitUrl, appName);
@@ -335,27 +335,21 @@ public class AppResource {
                 .put("message", "No application called " + appName + " exists")
                 .toString()).build();
         }
-        try {
-            estate.remove(existing.get());
-            return responseForAddingAppToEstate(uriInfo, gitUrl, appName, 200);
-        } catch (Exception e) {
-            String errorId = "ERR" + System.currentTimeMillis();
-            log.error("Error while updating app. ErrorID=" + errorId, e);
-            return Response.serverError().entity(new JSONObject()
-                .put("message", "Error while updating app")
-                .put("errorID", errorId)
-                .put("detailedError", e.toString())
-                .put("gitUrl", gitUrl)
-                .toString(4)).build();
-        }
+        AppDescription desc = existing.get();
+        desc.gitUrl(gitUrl);
 
+        return Response.status(200)
+            .header("Location", uriInfo.getRequestUri() + "/" + desc.name())
+            .header("Content-Type", "application/json")
+            .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
+            .build();
     }
 
     @DELETE
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/{name}")
     @Description(value = "De-registers an application")
-    public Response delete(@Context UriInfo uriInfo, @Description(value="The name of the app") @PathParam("name") String name) throws IOException {
+    public Response delete(@Context UriInfo uriInfo, @Description(value = "The name of the app") @PathParam("name") String name) throws IOException {
         Optional<AppDescription> existing = estate.app(name);
         if (existing.isPresent()) {
             AppDescription appDescription = existing.get();
@@ -378,7 +372,7 @@ public class AppResource {
         "actually succeeds or fails is ignored. Returns streamed plain text of the build log and console startup, unless the Accept" +
         " header includes 'application/json'.")
     public Response deploy(@Context UriInfo uriInfo, @Description(value = "The type of response desired, e.g. application/json or text/plain", example = "application/json") @HeaderParam("Accept") String accept,
-                           @Required @Description(value="The name of the app", example = "app-runner-home") @PathParam("name") String name) throws IOException {
+                           @Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name) throws IOException {
         StreamingOutput stream = new UpdateStreamer(name);
         if (MediaType.APPLICATION_JSON.equals(accept)) {
             StringBuilderWriter output = new StringBuilderWriter();

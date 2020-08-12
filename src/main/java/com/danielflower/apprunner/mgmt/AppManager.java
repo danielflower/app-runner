@@ -26,10 +26,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.URL;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
@@ -114,7 +111,7 @@ public class AppManager implements AppDescription {
         this.contributors = getContributorsFromRepo();
     }
 
-    private final String gitUrl;
+    private volatile String gitUrl;
     private final String name;
     private final Git git;
     private final File instanceDir;
@@ -148,6 +145,10 @@ public class AppManager implements AppDescription {
 
     public String gitUrl() {
         return gitUrl;
+    }
+
+    public void gitUrl(String url) {
+        this.gitUrl = Objects.requireNonNull(url, "url");
     }
 
     @Override
