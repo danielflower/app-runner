@@ -17,6 +17,7 @@
         <github.global.server>github</github.global.server>
         <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
         <jetty.version>9.4.30.v20200611</jetty.version> <!-- Should be same as murp version's -->
+        <jgit.version>5.8.1.202007141445-r</jgit.version>
     </properties>
 
     <prerequisites>
@@ -76,7 +77,7 @@
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>mu-server</artifactId>
-            <version>0.50.0</version>
+            <version>0.51.5</version>
         </dependency>
         <dependency>
             <groupId>io.muserver</groupId>
@@ -165,7 +166,12 @@
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
-            <version>5.8.1.202007141445-r</version>
+            <version>${jgit.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
+            <version>${jgit.version}</version>
         </dependency>
         <dependency>
             <groupId>org.json</groupId>

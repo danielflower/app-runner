@@ -60,7 +60,7 @@ public class AppManager implements AppDescription {
             git = Git.open(gitDir);
             isNew = true;
         } catch (RepositoryNotFoundException e) {
-            log.info("Clone app " + name + " from " + gitUrl);
+            log.info("Clone app " + name + " from " + gitUrl + " to " + Mutils.fullPath(gitDir));
             git = Git.cloneRepository()
                 .setURI(gitUrl)
                 .setBare(false)
@@ -263,7 +263,7 @@ public class AppManager implements AppDescription {
                 log.info("Deleting " + Mutils.fullPath(dir));
                 FileUtils.deleteDirectory(dir);
             } catch (IOException e) {
-                log.warn("Failed to delete " + Mutils.fullPath(dir) + " - message was " + e.getMessage());
+                log.warn("Failed to delete " + Mutils.fullPath(dir) + " - message was " + e.getMessage(), e);
             }
         }
     }
