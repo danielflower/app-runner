@@ -10,16 +10,15 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 
 public class AppUriMapperTest {
 
-    private ProxyMap proxyMap = new ProxyMap();
-    private AppUriMapper mapper = new AppUriMapper(proxyMap);
+    private final ProxyMap proxyMap = new ProxyMap();
+    private final AppUriMapper mapper = new AppUriMapper(proxyMap);
 
     @Test
     public void nonMatchesReturnNull() throws Exception {

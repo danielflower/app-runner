@@ -10,12 +10,10 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 public class RestClient {
 
-    public static HttpClient httpClient = new HttpClient(new SslContextFactory(true));
+    public static HttpClient httpClient = new HttpClient(new SslContextFactory.Client(true));
     static {
         try {
             httpClient.start();

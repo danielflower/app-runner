@@ -6,7 +6,6 @@ import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.MavenRunnerFactory;
 import com.danielflower.apprunner.web.v1.AppResource;
 import io.muserver.rest.MuRuntimeDelegate;
-import org.apache.commons.io.output.NullOutputStream;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -25,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
+import static org.apache.commons.io.output.NullOutputStream.NULL_OUTPUT_STREAM;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -96,7 +96,7 @@ public class AppResourceTest {
 
         Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "", "my-app");
         StreamingOutput stream = (StreamingOutput) response.getEntity();
-        stream.write(new NullOutputStream());
+        stream.write(NULL_OUTPUT_STREAM);
         assertThat(response.getStatus(), is(200));
         assertThat(myApp.updateCount, is(1));
         assertThat(anApp.updateCount, is(0));
@@ -110,7 +110,7 @@ public class AppResourceTest {
         Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "", "unreal-app");
         StreamingOutput stream = (StreamingOutput) response.getEntity();
         try {
-            stream.write(new NullOutputStream());
+            stream.write(NULL_OUTPUT_STREAM);
             Assert.fail("Expected exception");
         } catch (WebApplicationException e) {
             assertThat(e.getResponse().getStatus(), is(404));

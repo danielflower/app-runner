@@ -8,7 +8,7 @@ import com.danielflower.apprunner.web.ProxyMap;
 import com.danielflower.apprunner.web.WebServer;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
-import io.muserver.SSLContextBuilder;
+import io.muserver.HttpsConfigBuilder;
 import io.muserver.acme.AcmeCertManager;
 import io.muserver.acme.AcmeCertManagerBuilder;
 import org.apache.commons.io.FileUtils;
@@ -85,7 +85,7 @@ public class App {
 
         int httpPort = config.getInt(Config.SERVER_HTTP_PORT, -1);
         int httpsPort = config.getInt(Config.SERVER_HTTPS_PORT, -1);
-        SSLContextBuilder sslContext = null;
+        HttpsConfigBuilder sslContext = null;
         AcmeCertManager acmeCertManager = null;
         if (httpsPort > -1) {
             String acmeUri = config.get("apprunner.acme.serverUri", null);
@@ -99,7 +99,7 @@ public class App {
                 }
                 acmeCertManager = builder.build();
             } else {
-                sslContext = SSLContextBuilder.sslContext()
+                sslContext = HttpsConfigBuilder.httpsConfig()
                     .withKeystore(config.getFile("apprunner.keystore.path"))
                     .withKeystorePassword(config.get("apprunner.keystore.password"))
                     .withKeyPassword(config.get("apprunner.keymanager.password"))
