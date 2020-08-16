@@ -7,6 +7,7 @@ import com.danielflower.apprunner.io.Zippy;
 import com.danielflower.apprunner.mgmt.*;
 import com.danielflower.apprunner.problems.AppNotFoundException;
 import com.danielflower.apprunner.runners.UnsupportedProjectTypeException;
+import io.muserver.Mutils;
 import io.muserver.rest.ApiResponse;
 import io.muserver.rest.Description;
 import io.muserver.rest.Required;
@@ -24,6 +25,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.io.*;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -267,7 +269,7 @@ public class AppResource {
         try {
             appDescription = estate.addApp(gitUrl, appName);
             return Response.status(status)
-                .header("Location", uriInfo.getRequestUri() + "/" + appDescription.name())
+                .header("Location", uriInfo.getRequestUri() + "/" + Mutils.urlEncode(appDescription.name()))
                 .header("Content-Type", "application/json")
                 .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
                 .build();
@@ -322,24 +324,21 @@ public class AppResource {
                            @Required @Description(value = "An SSH or HTTP git URL that points to an app-runner compatible app")
                            @FormParam("gitUrl") String gitUrl,
                            @Description(value = "The ID of the app to update")
-                           @PathParam("name") String appName) {
+                           @PathParam("name") String appName) throws Exception {
         log.info("Received request to update " + appName + " to " + gitUrl);
         if (isBlank(gitUrl) || isBlank(appName)) {
             return Response.status(400).entity(new JSONObject()
                 .put("message", "No git URL was specified")
                 .toString()).build();
         }
-        Optional<AppDescription> existing = estate.app(appName);
+        Optional<AppDescription> existing = estate.updateApp(gitUrl, appName);
         if (!existing.isPresent()) {
             return Response.status(404).entity(new JSONObject()
                 .put("message", "No application called " + appName + " exists")
                 .toString()).build();
         }
-        AppDescription desc = existing.get();
-        desc.gitUrl(gitUrl);
-
         return Response.status(200)
-            .header("Location", uriInfo.getRequestUri() + "/" + desc.name())
+            .header("Location", uriInfo.getRequestUri() + "/" + Mutils.urlEncode(existing.get().name()))
             .header("Content-Type", "application/json")
             .entity(appJson(uriInfo.getRequestUri(), estate.app(appName).get()).toString(4))
             .build();
@@ -401,6 +400,8 @@ public class AppResource {
                     estate.update(name, new OutputToWriterBridge(writer));
                     log.info("Finished updating " + name);
                     writer.write("Success" + LINE_SEPARATOR);
+                } catch (URISyntaxException uex) {
+                    throw new ClientErrorException("Invalid GIT URL", 400);
                 } catch (AppNotFoundException e) {
                     Response r = Response.status(404).entity(e.getMessage()).build();
                     throw new WebApplicationException(r);

@@ -77,6 +77,7 @@ public class App {
         }
 
         estate.addAppAddedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
+        estate.addAppUpdatedListener(app -> gitRepoLoader.save(app.name(), app.gitUrl()));
         estate.addAppDeletedListener(app -> gitRepoLoader.delete(app.name()));
 
         int redirectToHttps = Integer.parseInt(config.get("apprunner.redirecttohttps.port", "-1"));

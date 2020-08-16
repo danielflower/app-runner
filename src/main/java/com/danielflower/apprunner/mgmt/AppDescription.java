@@ -2,8 +2,10 @@ package com.danielflower.apprunner.mgmt;
 
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 
 public interface AppDescription {
@@ -11,7 +13,7 @@ public interface AppDescription {
 
     String gitUrl();
 
-    void gitUrl(String url);
+    void gitUrl(String url) throws URISyntaxException, GitAPIException;
 
     Availability currentAvailability();
 

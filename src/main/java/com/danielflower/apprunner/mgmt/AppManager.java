@@ -18,12 +18,14 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.URIish;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.Instant;
 import java.util.*;
@@ -147,8 +149,10 @@ public class AppManager implements AppDescription {
         return gitUrl;
     }
 
-    public void gitUrl(String url) {
-        this.gitUrl = Objects.requireNonNull(url, "url");
+    public void gitUrl(String url) throws URISyntaxException, GitAPIException {
+        Objects.requireNonNull(url, "url");
+        git.remoteSetUrl().setRemoteName("origin").setRemoteUri(new URIish(url)).call();
+        this.gitUrl = url;
     }
 
     @Override

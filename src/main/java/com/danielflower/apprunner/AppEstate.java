@@ -26,6 +26,7 @@ public class AppEstate {
     private final ProxyMap proxyMap;
     private final FileSandbox fileSandbox;
     private final List<AppChangedListener> appAddedListeners = new ArrayList<>();
+    private final List<AppChangedListener> appUpdatedListeners = new ArrayList<>();
     private final List<AppChangedListener> appDeletedListeners = new ArrayList<>();
     private final AppRunnerFactoryProvider runnerProvider;
 
@@ -66,6 +67,18 @@ public class AppEstate {
         return appMan;
     }
 
+    public Optional<AppDescription> updateApp(String gitUrl, String appName) throws Exception {
+        Optional<AppDescription> existing = app(appName);
+        if (existing.isPresent()) {
+            existing.get().gitUrl(gitUrl);
+            for (AppChangedListener listener : appUpdatedListeners) {
+                listener.onAppChanged(existing.get());
+            }
+        }
+        return existing;
+
+    }
+
     public void update(String name, InvocationOutputHandler outputHandler) throws Exception {
         for (AppDescription manager : managers) {
             if (manager.name().equalsIgnoreCase(name)) {
@@ -79,6 +92,10 @@ public class AppEstate {
 
     public void addAppAddedListener(AppChangedListener listener) {
         this.appAddedListeners.add(listener);
+    }
+
+    public void addAppUpdatedListener(AppChangedListener listener) {
+        this.appUpdatedListeners.add(listener);
     }
 
     public void addAppDeletedListener(AppChangedListener listener) {
