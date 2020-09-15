@@ -122,7 +122,7 @@ public class AppManager implements AppDescription {
     private final File[] dirsToDelete;
     private ArrayList<String> contributors;
     private final List<AppChangeListener> listeners = new ArrayList<>();
-    private AppRunner currentRunner;
+    private volatile AppRunner currentRunner;
     private String latestBuildLog;
     private final CircularFifoQueue<String> consoleLog = new CircularFifoQueue<>(5000);
     private volatile Availability availability = Availability.unavailable("Not started");

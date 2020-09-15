@@ -100,6 +100,8 @@ public class MavenRunner implements AppRunner {
         if (watchDog != null) {
             watchDog.destroyProcess();
             watchDog.stop();
+        } else {
+            log.info("Shutdown requested but watchdog is null");
         }
     }
 
