@@ -1,0 +1,10 @@
+package samples;
+
+class App {
+
+    final String thing;
+
+    public static void main(String[] args) {
+
+    }
+}

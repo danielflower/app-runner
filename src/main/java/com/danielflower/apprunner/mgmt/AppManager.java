@@ -232,18 +232,20 @@ public class AppManager implements AppDescription {
         AppRunnerFactory appRunnerFactory = runnerProvider.runnerFor(name(), instanceDir);
         String runnerId = appRunnerFactory.id();
         markBuildAsStarting(runnerId);
-        currentRunner = appRunnerFactory.appRunner(instanceDir);
+        AppRunner newRunner = appRunnerFactory.appRunner(instanceDir);
         log.info("Using " + appRunnerFactory.id() + " for " + name);
         int port = getAFreePort();
 
         Map<String, String> envVarsForApp = createAppEnvVars(port, name, dataDir, tempDir);
 
         try (Waiter startupWaiter = Waiter.waitForApp(name, port)) {
-            currentRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
+            newRunner.start(buildLogHandler, consoleLogHandler, envVarsForApp, startupWaiter);
         } catch (Exception e) {
+            newRunner.shutdown();
             recordBuildFailure("Crashed during startup", runnerId);
             throw e;
         }
+        currentRunner = newRunner;
         recordBuildSuccess(runnerId);
         buildLogHandle.set(null);
 

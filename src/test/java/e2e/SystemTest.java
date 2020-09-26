@@ -21,6 +21,7 @@ import org.hamcrest.Matchers;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.skyscreamer.jsonassert.JSONAssert;
@@ -31,6 +32,8 @@ import scaffolding.RestClient;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -88,6 +91,8 @@ public class SystemTest {
             put("apprunner.keystore.path", fullPath(new File("local/test.keystore")));
             put("apprunner.keystore.password", "password");
             put("apprunner.keymanager.password", "password");
+            put("apprunner.proxy.idle.timeout", "180000");
+            put("apprunner.proxy.total.timeout", "180000");
             put(Config.DATA_DIR, fullPath(dataDir));
         }};
 
@@ -179,6 +184,46 @@ public class SystemTest {
     }
 
     @Test
+    public void failureToStartLeavesOldAppRunning() throws Exception {
+        AppRepo changesApp = AppRepo.create("maven");
+        restClient.createApp(changesApp.gitUrl(), "startup");
+        restClient.deploy("startup");
+
+        assertThat(restClient.homepage("startup"), is(equalTo(200, containsString("My Maven App"))));
+
+        File appJava = new File(changesApp.originDir, FilenameUtils.separatorsToSystem("src/main/java/samples/App.java"));
+        FileUtils.copyFile(new File("src/test/resources/compilation-failure.java.txt"), appJava);
+        commitChanges(changesApp);
+
+        assertThat(restClient.deploy("startup"),
+            is(equalTo(200, containsString("\"description\": \"Crashed during startup\""))));
+
+        assertThat(restClient.homepage("startup"), is(equalTo(200, containsString("My Maven App"))));
+
+        FileUtils.copyFile(new File("src/test/resources/no-startup-response.java.txt"), appJava);
+        commitChanges(changesApp);
+        ContentResponse hangingStartup = restClient.deploy("startup");
+        assertThat(hangingStartup.getStatus(), is(200));
+
+        JSONObject status = new JSONObject(hangingStartup.getContentAsString());
+        assertThat(status.query("/lastBuild/status"), is("failed"));
+        assertThat(status.query("/lastSuccessfulBuild/status"), is("success"));
+        assertThat(restClient.get(URI.create(status.getString("buildLogUrl")).getRawPath()),
+            is(equalTo(200, containsString("Built successfully, but timed out waiting for startup"))));
+
+        try {
+            // port 27364 is hardcoded in no-startup-response.java.txt
+            RestClient.httpClient.GET("http://localhost:27364");
+            Assert.fail("The app that didn't start shouldn't be serving requests");
+        } catch (ExecutionException e) {
+            assertThat(e.getCause(), instanceOf(ConnectException.class));
+        }
+
+        restClient.deleteApp("startup");
+    }
+
+
+    @Test
     public void appRunnerCanStartEvenWithInvalidApps() throws Exception {
         shutDownAppRunner();
 
@@ -245,8 +290,12 @@ public class SystemTest {
         File indexHtml = new File(mavenApp.originDir, FilenameUtils.separatorsToSystem("src/main/resources/web/index.html"));
         String newVersion = FileUtils.readFileToString(indexHtml, "UTF-8").replaceAll("<h1>.*</h1>", "<h1>" + replacement + "</h1>");
         FileUtils.write(indexHtml, newVersion, "UTF-8", false);
-        mavenApp.origin.add().addFilepattern(".").call();
-        mavenApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
+        commitChanges(mavenApp);
+    }
+
+    private static void commitChanges(AppRepo testApp) throws GitAPIException {
+        testApp.origin.add().addFilepattern(".").call();
+        testApp.origin.commit().setMessage("Updated index.html").setAuthor("Dan F", "danf@example.org").call();
     }
 
     @Test

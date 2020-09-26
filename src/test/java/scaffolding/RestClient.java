@@ -10,13 +10,19 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.concurrent.TimeUnit;
 
 public class RestClient {
 
-    public static HttpClient httpClient = new HttpClient(new SslContextFactory.Client(true));
+    public static final HttpClient httpClient;
     static {
         try {
-            httpClient.start();
+            SslContextFactory.Client scf = new SslContextFactory.Client(true);
+            scf.setEndpointIdentificationAlgorithm("https");
+            HttpClient hc = new HttpClient(scf);
+            hc.setIdleTimeout(TimeUnit.MINUTES.toMillis(5));
+            hc.start();
+            httpClient = hc;
         } catch (Exception e) {
             throw new RuntimeException("Could not start httpClient", e);
         }

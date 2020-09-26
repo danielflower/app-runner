@@ -173,12 +173,13 @@
             <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
             <version>${jgit.version}</version>
         </dependency>
+        <!-- end git stuff -->
+
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
             <version>20200518</version>
         </dependency>
-        <!-- end git stuff -->
 
         <dependency>
             <groupId>org.apache.commons</groupId>

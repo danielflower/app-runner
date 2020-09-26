@@ -1,0 +1,23 @@
+package samples;
+
+import io.muserver.ContentTypes;
+import io.muserver.Method;
+import io.muserver.MuServer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static io.muserver.ContextHandlerBuilder.context;
+import static io.muserver.MuServerBuilder.muServer;
+import static io.muserver.handlers.ResourceHandlerBuilder.fileOrClasspath;
+
+public class App {
+    private static final Logger log = LoggerFactory.getLogger(App.class);
+    public static void main(String[] args) throws Exception {
+        MuServer server = muServer()
+            .withHttpPort(27364)
+            .start();
+        Runtime.getRuntime().addShutdownHook(new Thread(server::stop));
+        log.info("Started app at " + server.uri());
+    }
+
+}
