@@ -1,16 +1,12 @@
 package com.danielflower.apprunner.mgmt;
 
+import java.io.IOException;
+
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.web.WebServerTest;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Test;
 import scaffolding.AppRepo;
-import scaffolding.Photocopier;
-
-import java.io.File;
-import java.io.IOException;
 
 public class AppManagerTest {
 

@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
-import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class ProcessStarter {
     public static final Logger log = LoggerFactory.getLogger(ProcessStarter.class);
@@ -83,7 +82,7 @@ public class ProcessStarter {
 
     public static Pair<Boolean, String> run(CommandLine command) {
         ExecuteWatchdog watchDog = new ExecuteWatchdog(30000);
-        StringBuffer output = new StringBuffer();
+        StringBuilder output = new StringBuilder();
         Executor executor = createExecutor(output::append, command, new File("."), watchDog);
         output.setLength(0);
         try {
@@ -111,7 +110,7 @@ public class ProcessStarter {
         executor.setWorkingDirectory(projectRoot);
         executor.setWatchdog(watchDog);
         executor.setStreamHandler(new PumpStreamHandler(new WriterOutputStream(new WriterToOutputBridge(consoleLogHandler))));
-        consoleLogHandler.consumeLine(fullPath(executor.getWorkingDirectory()) + "> " + String.join(" ", command.toStrings()) + LINE_SEPARATOR);
+        consoleLogHandler.consumeLine(fullPath(executor.getWorkingDirectory()) + "> " + String.join(" ", command.toStrings()) + System.lineSeparator());
         return executor;
     }
 

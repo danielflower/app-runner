@@ -30,7 +30,6 @@ import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 import static org.apache.commons.lang3.StringUtils.isBlank;
 
 @Description(value = "Application")
@@ -216,16 +215,9 @@ public class AppResource {
     }
 
     private static String getContributorsList(AppDescription app) {
-        String contributors = "";
         String[] contributorsArray = app.contributors().toArray(new String[0]);
         Arrays.sort(contributorsArray);
-        for (String name : contributorsArray) {
-            contributors += name + ", ";
-        }
-        if (contributors.length() > 2) {
-            contributors = contributors.substring(0, contributors.length() - 2);
-        }
-        return contributors;
+        return String.join(", ", contributorsArray);
     }
 
     private static URI appUrl(AppDescription app, URI restURI, String path) {
@@ -393,13 +385,13 @@ public class AppResource {
 
         public void write(OutputStream output) throws IOException, WebApplicationException {
             try (Writer writer = new OutputStreamWriter(output)) {
-                writer.write("Going to build and deploy " + name + " at " + new Date() + LINE_SEPARATOR);
+                writer.write("Going to build and deploy " + name + " at " + new Date() + System.lineSeparator());
                 writer.flush();
                 log.info("Going to update " + name);
                 try {
                     estate.update(name, new OutputToWriterBridge(writer));
                     log.info("Finished updating " + name);
-                    writer.write("Success" + LINE_SEPARATOR);
+                    writer.write("Success" + System.lineSeparator());
                 } catch (URISyntaxException uex) {
                     throw new ClientErrorException("Invalid GIT URL", 400);
                 } catch (AppNotFoundException e) {
