@@ -32,8 +32,15 @@ public class GoLangRunnerTest {
     @Test
     public void canStartAndStopGoProjects() throws Exception {
         // doing it twice proves the port was cleaned up
-        canStartAnGOProject(1);
-        canStartAnGOProject(2);
+        canStartAnGOProject(1, "golang");
+        canStartAnGOProject(2, "golang");
+    }
+
+    @Test
+    public void canStartAndStopGoProjectsWithGoModule() throws Exception {
+        // doing it twice proves the port was cleaned up
+        canStartAnGOProject(1, "golang-mod");
+        canStartAnGOProject(2, "golang-mod");
     }
 
     @Test
@@ -41,8 +48,7 @@ public class GoLangRunnerTest {
         assertThat(goRunnerFactory.versionInfo(), containsString("go"));
     }
 
-    private void canStartAnGOProject(int attempt) throws Exception {
-        String appName = "golang";
+    private void canStartAnGOProject(int attempt, String appName) throws Exception {
         File projectRoot = Photocopier.folderForSampleProject("instances" + File.separator + appName);
         FileUtils.copyDirectory(new File(Photocopier.sampleDir(), appName),
                 projectRoot);
