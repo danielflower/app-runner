@@ -28,6 +28,8 @@ and want the convenience of a platform such as Heroku but cannot use an external
 Change log
 ----------
 
+* **2.3.0** Breaking golang change: it now uses go modules. Also, the default branch no longer needs to be called `master`
+* **2.2.0** Bug fixes, particularly the one where apps were sometimes not shutting down.
 * **2.1.0** Added [let's encrypt](https://letsencrypt.org) (and other ACME server) support for free HTTPS certs (see `sample-config.properties` for instructions)
 * **1.6.0** Added `GET`/`POST`/`DELETE` `/api/v1/apps/{name}/data` endpoints to manipulate an app's data directory.
 * **1.5.6** Added backup info to the apps API and added app name validation
