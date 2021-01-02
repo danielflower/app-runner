@@ -11,7 +11,6 @@ import java.util.Optional;
 import java.util.concurrent.*;
 
 import static java.util.stream.Collectors.joining;
-import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class AppRunnerFactoryProvider {
     public static final Logger log = LoggerFactory.getLogger(AppRunnerFactoryProvider.class);
@@ -58,7 +57,7 @@ public class AppRunnerFactoryProvider {
     public String describeRunners() {
         return factories.stream()
                 .map(AppRunnerFactory::versionInfo)
-                .collect(joining(LINE_SEPARATOR));
+                .collect(joining(System.lineSeparator()));
     }
 
     public List<AppRunnerFactory> factories() {

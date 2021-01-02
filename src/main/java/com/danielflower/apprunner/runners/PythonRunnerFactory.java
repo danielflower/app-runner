@@ -2,7 +2,6 @@ package com.danielflower.apprunner.runners;
 
 import com.danielflower.apprunner.Config;
 import org.apache.commons.exec.CommandLine;
-import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.LoggerFactory;
 

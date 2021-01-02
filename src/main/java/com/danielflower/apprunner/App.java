@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
-import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class App {
     public static final Logger log = LoggerFactory.getLogger(App.class);
@@ -61,7 +60,7 @@ public class App {
 
         log.info("Detecting providers...");
         AppRunnerFactoryProvider runnerProvider = AppRunnerFactoryProvider.create(config);
-        log.info("Registered providers..." + LINE_SEPARATOR + runnerProvider.describeRunners());
+        log.info("Registered providers..." + System.lineSeparator() + runnerProvider.describeRunners());
 
         estate = new AppEstate(
             proxyMap,
@@ -147,7 +146,7 @@ public class App {
                     try {
                         estate.update(a.name(), new OutputToWriterBridge(writer));
                     } catch (Exception e) {
-                        log.warn("Error while starting up " + a.name() + LINE_SEPARATOR + "Logs:" + LINE_SEPARATOR + writer, e);
+                        log.warn("Error while starting up " + a.name() + System.lineSeparator() + "Logs:" + System.lineSeparator() + writer, e);
                     }
                 }
             }));

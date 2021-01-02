@@ -10,14 +10,19 @@ import com.danielflower.apprunner.runners.Waiter;
 import io.muserver.Mutils;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.file.PathUtils;
+import org.apache.commons.io.file.StandardDeleteOption;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.ResetCommand;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.transport.FetchResult;
 import org.eclipse.jgit.transport.URIish;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +37,8 @@ import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static com.danielflower.apprunner.FileSandbox.fullPath;
-import static org.apache.commons.io.IOUtils.LINE_SEPARATOR;
 
 public class AppManager implements AppDescription {
     public static final Logger log = LoggerFactory.getLogger(AppManager.class);
@@ -108,8 +111,13 @@ public class AppManager implements AppDescription {
     }
 
     private void gitUpdateFromOrigin() throws GitAPIException {
-        git.fetch().setRemote("origin").setTimeout(REMOTE_GIT_TIMEOUT).call();
-        git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
+        FetchResult fetchResult = git.fetch().setRemote("origin").setTimeout(REMOTE_GIT_TIMEOUT).call();
+        Ref headRef = fetchResult.getAdvertisedRef(Constants.HEAD);
+        if (headRef != null) {
+            git.checkout().setForced(true).setName(headRef.getObjectId().getName()).call();
+        } else {
+            git.reset().setMode(ResetCommand.ResetType.HARD).setRef("origin/master").call();
+        }
         this.contributors = getContributorsFromRepo();
     }
 
@@ -176,7 +184,7 @@ public class AppManager implements AppDescription {
 
     public String latestConsoleLog() {
         synchronized (consoleLog) {
-            return consoleLog.stream().collect(Collectors.joining());
+            return String.join("", consoleLog);
         }
     }
 
@@ -207,7 +215,7 @@ public class AppManager implements AppDescription {
                 outputHandler.consumeLine(line);
             } catch (IOException ignored) {
             }
-            latestBuildLog += line + LINE_SEPARATOR;
+            latestBuildLog += line + System.lineSeparator();
         };
 
         // Well this is complicated.
@@ -268,7 +276,9 @@ public class AppManager implements AppDescription {
         for (File dir : dirsToDelete) {
             try {
                 log.info("Deleting " + Mutils.fullPath(dir));
-                FileUtils.deleteDirectory(dir);
+                // pack files are read-only so we need to override that or delete fails on Windows
+                // (on Linux it's not necessary because the directory is writable, but it does no harm)
+                PathUtils.deleteDirectory(dir.toPath(), StandardDeleteOption.OVERRIDE_READ_ONLY);
             } catch (IOException e) {
                 log.warn("Failed to delete " + Mutils.fullPath(dir) + " - message was " + e.getMessage(), e);
             }

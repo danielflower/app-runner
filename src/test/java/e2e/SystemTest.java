@@ -184,6 +184,36 @@ public class SystemTest {
     }
 
     @Test
+    public void defaultBranchDoesNotHaveToBeCalledMaster() throws Exception {
+        AppRepo changesApp = AppRepo.create("maven");
+        changesApp.origin.branchRename().setOldName("master").setNewName("main").call();
+        restClient.createApp(changesApp.gitUrl(), "changes-app");
+        restClient.deploy("changes-app");
+
+        assertThat(restClient.homepage("changes-app"), is(equalTo(200, containsString("My Maven App"))));
+
+        updateHeaderAndCommit(changesApp, "My new and improved maven app!");
+
+        assertThat(restClient.deploy("changes-app"),
+            is(equalTo(200, containsString("buildLogUrl"))));
+
+        JSONObject appInfo = new JSONObject(client.GET(appRunnerUrl + "/api/v1/apps/changes-app").getContentAsString());
+
+        assertThat(
+            client.GET(appInfo.getString("url")),
+            is(equalTo(200, containsString("My new and improved maven app!"))));
+
+        assertThat(
+            client.GET(appInfo.getString("buildLogUrl")),
+            is(equalTo(200, containsString("[INFO] Building my-maven-app 1.0-SNAPSHOT"))));
+        assertThat(
+            client.GET(appInfo.getString("consoleLogUrl")),
+            is(equalTo(200, containsString("Starting changes-app on port"))));
+
+        restClient.deleteApp("changes-app");
+    }
+
+    @Test
     public void failureToStartLeavesOldAppRunning() throws Exception {
         AppRepo changesApp = AppRepo.create("maven");
         restClient.createApp(changesApp.gitUrl(), "startup");
