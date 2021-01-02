@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class GoRunner implements AppRunner {
     public static final Logger log = LoggerFactory.getLogger(GoRunner.class);
 
-    public static final String[] startCommands = new String[]{"go get", "go build", "go test", "./{app_dir_name}"};
+    public static final String[] startCommands = new String[]{"go get -v", "go build -v -o {app_dir_name}", "go test", "./{app_dir_name}"};
     private final File projectRoot;
     private final File instanceDir;
     private final CommandLineProvider goCmd;
@@ -61,8 +61,8 @@ public class GoRunner implements AppRunner {
 
     public void start(LineConsumer buildLogHandler, LineConsumer consoleLogHandler, Map<String, String> envVarsForApp, Waiter startupWaiter) throws ProjectCannotStartException {
         envVarsForApp.put("GOPATH", instanceDir.getAbsolutePath());
-        rungo(buildLogHandler, envVarsForApp, "get");
-        rungo(buildLogHandler, envVarsForApp, "build");
+        rungo(buildLogHandler, envVarsForApp, "get", "-v");
+        rungo(buildLogHandler, envVarsForApp, "build", "-v", "-o", instanceDir.getName());
         rungo(buildLogHandler, envVarsForApp, "test");
 
         CommandLine command = new CommandLine("." + File.separator + projectRoot.getName());
