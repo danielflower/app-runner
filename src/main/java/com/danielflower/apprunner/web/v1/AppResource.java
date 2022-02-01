@@ -154,7 +154,7 @@ public class AppResource {
         log.info("Setting data for " + name);
 
         String dataDirPath = ad.dataDir().getCanonicalPath();
-        File unzipTo = fileSandbox.tempDir("post-data-" + UUID.randomUUID().toString());
+        File unzipTo = fileSandbox.tempDir("post-data-" + UUID.randomUUID());
         String unzipToPath = unzipTo.getCanonicalPath();
         log.info("Going to unzip files to temp dir " + unzipToPath);
 
