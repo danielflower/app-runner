@@ -21,7 +21,7 @@ public class SbtRunner implements AppRunner {
     public static final String[] startCommands = new String[]{"sbt clean assembly", "java -jar {artifactPath}"};
 
     private static final List<String> CLEAN_AND_PACKAGE = asList("clean", "assembly");
-    private static final int SBT_LINE_BUFFER = 5;
+    private static final int SBT_LINE_BUFFER = 10;
     private static final Pattern ARTIFACT_PATH_REGEX = Pattern.compile(".*Packaging\\s+(\\S+)\\s+.*", Pattern.DOTALL);
 
     private final File projectRoot;

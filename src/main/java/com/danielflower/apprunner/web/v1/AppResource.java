@@ -362,10 +362,16 @@ public class AppResource {
     @ApiResponse(code = "200", message = "Returns 200 if the command was received successfully. Whether the build " +
         "actually succeeds or fails is ignored. Returns streamed plain text of the build log and console startup, unless the Accept" +
         " header includes 'application/json'.")
-    public Response deploy(@Context UriInfo uriInfo, @Description(value = "The type of response desired, e.g. application/json or text/plain", example = "application/json") @HeaderParam("Accept") String accept,
-                           @Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name) throws IOException {
+    public Response deploy(@Context UriInfo uriInfo,
+                           @Description(value = "The type of response desired, e.g. application/json or text/plain", example = "application/json") @HeaderParam("Accept") String accept,
+                           @Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name,
+                           @Context Request jaxRequest) throws IOException {
+        MediaType json = MediaType.valueOf("application/json; qs=0.5");
+        Variant variant = jaxRequest.selectVariant(
+            Variant.mediaTypes(json, MediaType.WILDCARD_TYPE).build()
+        );
         StreamingOutput stream = new UpdateStreamer(name);
-        if (MediaType.APPLICATION_JSON.equals(accept)) {
+        if (variant.getMediaType().equals(json)) {
             StringBuilderWriter output = new StringBuilderWriter();
             try (WriterOutputStream writer = new WriterOutputStream(output)) {
                 stream.write(writer);

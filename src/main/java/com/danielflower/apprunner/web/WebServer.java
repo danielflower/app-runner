@@ -81,7 +81,7 @@ public class WebServer implements AutoCloseable {
             .withHttpPort(httpPort)
             .withHttpsPort(httpsPort)
             .withMaxRequestSize(maxRequestSize)
-            .withIdleTimeout(idleTimeout + 5000 /* let the proxy timeout first */, TimeUnit.MILLISECONDS)
+            .withIdleTimeout(Math.max(idleTimeout + 5000, 10 /* minutes */ * 60 * 1000), TimeUnit.MILLISECONDS) // timeout is at least a little longer than configured timeout, or 5 minutes to account for slow API responses
             .withHttpsConfig(acmeCertManager != null ? acmeCertManager.createHttpsConfig() : sslContext)
             .withMaxHeadersSize(maxRequestHeadersSize)
             .addHandler(acmeCertManager == null ? null : acmeCertManager.createHandler())
