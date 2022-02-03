@@ -10,6 +10,7 @@ import java.util.Optional;
 import static com.danielflower.apprunner.mgmt.AppManager.getAFreePort;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.junit.Assume.assumeTrue;
 import static scaffolding.TestConfig.config;
 
@@ -37,9 +38,10 @@ public class DotnetRunnerTest {
 
     @Test
     public void theVersionIsReported() {
-        assertThat(runnerFactory.versionInfo(), containsString(".NET Core SDK"));
+        assertThat(runnerFactory.versionInfo(), anyOf(
+            containsString(".NET Core SDK"),
+            containsString(".NET SDK")
+        ));
     }
 
-    private void startAndStop(int attempt, String appName, AppRunner runner, int port) throws Exception {
-    }
 }

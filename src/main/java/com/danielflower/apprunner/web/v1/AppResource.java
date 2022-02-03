@@ -367,10 +367,10 @@ public class AppResource {
                            @Context Request jaxRequest) throws IOException {
         MediaType json = MediaType.valueOf("application/json; qs=0.5");
         Variant variant = jaxRequest.selectVariant(
-            Variant.mediaTypes(json, MediaType.WILDCARD_TYPE).build()
+            Variant.mediaTypes(json, MediaType.TEXT_PLAIN_TYPE).build()
         );
         StreamingOutput stream = new UpdateStreamer(name);
-        if (variant.getMediaType().equals(json)) {
+        if (variant != null && variant.getMediaType().equals(json)) {
             StringBuilderWriter output = new StringBuilderWriter();
             try (WriterOutputStream writer = new WriterOutputStream(output)) {
                 stream.write(writer);
