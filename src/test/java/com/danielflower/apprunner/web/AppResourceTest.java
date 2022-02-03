@@ -6,6 +6,7 @@ import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
 import com.danielflower.apprunner.runners.MavenRunnerFactory;
 import com.danielflower.apprunner.web.v1.AppResource;
 import io.muserver.rest.MuRuntimeDelegate;
+import org.apache.commons.lang3.NotImplementedException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -21,6 +22,7 @@ import javax.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import static com.danielflower.apprunner.web.WebServerTest.fileSandbox;
@@ -94,7 +96,7 @@ public class AppResourceTest {
         estate.add(myApp);
         estate.add(anApp);
 
-        Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "", "my-app");
+        Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "my-app", jaxRequest());
         StreamingOutput stream = (StreamingOutput) response.getEntity();
         stream.write(NULL_OUTPUT_STREAM);
         assertThat(response.getStatus(), is(200));
@@ -107,7 +109,7 @@ public class AppResourceTest {
         estate.add(myApp);
         estate.add(anApp);
 
-        Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "", "unreal-app");
+        Response response = appResource.deploy(new MockUriInfo("http://localhost/blah"), "unreal-app", jaxRequest());
         StreamingOutput stream = (StreamingOutput) response.getEntity();
         try {
             stream.write(NULL_OUTPUT_STREAM);
@@ -118,7 +120,41 @@ public class AppResourceTest {
         }
     }
 
+    private static Request jaxRequest() {
+        return new Request() {
+            @Override
+            public String getMethod() {
+                return "POST";
+            }
+
+            @Override
+            public Variant selectVariant(List<Variant> variants) {
+                return variants.stream().filter(v -> v.getMediaType().isWildcardType()).findFirst().orElse(null);
+            }
+
+            @Override
+            public Response.ResponseBuilder evaluatePreconditions(EntityTag eTag) {
+                throw new NotImplementedException();
+            }
+
+            @Override
+            public Response.ResponseBuilder evaluatePreconditions(Date lastModified) {
+                throw new NotImplementedException();
+            }
+
+            @Override
+            public Response.ResponseBuilder evaluatePreconditions(Date lastModified, EntityTag eTag) {
+                throw new NotImplementedException();
+            }
+
+            @Override
+            public Response.ResponseBuilder evaluatePreconditions() {
+                throw new NotImplementedException();
+            }
+        };
+    }
     private static class MockUriInfo implements UriInfo {
+
 
         private String uri;
 

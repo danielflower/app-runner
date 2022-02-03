@@ -352,7 +352,7 @@ public class AppResource {
         }
     }
 
-    @POST /* Maybe should be PUT, but too many hooks only use POST */
+    @POST
     @Produces({MediaType.TEXT_PLAIN, MediaType.APPLICATION_JSON})
     @Path("/{name}/deploy")
     @Description(value = "Deploys an app", details = "Deploys the app by fetching the latest changes from git, building it, " +
@@ -363,7 +363,6 @@ public class AppResource {
         "actually succeeds or fails is ignored. Returns streamed plain text of the build log and console startup, unless the Accept" +
         " header includes 'application/json'.")
     public Response deploy(@Context UriInfo uriInfo,
-                           @Description(value = "The type of response desired, e.g. application/json or text/plain", example = "application/json") @HeaderParam("Accept") String accept,
                            @Required @Description(value = "The name of the app", example = "app-runner-home") @PathParam("name") String name,
                            @Context Request jaxRequest) throws IOException {
         MediaType json = MediaType.valueOf("application/json; qs=0.5");
