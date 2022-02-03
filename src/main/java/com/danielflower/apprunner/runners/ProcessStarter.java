@@ -40,7 +40,9 @@ public class ProcessStarter {
                 started = true;
             }
         } catch (TimeoutException te) {
-            String message = "Built successfully, but timed out waiting for startup at " + fullPath(projectRoot);
+            String message = "Built successfully, but timed out waiting for startup at " + fullPath(projectRoot)
+                + " - is the application responding to HTTP requests on the port specified by the APP_PORT " +
+                "environment variable (currently " + envVarsForApp.get("APP_PORT") + ")?";
             buildLogHandler.consumeLine(message);
             throw new ProjectCannotStartException(message);
         } catch (ProjectCannotStartException pcse) {
