@@ -181,6 +181,11 @@ public class AppUriMapperTest {
             }
 
             @Override
+            public String clientIP() {
+                return null;
+            }
+
+            @Override
             public MuServer server() {
                 return null;
             }
