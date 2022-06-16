@@ -37,13 +37,6 @@ public class GoLangRunnerTest {
     }
 
     @Test
-    public void canStartAndStopGoProjectsWithGoModule() throws Exception {
-        // doing it twice proves the port was cleaned up
-        canStartAnGOProject(1, "golang-mod");
-        canStartAnGOProject(2, "golang-mod");
-    }
-
-    @Test
     public void theVersionIsReported() {
         assertThat(goRunnerFactory.versionInfo(), containsString("go"));
     }
