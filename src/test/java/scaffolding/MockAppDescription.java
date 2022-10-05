@@ -41,7 +41,7 @@ public class MockAppDescription implements AppDescription {
 
     @Override
     public BuildStatus lastBuildStatus() {
-        return BuildStatus.notStarted(null);
+        return BuildStatus.notStarted(gitUrl, null);
     }
 
     @Override
