@@ -13,9 +13,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class BuildStatusTest {
 
+    private static final String GIT_URL = "dummy_git_url";
+
     @Test
     public void notStartedWorks() {
-        JSONObject s = BuildStatus.notStarted(aCommit()).toJSON();
+        JSONObject s = BuildStatus.notStarted(GIT_URL, aCommit()).toJSON();
         JSONAssert.assertEquals("{" +
             "status: 'not-built', description: 'This hasn\\'t been built', commit: {}" +
             "}", s, JSONCompareMode.LENIENT);
@@ -24,15 +26,15 @@ public class BuildStatusTest {
     @Test
     public void fetchingWorks() {
         Instant startTime = Instant.now();
-        JSONObject s = BuildStatus.fetching(startTime).toJSON();
+        JSONObject s = BuildStatus.fetching(startTime, GIT_URL).toJSON();
         JSONAssert.assertEquals("{" +
             "status: 'fetching', startTime: '" + startTime.toString() + "', description: 'Fetching changes from git'" +
-            "}", s, JSONCompareMode.STRICT);
+            ", gitUrl: " + GIT_URL + "}", s, JSONCompareMode.STRICT);
     }
     @Test
     public void inProgressWorks() {
         Instant now = Instant.now();
-        JSONObject s = BuildStatus.inProgress(now, aCommit(), "maven").toJSON();
+        JSONObject s = BuildStatus.inProgress(now, GIT_URL, aCommit(), "maven").toJSON();
         JSONAssert.assertEquals("{" +
             "runnerId: 'maven', status: 'building', startTime: '" + now.toString() + "', description: 'Building now...', commit: {}" +
             "}", s, JSONCompareMode.LENIENT);
@@ -42,7 +44,7 @@ public class BuildStatusTest {
     public void successWorks() {
         Instant start = Instant.now();
         Instant end = start.plusMillis(10000);
-        JSONObject s = BuildStatus.success(start, end, aCommit(), "maven").toJSON();
+        JSONObject s = BuildStatus.success(start, end, GIT_URL, aCommit(), "maven").toJSON();
         JSONAssert.assertEquals("{" +
             "status: 'success', startTime: '" + start.toString() + "', endTime: '" + end.toString() + "', " +
             "description: 'Completed successfully in 10 seconds', commit: {}" +
@@ -53,7 +55,7 @@ public class BuildStatusTest {
     public void failureWorks() {
         Instant start = Instant.now();
         Instant end = start.plusMillis(10000);
-        JSONObject s = BuildStatus.failure(start, end, "Oh no", aCommit(), "maven").toJSON();
+        JSONObject s = BuildStatus.failure(start, end, "Oh no", GIT_URL, aCommit(), "maven").toJSON();
         JSONAssert.assertEquals("{" +
             "status: 'failed', startTime: '" + start.toString() + "', endTime: '" + end.toString() + "', " +
             "description: 'Oh no', commit: {}" +
@@ -62,7 +64,7 @@ public class BuildStatusTest {
 
     @Test
     public void theCommitCanBeNull() {
-        JSONObject buildStatus = BuildStatus.notStarted(null).toJSON();
+        JSONObject buildStatus = BuildStatus.notStarted(GIT_URL, null).toJSON();
         assertThat(buildStatus.has("commit"), is(false));
     }
 

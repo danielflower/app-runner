@@ -146,7 +146,7 @@ public class AppManager implements AppDescription {
         this.tempDir = tempDir;
         this.dirsToDelete = dirsToDelete;
         this.contributors = new ArrayList<>();
-        this.lastBuildStatus = BuildStatus.notStarted(gitCommit);
+        this.lastBuildStatus = BuildStatus.notStarted(gitUrl, gitCommit);
     }
 
     public String name() {
@@ -286,26 +286,26 @@ public class AppManager implements AppDescription {
     }
 
     private void markBuildAsFetching() {
-        lastBuildStatus = BuildStatus.fetching(Instant.now());
+        lastBuildStatus = BuildStatus.fetching(Instant.now(), gitUrl);
         if (!availability.isAvailable) {
             availability = Availability.unavailable("Starting");
         }
     }
 
     private void markBuildAsStarting(String runnerId) {
-        lastBuildStatus = BuildStatus.inProgress(Instant.now(), getCurrentHead(), runnerId);
+        lastBuildStatus = BuildStatus.inProgress(Instant.now(), gitUrl, getCurrentHead(), runnerId);
         if (!availability.isAvailable) {
             availability = Availability.unavailable("Starting");
         }
     }
 
     private void recordBuildSuccess(String runnerId) {
-        lastBuildStatus = lastSuccessfulBuildStatus = BuildStatus.success(lastBuildStatus.startTime, Instant.now(), getCurrentHead(), runnerId);
+        lastBuildStatus = lastSuccessfulBuildStatus = BuildStatus.success(lastBuildStatus.startTime, Instant.now(), gitUrl, getCurrentHead(), runnerId);
         availability = Availability.available();
     }
 
     private void recordBuildFailure(String message, String runnerId) {
-        lastBuildStatus = BuildStatus.failure(lastBuildStatus.startTime, Instant.now(), message, getCurrentHead(), runnerId);
+        lastBuildStatus = BuildStatus.failure(lastBuildStatus.startTime, Instant.now(), message, gitUrl, getCurrentHead(), runnerId);
         if (!availability.isAvailable) {
             availability = Availability.unavailable(message);
         }
