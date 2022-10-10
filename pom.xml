@@ -9,14 +9,14 @@
     <version>2.3-SNAPSHOT</version>
 
     <name>App Runner</name>
-    <description>A self-hosted platform-as-a-service that hosts web apps written in Java, Clojure, NodeJS, Python, golang and Scala.</description>
+    <description>A self-hosted platform-as-a-service that hosts web apps written in Java, Clojure, NodeJS, Python, golang, Rust and Scala.</description>
     <url>https://github.com/danielflower/app-runner</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
         <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
-        <jetty.version>9.4.44.v20210927</jetty.version> <!-- Should be same or overwriting murp version's -->
+        <jetty.version>9.4.48.v20220622</jetty.version> <!-- Should be same or overwriting murp version's -->
         <jgit.version>5.13.0.202109080827-r</jgit.version>
     </properties>
 
@@ -60,12 +60,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.36</version>
+            <version>2.0.3</version>
         </dependency>
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.2.11</version>
+            <version>1.4.4</version>
             <scope>runtime</scope>
         </dependency>
 
@@ -77,12 +77,12 @@
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>mu-server</artifactId>
-            <version>0.72.15</version>
+            <version>0.72.19</version>
         </dependency>
         <dependency>
             <groupId>io.muserver</groupId>
             <artifactId>murp</artifactId>
-            <version>0.6.2</version>
+            <version>0.6.4</version>
         </dependency>
         <dependency>
             <groupId>io.muserver</groupId>
@@ -112,7 +112,7 @@
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-tcnative-boringssl-static</artifactId>
-            <version>2.0.51.Final</version>
+            <version>2.0.54.Final</version>
             <classifier>linux-x86_64</classifier>
             <scope>runtime</scope>
         </dependency>
@@ -178,7 +178,7 @@
         <dependency>
             <groupId>org.json</groupId>
             <artifactId>json</artifactId>
-            <version>20211205</version>
+            <version>20220924</version>
         </dependency>
 
         <dependency>
@@ -190,12 +190,12 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model</artifactId>
-            <version>3.8.5</version>
+            <version>3.8.6</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.shared</groupId>
             <artifactId>maven-invoker</artifactId>
-            <version>3.1.0</version>
+            <version>3.2.0</version>
         </dependency>
 
 
@@ -220,7 +220,7 @@
         <dependency>
             <groupId>org.skyscreamer</groupId>
             <artifactId>jsonassert</artifactId>
-            <version>1.5.0</version>
+            <version>1.5.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -238,7 +238,7 @@
             <plugin>
                 <groupId>com.github.danielflower.mavenplugins</groupId>
                 <artifactId>multi-module-maven-release-plugin</artifactId>
-                <version>3.1.2</version>
+                <version>3.6.1</version>
                 <configuration>
                     <releaseGoals>
                         <releaseGoal>clean</releaseGoal>
@@ -253,7 +253,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
+                <version>3.10.1</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -280,7 +280,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
+                <version>3.4.0</version>
                 <executions>
                     <execution>
                         <phase>package</phase>
@@ -337,7 +337,7 @@
                     <plugin>
                         <groupId>org.sonatype.plugins</groupId>
                         <artifactId>nexus-staging-maven-plugin</artifactId>
-                        <version>1.6.5</version>
+                        <version>1.6.8</version>
                         <extensions>true</extensions>
                         <configuration>
                             <serverId>ossrh</serverId>

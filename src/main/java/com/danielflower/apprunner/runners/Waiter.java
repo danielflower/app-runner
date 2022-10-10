@@ -60,7 +60,8 @@ public class Waiter implements AutoCloseable {
                 client.GET(url);
                 return true;
             } catch (InterruptedException e) {
-                return true; // erg... really want to bubble this but can't
+                Thread.currentThread().interrupt();
+                return true;
             } catch (Exception ex) {
                 return false;
             }

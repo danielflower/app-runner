@@ -29,7 +29,7 @@ public class ProcessStarter {
             DefaultExecuteResultHandler handler = new DefaultExecuteResultHandler();
             executor.execute(command, envVarsForApp, handler);
 
-            startupWaiter.or(c -> handler.hasResult()); // stop waiting if the process exist
+            startupWaiter.or(c -> handler.hasResult()); // stop waiting if the process exits
             startupWaiter.blockUntilReady();
 
             if (handler.hasResult()) {
