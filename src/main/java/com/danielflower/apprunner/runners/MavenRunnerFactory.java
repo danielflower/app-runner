@@ -4,6 +4,8 @@ import com.danielflower.apprunner.Config;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.InvocationRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collections;
@@ -12,6 +14,7 @@ import java.util.Optional;
 import static com.danielflower.apprunner.runners.MavenRunner.CLEAN_AND_PACKAGE;
 
 public class MavenRunnerFactory implements AppRunnerFactory {
+    public static final Logger log = LoggerFactory.getLogger(MavenRunnerFactory.class);
 
     private final HomeProvider javaHomeProvider;
     private final String versionInfo;
@@ -71,6 +74,7 @@ public class MavenRunnerFactory implements AppRunnerFactory {
             String versionInfo = StringUtils.removeEndIgnoreCase(out.toString(), " - ");
             return Optional.of(new MavenRunnerFactory(homeProvider, versionInfo));
         } catch (Exception e) {
+            log.info("Maven runner not available", e);
             return Optional.empty();
         }
     }
