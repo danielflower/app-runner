@@ -22,6 +22,7 @@ public class MavenRunner implements AppRunner {
     private static final Logger log = LoggerFactory.getLogger(MavenRunner.class);
     static final List<String> CLEAN_AND_PACKAGE = asList("clean", "package");
     public static final String[] startCommands = new String[] { "mvn clean package", "java -jar target/{artifactid}-{version}.jar" };
+    private final File m2Home;
 
     static Model loadPomModel(File pomFile) {
         try {
@@ -39,7 +40,8 @@ public class MavenRunner implements AppRunner {
     private final List<String> goals;
     private ExecuteWatchdog watchDog;
 
-    public MavenRunner(File projectRoot, HomeProvider javaHomeProvider, List<String> goals) {
+    public MavenRunner(File m2Home, File projectRoot, HomeProvider javaHomeProvider, List<String> goals) {
+        this.m2Home = m2Home;
         this.projectRoot = projectRoot;
         this.javaHomeProvider = javaHomeProvider;
         this.goals = goals;
@@ -53,6 +55,7 @@ public class MavenRunner implements AppRunner {
 
         } else {
             InvocationRequest request = new DefaultInvocationRequest()
+                .setMavenHome(m2Home)
                 .setBatchMode(true)
                 .setPomFile(pomFile)
                 .setOutputHandler(buildLogHandler::consumeLine)

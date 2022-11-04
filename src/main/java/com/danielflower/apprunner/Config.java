@@ -30,6 +30,7 @@ public class Config {
     public static final String BACKUP_MINUTES = "appserver.backup.schedule.minutes";
 
     public static final String JAVA_HOME = "java.home";
+    public static final String M2_HOME = "m2.home";
     public static final String LEIN_JAR = "lein.jar";
     public static final String LEIN_JAVA_CMD = "lein.java.cmd";
 

@@ -6,6 +6,7 @@ import com.danielflower.apprunner.mgmt.AppManager;
 import com.danielflower.apprunner.mgmt.FileBasedGitRepoLoader;
 import com.danielflower.apprunner.mgmt.GitRepoLoader;
 import com.danielflower.apprunner.runners.*;
+import io.muserver.Mutils;
 import org.apache.commons.exec.CommandLine;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -77,7 +78,9 @@ public class SystemTest {
     }
 
     private static void buildAndStartUberJar(List<String> goals) throws Exception {
-        mavenRunner = new MavenRunner(new File("."), new HomeProvider() {
+        String m2HomePath = System.getenv("M2_HOME");
+        File m2Home = Mutils.nullOrEmpty(m2HomePath) ? null : new File(m2HomePath);
+        mavenRunner = new MavenRunner(m2Home, new File("."), new HomeProvider() {
             public InvocationRequest mungeMavenInvocationRequest(InvocationRequest request) {
                 return HomeProvider.default_java_home.mungeMavenInvocationRequest(request);
             }
