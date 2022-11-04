@@ -101,6 +101,7 @@ public class WebServer implements AutoCloseable {
                         RestHandlerBuilder.restHandler(appResource, systemResource)
                             .withCORS(corsConfig()
                                 .withAllowedOriginRegex(".*")
+                                .withAllowedHeaders("content-type")
                                 .withAllowCredentials(true)
                                 .withExposedHeaders("content-type", "accept", "authorization")
                             )
