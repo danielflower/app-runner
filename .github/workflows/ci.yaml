@@ -7,22 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ 8 ]
+        java: [ 8, 17 ]
     name: Java ${{ matrix.java }} build
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v1
+        uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+          cache: 'maven'
 
-      - name: Cache the Maven packages to speed up build
-        uses: actions/cache@v1
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - run: echo "M2_HOME=$(dirname $(dirname `which mvn`))" >> $GITHUB_ENV
-      - name: Build with Maven on JDK ${{ matrix.java }}
+      - name: Build with JDK ${{ matrix.java }} and Maven ${{ env.M2_HOME }}
         run: mvn --batch-mode --update-snapshots verify
