@@ -65,12 +65,12 @@ public class App {
         estate = new AppEstate(
             proxyMap,
             fileSandbox,
-            runnerProvider);
+            runnerProvider, config.hooks);
 
         for (Map.Entry<String, String> repo : gitRepoLoader.loadAll().entrySet()) {
             try {
                 estate.addApp(repo.getValue(), repo.getKey());
-            } catch (UnsupportedProjectTypeException | GitAPIException e) {
+            } catch (UnsupportedProjectTypeException | ValidationException | GitAPIException e) {
                 log.warn("Error while trying to initiliase " + repo.getKey() + " (" + repo.getValue() + ") - will ignore this app.", e);
             }
         }
@@ -120,7 +120,7 @@ public class App {
         int totalTimeout = config.getInt("apprunner.proxy.total.timeout", 60000);
 
 
-        AppResource appResource = new AppResource(estate, systemInfo, fileSandbox);
+        AppResource appResource = new AppResource(estate, systemInfo, fileSandbox, config.hooks);
         SystemResource systemResource = new SystemResource(systemInfo, startupComplete, runnerProvider.factories(), backupService);
 
         long maxRequestSize = config.getLong("apprunner.request.max.size.bytes", 500 * 1024 * 1024L);

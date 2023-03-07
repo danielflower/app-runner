@@ -1,6 +1,7 @@
 package com.danielflower.apprunner.web.v1;
 
 import com.danielflower.apprunner.AppEstate;
+import com.danielflower.apprunner.AppRunnerHooks;
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.io.OutputToWriterBridge;
 import com.danielflower.apprunner.io.Zippy;
@@ -40,11 +41,13 @@ public class AppResource {
     private final AppEstate estate;
     private final SystemInfo systemInfo;
     private final FileSandbox fileSandbox;
+    private final AppRunnerHooks hooks;
 
-    public AppResource(AppEstate estate, SystemInfo systemInfo, FileSandbox fileSandbox) {
+    public AppResource(AppEstate estate, SystemInfo systemInfo, FileSandbox fileSandbox, AppRunnerHooks hooks) {
         this.estate = estate;
         this.systemInfo = systemInfo;
         this.fileSandbox = fileSandbox;
+        this.hooks = hooks;
     }
 
     @GET
@@ -239,11 +242,10 @@ public class AppResource {
                            @FormParam("appName") String appName) {
         log.info("Received request to create " + gitUrl);
         if (isBlank(gitUrl)) {
-            return Response.status(400).entity(new JSONObject()
-                .put("message", "No git URL was specified")
-                .toString()).build();
+            throw new ValidationException("No git URL was specified");
         }
 
+        hooks.validateGitUrl(gitUrl);
         appName = isBlank(appName) ? AppManager.nameFromUrl(gitUrl) : appName;
 
         Optional<AppDescription> existing = estate.app(appName);
@@ -319,9 +321,7 @@ public class AppResource {
                            @PathParam("name") String appName) throws Exception {
         log.info("Received request to update " + appName + " to " + gitUrl);
         if (isBlank(gitUrl) || isBlank(appName)) {
-            return Response.status(400).entity(new JSONObject()
-                .put("message", "No git URL was specified")
-                .toString()).build();
+            throw new ValidationException("No git URL was specified");
         }
         Optional<AppDescription> existing = estate.updateApp(gitUrl, appName);
         if (!existing.isPresent()) {

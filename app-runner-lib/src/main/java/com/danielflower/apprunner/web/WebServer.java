@@ -1,6 +1,7 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.Config;
+import com.danielflower.apprunner.mgmt.ValidationException;
 import com.danielflower.apprunner.problems.AppRunnerException;
 import com.danielflower.apprunner.web.v1.AppResource;
 import com.danielflower.apprunner.web.v1.SystemResource;
@@ -11,9 +12,11 @@ import io.muserver.openapi.OpenAPIObjectBuilder;
 import io.muserver.rest.RestHandlerBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.client.HttpClient;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.concurrent.TimeUnit;
@@ -105,6 +108,11 @@ public class WebServer implements AutoCloseable {
                                 .withAllowCredentials(true)
                                 .withExposedHeaders("content-type", "accept", "authorization")
                             )
+                            .addExceptionMapper(ValidationException.class, exception -> Response.status(400)
+                                .type("application/json")
+                                .entity(new JSONObject()
+                                .put("message", exception.getMessage())
+                                .toString()).build())
                             .withOpenApiJsonUrl("swagger.json")
                             .withOpenApiHtmlUrl("api.html")
                             .withOpenApiDocument(OpenAPIObjectBuilder.openAPIObject()

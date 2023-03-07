@@ -7,7 +7,7 @@ public class RunLocal {
 
     public static void main(String[] args) {
         System.setProperty("logback.configurationFile", "src/test/resources/logback-test.xml");
-        EntryPoint.main(new String[] { "sample-config.properties" });
+        EntryPoint.start(new String[]{"sample-config.properties"}, null);
     }
 
 }

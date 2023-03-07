@@ -1,6 +1,7 @@
 package com.danielflower.apprunner.web;
 
 import com.danielflower.apprunner.AppEstate;
+import com.danielflower.apprunner.AppRunnerHooks;
 import com.danielflower.apprunner.FileSandbox;
 import com.danielflower.apprunner.mgmt.SystemInfo;
 import com.danielflower.apprunner.runners.AppRunnerFactoryProvider;
@@ -42,12 +43,12 @@ public class WebServerTest {
         client.setFollowRedirects(false);
         client.start();
         AppEstate estate = new AppEstate(proxyMap, fileSandbox(),
-            new AppRunnerFactoryProvider(new ArrayList<>()));
+            new AppRunnerFactoryProvider(new ArrayList<>()), appRunnerHooks);
         int port = WebServer.getAFreePort();
         webServerUrl = "http://localhost:" + port;
         SystemInfo systemInfo = SystemInfo.create();
         webServer = new WebServer(port, -1, null, null, -1, proxyMap, "test-app",
-            new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>(), null), new AppResource(estate, systemInfo, fileSandbox()), PROXY_TIMEOUT, PROXY_TIMEOUT, "apprunner", 500 * 1024 * 1024);
+            new SystemResource(systemInfo, new AtomicBoolean(true), new ArrayList<>(), null), new AppResource(estate, systemInfo, fileSandbox(), new AppRunnerHooks() {}), PROXY_TIMEOUT, PROXY_TIMEOUT, "apprunner", 500 * 1024 * 1024);
         webServer.start();
         appServer = new TestServer();
     }

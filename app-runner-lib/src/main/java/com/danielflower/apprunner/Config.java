@@ -28,6 +28,8 @@ public class Config {
     public static final String INITIAL_APP_URL = "appserver.initial.app.url";
     public static final String BACKUP_URL = "appserver.backup.url";
     public static final String BACKUP_MINUTES = "appserver.backup.schedule.minutes";
+    public static final String GIT_URL_VALIDATION_REGEX = "apprunner.git.url.validation.regex";
+    public static final String GIT_URL_VALIDATION_MESSAGE = "apprunner.git.url.validation.message";
 
     public static final String JAVA_HOME = "java.home";
     public static final String M2_HOME = "m2.home";
@@ -68,6 +70,7 @@ public class Config {
         return new Config(env);
     }
 
+    public AppRunnerHooks hooks = new AppRunnerHooks() {};
     private final Map<String, String> raw;
 
     public Config(Map<String, String> raw) {

@@ -29,11 +29,13 @@ public class AppEstate {
     private final List<AppChangedListener> appUpdatedListeners = new ArrayList<>();
     private final List<AppChangedListener> appDeletedListeners = new ArrayList<>();
     private final AppRunnerFactoryProvider runnerProvider;
+    private final AppRunnerHooks appRunnerHooks;
 
-    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, AppRunnerFactoryProvider runnerProvider) {
+    public AppEstate(ProxyMap proxyMap, FileSandbox fileSandbox, AppRunnerFactoryProvider runnerProvider, AppRunnerHooks appRunnerHooks) {
         this.proxyMap = proxyMap;
         this.fileSandbox = fileSandbox;
         this.runnerProvider = runnerProvider;
+        this.appRunnerHooks = appRunnerHooks;
     }
 
     public void add(AppDescription appMan) throws IOException {
@@ -60,6 +62,7 @@ public class AppEstate {
 
     public AppDescription addApp(String gitUrl, String appName) throws UnsupportedProjectTypeException, IOException, GitAPIException {
         log.info("Loading app [" + appName + "] (git:" + gitUrl + ")");
+        appRunnerHooks.validateGitUrl(gitUrl);
         AppManager appMan = AppManager.create(gitUrl, fileSandbox, appName);
         runnerProvider.runnerFor(appName, fileSandbox.repoDir(appName));
         appMan.addListener(proxyMap::add);
@@ -68,6 +71,7 @@ public class AppEstate {
     }
 
     public Optional<AppDescription> updateApp(String gitUrl, String appName) throws Exception {
+        appRunnerHooks.validateGitUrl(gitUrl);
         Optional<AppDescription> existing = app(appName);
         if (existing.isPresent()) {
             existing.get().gitUrl(gitUrl);

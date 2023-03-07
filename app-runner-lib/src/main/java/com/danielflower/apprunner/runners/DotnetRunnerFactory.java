@@ -29,6 +29,10 @@ public class DotnetRunnerFactory implements AppRunnerFactory {
         Pair<Boolean, String> proc = ProcessStarter.run(new CommandLine(executable).addArgument("--info"));
         if (proc.getLeft()) {
             String versionInfo = proc.getRight();
+            if (versionInfo.contains("No SDKs were found")) {
+                log.info("DotNet is installed, but no SDKs were found");
+                return Optional.empty();
+            }
             return Optional.of(new DotnetRunnerFactory(executable, versionInfo));
         } else {
             //log.warn(executable + " couldn't be run, so the DotnetRunnerFactory has not been created");
