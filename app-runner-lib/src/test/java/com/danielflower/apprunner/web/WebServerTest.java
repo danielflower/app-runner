@@ -43,7 +43,7 @@ public class WebServerTest {
         client.setFollowRedirects(false);
         client.start();
         AppEstate estate = new AppEstate(proxyMap, fileSandbox(),
-            new AppRunnerFactoryProvider(new ArrayList<>()), appRunnerHooks);
+            new AppRunnerFactoryProvider(new ArrayList<>()), new AppRunnerHooks() {});
         int port = WebServer.getAFreePort();
         webServerUrl = "http://localhost:" + port;
         SystemInfo systemInfo = SystemInfo.create();

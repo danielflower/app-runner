@@ -22,7 +22,7 @@ public class AppEstateTest {
 
     @Before
     public void populate() throws IOException {
-        estate = new AppEstate(new ProxyMap(), fileSandbox(), null, appRunnerHooks);
+        estate = new AppEstate(new ProxyMap(), fileSandbox(), null, new AppRunnerHooks() {});
         estate.add(app("Y app"));
         estate.add(app("z app"));
         estate.add(app("c app"));

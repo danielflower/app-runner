@@ -35,7 +35,7 @@ public class AppResourceTest {
 
     private final MockAppDescription myApp = new MockAppDescription("my-app", "git://something/.git");
     private final MockAppDescription anApp = new MockAppDescription("an-app", "git://something/.git");
-    private final AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new AppRunnerFactoryProvider(Collections.singletonList(MavenRunnerFactory.createIfAvailable(TestConfig.config).get())), appRunnerHooks);
+    private final AppEstate estate = new AppEstate(new ProxyMap(), fileSandbox(), new AppRunnerFactoryProvider(Collections.singletonList(MavenRunnerFactory.createIfAvailable(TestConfig.config).get())), new AppRunnerHooks() {});
     private final SystemInfo systemInfo = SystemInfo.create();
     private final AppResource appResource = new AppResource(estate, systemInfo, fileSandbox(), new AppRunnerHooks() {});
 
