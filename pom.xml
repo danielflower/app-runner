@@ -20,9 +20,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <github.global.server>github</github.global.server>
-        <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
-        <jetty.version>9.4.48.v20220622</jetty.version> <!-- Should be same or overwriting murp version's -->
-        <jgit.version>5.13.0.202109080827-r</jgit.version>
     </properties>
 
     <prerequisites>
