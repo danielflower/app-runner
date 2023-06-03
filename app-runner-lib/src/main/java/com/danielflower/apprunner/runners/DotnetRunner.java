@@ -35,7 +35,6 @@ public class DotnetRunner implements AppRunner {
 
         CommandLine command = new CommandLine(executable)
             .addArgument("run")
-            .addArgument("-p")
             .addArgument(projectFile.getName());
 
         buildLogHandler.consumeLine("Starting Dotnet app: " + StringUtils.join(command.toStrings(), " "));
