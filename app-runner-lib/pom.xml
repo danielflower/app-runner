@@ -14,7 +14,7 @@
 
     <properties>
         <jsch.agentproxy.version>0.0.9</jsch.agentproxy.version>
-        <jetty.version>9.4.51.v20230217</jetty.version> <!-- Should be same or overwriting murp version's -->
+        <jetty.version>9.4.52.v20230823</jetty.version> <!-- Should be same or overwriting murp version's -->
         <jgit.version>5.13.1.202206130422-r</jgit.version>
     </properties>
 
