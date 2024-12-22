@@ -8,21 +8,21 @@ import com.danielflower.apprunner.web.v1.SystemResource;
 import io.muserver.*;
 import io.muserver.acme.AcmeCertManager;
 import io.muserver.handlers.HttpsRedirectorBuilder;
+import io.muserver.murp.ReverseProxyBuilder;
 import io.muserver.openapi.OpenAPIObjectBuilder;
 import io.muserver.rest.RestHandlerBuilder;
 import org.apache.commons.lang3.StringUtils;
-import org.eclipse.jetty.client.HttpClient;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.net.http.HttpClient;
 import java.util.concurrent.TimeUnit;
 
 import static io.muserver.ContextHandlerBuilder.context;
-import static io.muserver.murp.HttpClientBuilder.httpClient;
 import static io.muserver.murp.ReverseProxyBuilder.reverseProxy;
 import static io.muserver.openapi.InfoObjectBuilder.infoObject;
 import static io.muserver.rest.CORSConfigBuilder.corsConfig;
@@ -42,7 +42,6 @@ public class WebServer implements AutoCloseable {
     private final int idleTimeout;
     private final int totalTimeout;
     private final String viaName;
-    private HttpClient rpClient;
     private final long maxRequestSize;
 
     public WebServer(int httpPort, int httpsPort, HttpsConfigBuilder sslContext, AcmeCertManager acmeCertManager, int redirectToHttps, ProxyMap proxyMap, String defaultAppName, SystemResource systemResource, AppResource appResource, int idleTimeout, int totalTimeout, String viaName, long maxRequestSize) {
@@ -75,10 +74,7 @@ public class WebServer implements AutoCloseable {
 
         int maxRequestHeadersSize = 24 * 1024;
 
-        rpClient = httpClient()
-            .withIdleTimeoutMillis(idleTimeout)
-            .withMaxRequestHeadersSize(maxRequestHeadersSize)
-            .build();
+        HttpClient rpClient = ReverseProxyBuilder.createHttpClientBuilder(true).build();
 
         muServer = MuServerBuilder.muServer()
             .withHttpPort(httpPort)
@@ -142,17 +138,13 @@ public class WebServer implements AutoCloseable {
     }
 
 
-    public void close() throws Exception {
+    public void close() {
         if (acmeCertManager != null) {
             acmeCertManager.stop();
         }
         if (muServer != null) {
             muServer.stop();
             muServer = null;
-        }
-        if (rpClient != null) {
-            rpClient.stop();
-            rpClient = null;
         }
     }
 }

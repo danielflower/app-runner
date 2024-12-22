@@ -8,7 +8,7 @@ support to auto-deploy on every git push.
 
 ### Features
 
-* Host your own Platform as a Service: you just need Java 8, plus optional build tools
+* Host your own Platform as a Service: you just need Java 11, plus optional build tools
 (Maven, Leinigen, Scala/SBT, go compiler, NodeJS/NPM, Gradle, Python 2 or 3, .NET Core SDK).
 * Deploy web apps with no build servers or deploy scripts needed: tell AppRunner the Git
 URL and it will automatically build and host it.

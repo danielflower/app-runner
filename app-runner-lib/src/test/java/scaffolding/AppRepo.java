@@ -1,7 +1,6 @@
 package scaffolding;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.InitCommand;
 import org.eclipse.jgit.lib.PersonIdent;
 
 import java.io.File;
@@ -18,9 +17,9 @@ public class AppRepo {
         try {
             File originDir = copySampleAppToTempDir(sampleAppName);
 
-            InitCommand initCommand = Git.init();
-            initCommand.setDirectory(originDir);
-            Git origin = initCommand.call();
+            Git origin = Git.init()
+                .setDirectory(originDir)
+                .setInitialBranch("master").call();
 
             origin.add().addFilepattern(".").call();
             origin.commit().setMessage("Initial commit")

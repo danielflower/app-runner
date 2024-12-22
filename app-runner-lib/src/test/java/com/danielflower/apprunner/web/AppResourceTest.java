@@ -18,8 +18,8 @@ import scaffolding.AppRepo;
 import scaffolding.MockAppDescription;
 import scaffolding.TestConfig;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.*;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.*;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
